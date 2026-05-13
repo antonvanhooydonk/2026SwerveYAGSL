@@ -83,7 +83,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with success LED
    */
   public Command successCommand() {
-    return runPattern(LEDPattern.solid(LEDConstants.kSuccess).breathe(Seconds.of(1.0)))
+    return runPattern(LEDPattern.solid(Color.kGreen).breathe(Seconds.of(0.5)))
       .withName("LED_Success");
   }
   
@@ -92,7 +92,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with info LED
    */
   public Command infoCommand() {
-    return runPattern(LEDPattern.solid(LEDConstants.kInfo).breathe(Seconds.of(1.0)))
+    return runPattern(LEDPattern.solid(Color.kDarkViolet).breathe(Seconds.of(0.5)))
       .withName("LED_Info");
   }
   
@@ -101,7 +101,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with warning LED
    */
   public Command warningCommand() {
-    return runPattern(LEDPattern.solid(LEDConstants.kWarning).breathe(Seconds.of(1.0)))
+    return runPattern(LEDPattern.solid(Color.kYellow).breathe(Seconds.of(0.5)))
       .withName("LED_Warning");
   }
   
@@ -110,7 +110,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with error LED
    */
   public Command errorCommand() {
-    return runPattern(LEDPattern.solid(LEDConstants.kError).breathe(Seconds.of(1.0)))
+    return runPattern(LEDPattern.solid(Color.kRed).breathe(Seconds.of(0.5)))
       .withName("LED_Error");
   }
   
@@ -119,20 +119,20 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that sets idle LED display
    */
   public Command idleCommand() {
-    return runPattern(LEDPattern.solid(LEDConstants.kIdle))
+    return runPattern(LEDPattern.solid(Color.kSlateBlue).breathe(Seconds.of(2.0)))
       .withName("LED_Idle");
   }
   
   /**
    * Command to display team colors (scrolling gradient) until interrupted  
-   * @return Command that pulses between green & copper
+   * @return Command that scrolls between green & copper
    */
   public Command teamColorsCommand() {
     return runPattern(
       LEDPattern.gradient(
         GradientType.kContinuous, 
-        LEDConstants.kTeamGreen, 
-        LEDConstants.kTeamCopper
+        Color.kDarkGreen, 
+        Color.kDarkOrange
       )
       .scrollAtRelativeSpeed(Percent.per(Second).of(25))
     )
