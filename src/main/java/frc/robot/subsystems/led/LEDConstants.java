@@ -17,5 +17,5 @@ public final class LEDConstants {
   public static final int kLEDLength = 60;
 
   /** Control the brightness of the LEDs 0.0 to 1.0 */
-  public static final double kBrightness = 0.85;
+  public static final double kBrightness = 0.65;
 }
