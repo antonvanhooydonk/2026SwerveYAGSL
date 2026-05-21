@@ -82,6 +82,11 @@ public class VisionSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    // If vision is not enabled, skip processing
+    if (!isEnabled()) { 
+      return;
+    }
+
     // CRITICAL: Update each camera's cache BEFORE processing measurements.
     // The camera's updateCache() function should be the ONLY place where 
     // getAllUnreadResults() gets called (once per camera per cycle)!
@@ -103,11 +108,6 @@ public class VisionSubsystem extends SubsystemBase {
    * Update vision measurements from cached camera data
    */
   private void updateVisionMeasurements() {
-    // If vision is not enabled, skip processing
-    if (!isEnabled()) { 
-      return;
-    }
-
     // Process each camera's cached unread results
     for (Camera camera : cameras) {
       try {

@@ -18,6 +18,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
+
 import com.studica.frc.AHRS;
 
 import edu.wpi.first.math.MathUtil;
@@ -46,7 +47,6 @@ import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
-import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 /**
  * Swerve drive subsystem using four SwerveModules.
@@ -84,7 +84,7 @@ public class SwerveSubsystem extends SubsystemBase {
       : new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0));
 
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
-    SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;
+    SwerveDriveTelemetry.verbosity = SwerveConstants.kTelemetryVerbosity;
 
     // Initialize YAGSL SwerveDrive
     try {
@@ -224,7 +224,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private Pose2d getPose() {
     return swerveDrive.getPose();
   }
-  
+
   /**
    * Gets the current robot-relative chassis speeds
    * @return Current ChassisSpeeds
@@ -275,7 +275,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * Initializes the drive subsystem at the start of the autonomous phase.
    * Should be called from Robot.autonomousInit() or a command scheduler binding.
    */
-  public void autonomousInit() {    
+  public void autonomousInit() {
     // Set motors to brake mode for match (do this before resetting encoders)
     setMotorBrake(true);
 
@@ -467,7 +467,7 @@ public class SwerveSubsystem extends SubsystemBase {
         double clippedMagnitude = (magnitude - SwerveConstants.kJoystickDeadband) / (1.0 - SwerveConstants.kJoystickDeadband);
         
         // Apply squaring/cubing to the clipped magnitude
-        double curvedMagnitude = Math.copySign(Math.pow(clippedMagnitude, SwerveConstants.kJoystickSmoothing), clippedMagnitude);
+        double curvedMagnitude = Math.copySign(Math.pow(clippedMagnitude, SwerveConstants.kJoystickInputExponent), clippedMagnitude);
 
         // Re-apply the direction sign to the new magnitude
         xSpeed = (rawX / magnitude) * curvedMagnitude;
@@ -476,7 +476,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
       // Apply 1D deadband and squaring for rotation
       double rSpeed = MathUtil.applyDeadband(rawR, SwerveConstants.kJoystickDeadband);
-      rSpeed = Math.copySign(Math.pow(rSpeed, SwerveConstants.kJoystickSmoothing), rSpeed);
+      rSpeed = Math.copySign(Math.pow(rSpeed, SwerveConstants.kJoystickInputExponent), rSpeed);
 
       // If slow mode is enabled, scale down speeds for finer control
       if (isSlowMode()) {

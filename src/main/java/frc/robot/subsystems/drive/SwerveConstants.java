@@ -13,6 +13,8 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Robot;
 
+import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -29,12 +31,13 @@ public final class SwerveConstants {
   public static final double kMaxAngularSpeedRadsPerSecond = Units.rotationsToRadians(1.75); // max rotational speed, conservative: 1.0 - 1.5, competitive: 1.5 - 2.0, aggressive: 2.0 - 2.5
   public static final double kSlowModeScaling = 0.25; // scaling factor for "slow mode", typically 0.25 to 0.5, adjust as needed for driver control at low speeds
 
+  public static final TelemetryVerbosity kTelemetryVerbosity = TelemetryVerbosity.LOW;
   public static final boolean kUseSetpointGenerator = true && Robot.isReal();
 
   // ------------------------------------------------------------
   // Driver joystick settings
   // ------------------------------------------------------------
-  public static final double kJoystickSmoothing = 2.0; // 2 to square, 3 to cube
+  public static final double kJoystickInputExponent = 2.0; // 2 to square, 3 to cube
   public static final double kJoystickDeadband  = 0.1; // typically 0.05 to 0.15
 
   // ------------------------------------------------------------
