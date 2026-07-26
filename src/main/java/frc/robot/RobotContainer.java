@@ -222,12 +222,15 @@ public class RobotContainer {
     wasInTeleop = true;
 
     // When testing we sometimes enable the robot in teleop and skip autoonomous.
-    // If that is the case, init autonomous instead of teleop.
+    // If that is the case, init autonomous before initialization of teleop.
+    // This doesn't call the select auto command, it just initializes the 
+    // subsystems for autonomous mode.
     if (!wasInAuto) {
       driveSubsystem.autonomousInit();
-    } else {
-      driveSubsystem.teleopInit();
-    }
+    } 
+
+    // Initialize subsystems
+    driveSubsystem.teleopInit();
   }
 
   /**
