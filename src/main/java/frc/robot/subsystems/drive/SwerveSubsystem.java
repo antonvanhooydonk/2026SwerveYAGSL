@@ -96,8 +96,8 @@ public class SwerveSubsystem extends SubsystemBase {
     // Heading correction should only be used while controlling the robot via angle.
     swerveDrive.setHeadingCorrection(false);
     
-    // Disables cosine compensation as recommended when using swerveDrive.drive(robotVelocity, state, feedforwards)
-    swerveDrive.setCosineCompensator(false);
+    // Disable cosine compensation when using swerveDrive.drive(robotVelocity, state, feedforwards)
+    swerveDrive.setCosineCompensator(!SwerveConstants.kUseSetpointGenerator);
 
     // Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
     swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
