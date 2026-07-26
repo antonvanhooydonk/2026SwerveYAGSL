@@ -126,7 +126,8 @@ public class RobotContainer {
   private void configureButtonBindings() {
     // manually reset odometry & climber home position
     driverXbox.start().onTrue(Commands.parallel(
-      driveSubsystem.resetOdometryCommand()
+      driveSubsystem.resetOdometryCommand(),
+      climberSubsystem.setHomePositionCommand()
     ));
 
     // toggles the drive mode: field-relative vs robot-relative
