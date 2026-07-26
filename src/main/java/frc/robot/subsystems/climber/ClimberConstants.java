@@ -38,7 +38,7 @@ public final class ClimberConstants {
    * If motor spins X times, wheel spins 1 time
    * Formula: gear ratio = driven gear teeth / driving gear teeth
    */
-  public static final double kGearRatio = 28 / 10;
+  public static final double kGearRatio = 28.0 / 10.0;
 
   /**
    * Position conversion factor: converts encoder ticks to degrees
