@@ -235,6 +235,8 @@ public class RobotContainer {
 
   /**
    * Initializes all subsystems for post match mode. Should be called from Robot.disabledInit().
+   * The robot may be disabled briefly by the field management system before the match is over, 
+   * when moving between match phases, so we only want to run this once after teleop.
    */
   public void postMatch() {
     // Clean up post match
