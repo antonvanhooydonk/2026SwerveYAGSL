@@ -56,7 +56,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousExit() {
-    // If an autonomous command is running, cancel it when teleop starts.
+    // If an autonomous command is running, cancel it now
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().cancel(m_autonomousCommand);
     }
