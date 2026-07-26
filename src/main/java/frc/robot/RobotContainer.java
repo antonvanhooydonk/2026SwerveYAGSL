@@ -169,6 +169,26 @@ public class RobotContainer {
     RobotModeTriggers.teleop()
       .and(driveSubsystem.isFieldRelativeTrigger)
       .onFalse(feedback.warningCommand());
+
+    // feedback when climber is at level one climb position
+    RobotModeTriggers.teleop()
+      .and(climberSubsystem.isAtLevelOneClimbPositionTrigger)
+      .onTrue(feedback.infoCommand());
+
+    // feedback when climber is at level two climb position
+    RobotModeTriggers.teleop()
+      .and(climberSubsystem.isAtLevelTwoClimbPositionTrigger)
+      .onTrue(feedback.infoCommand());
+
+    // feedback when climber is at lower limit position
+    RobotModeTriggers.teleop()
+      .and(climberSubsystem.isAtLowerLimitTrigger)
+      .onTrue(feedback.warningCommand());
+
+    // feedback when climber is at upper limit position
+    RobotModeTriggers.teleop()
+      .and(climberSubsystem.isAtUpperLimitTrigger)
+      .onTrue(feedback.warningCommand());
   }
 
   /**
