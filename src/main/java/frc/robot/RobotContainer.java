@@ -82,6 +82,9 @@ public class RobotContainer {
    */
   private void registerNamedAutos() {
     NamedCommands.registerCommand("DRIVE_ALIGN_TO_TARGET", Commands.none());
+    NamedCommands.registerCommand("AIM_AT_TARGET", Commands.none());
+    NamedCommands.registerCommand("INTAKE_FUEL", Commands.none());
+    NamedCommands.registerCommand("LAUNCH_FUEL", Commands.none());
   }
 
   /**
