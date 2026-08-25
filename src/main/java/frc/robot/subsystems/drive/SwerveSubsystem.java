@@ -7,12 +7,12 @@ package frc.robot.subsystems.drive;
 import static edu.wpi.first.units.Units.Meter;
 
 import java.io.File;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.util.DriveFeedforwards;
@@ -25,6 +25,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -34,7 +35,6 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -72,6 +72,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private boolean slowMode = false;
   private long acceptedVisionCount = 0;
   private long rejectedVisionCount = 0;
+  private long consecutiveRejectedJumps = 0;
 
   /**
    * Creates a new SwerveSubsystem
@@ -127,9 +128,9 @@ public class SwerveSubsystem extends SubsystemBase {
     // Configure AutoBuilder for path following
     AutoBuilder.configure(
       this::getPose, // Robot pose supplier
-      (pose) -> resetOdometry(pose), // Method to reset odometry (will be called if your auto has a starting pose)
+      this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
       this::getRobotRelativeSpeeds, // ChassisSpeeds supplier
-      (speeds, feedforwards) -> driveRobotRelative(speeds), // Method that will drive the robot given ChassisSpeeds
+      (speeds, feedforwards) -> driveRobotRelative(speeds, feedforwards), // Method that will drive the robot given ChassisSpeeds
       new PPHolonomicDriveController(
         new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
         new PIDConstants(5.0, 0.0, 0.0)  // Rotation PID constants
@@ -138,10 +139,6 @@ public class SwerveSubsystem extends SubsystemBase {
       Utils::isRedAlliance, // Method to flip path based on alliance color
       this // Reference to this subsystem to set requirements
     );
-
-    // Preload PathPlanner Path finding
-    // IF USING CUSTOM PATHFINDER ADD THEM HERE
-    CommandScheduler.getInstance().schedule(PathfindingCommand.warmupCommand());
 
     // Add data to dashboard
     SmartDashboard.putData("Drive", this);
@@ -161,13 +158,29 @@ public class SwerveSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Drive the robot using the given robot-relative chassis speeds.
+   * Drive the robot using the given robot-relative chassis speeds, with no feedforward override.
+   * Used by manual driving and anywhere we don't have precomputed module forces.
    * @param speeds The desired robot-relative speeds
    */
   private void driveRobotRelative(ChassisSpeeds speeds) {
+    driveRobotRelative(speeds, null);
+  }
+
+  /**
+   * Drive the robot using the given robot-relative chassis speeds.
+   * @param speeds The desired robot-relative speeds
+   * @param feedforwards Optional module feedforward forces (e.g. from PathPlanner).
+   *                     If null, feedforward is computed by the setpoint generator (or omitted).
+   */
+  private void driveRobotRelative(ChassisSpeeds speeds, DriveFeedforwards feedforwards) {
     // By-pass the setpoint generator and drive directly with the desired speeds if necessary
     if (!SwerveConstants.kUseSetpointGenerator) {
-      swerveDrive.drive(speeds);
+      if (feedforwards != null) {
+        SwerveModuleState[] states = swerveDrive.kinematics.toSwerveModuleStates(speeds);
+        swerveDrive.drive(speeds, states, feedforwards.linearForces());
+      } else {
+        swerveDrive.drive(speeds);
+      }
       return;
     }
 
@@ -291,6 +304,7 @@ public class SwerveSubsystem extends SubsystemBase {
     slowMode = false;
     acceptedVisionCount = 0;
     rejectedVisionCount = 0;
+    consecutiveRejectedJumps = 0;
 
     // Log initialization
     Utils.logInfo("Drive subsystem initialized for autonomous");
@@ -316,6 +330,7 @@ public class SwerveSubsystem extends SubsystemBase {
     slowMode = false;
     acceptedVisionCount = 0;
     rejectedVisionCount = 0;
+    consecutiveRejectedJumps = 0;
   
     // Log initialization
     Utils.logInfo("Drive subsystem initialized for teleop");
@@ -335,6 +350,13 @@ public class SwerveSubsystem extends SubsystemBase {
       getModuleStates(), 
       DriveFeedforwards.zeros(4)
     );
+    
+    // Reset state variables
+    fieldRelative = true;
+    slowMode = false;
+    acceptedVisionCount = 0;
+    rejectedVisionCount = 0;
+    consecutiveRejectedJumps = 0;
 
     // Log initialization
     Utils.logInfo("Drive subsystem initialized for post match");
@@ -371,10 +393,18 @@ public class SwerveSubsystem extends SubsystemBase {
         return;
       }
 
-      // Reject large translation jumps
+      // Reject large translation jumps, UNLESS:
+      //  - we haven't accepted any vision yet (odometry-only pose may already be stale), or
+      //  - we've rejected several in a row (likely genuine drift, not a bad reading)
       double translationDistance = getPose().getTranslation().getDistance(visionPose.getTranslation());
-      if (translationDistance > SwerveConstants.kVisionMaxTranslationJumpMeters) {
+      boolean isJump = translationDistance > SwerveConstants.kVisionMaxTranslationJumpMeters;
+      boolean shouldGateJump = isJump
+        && acceptedVisionCount > 0
+        && consecutiveRejectedJumps < SwerveConstants.kMaxConsecutiveVisionRejections;
+
+      if (shouldGateJump) {
         rejectedVisionCount++;
+        consecutiveRejectedJumps++;
         return;
       }
 
@@ -387,6 +417,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
       // Increment the count of accepted vision measurements for monitoring purposes
       acceptedVisionCount++;
+      consecutiveRejectedJumps = 0;
     } catch (Exception e) {
       Utils.logError("Error adding vision measurement: " + e.getMessage());
     }
@@ -544,11 +575,11 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   public Command driveDistanceCommand(double distanceMeters, Rotation2d heading) {
     return Commands.defer(() -> {
-      // Calculate the target pose based on current pose + offset in the given direction
-      Pose2d currentPose = getPose();
-
       // Calculate the translation offset based on the desired distance and heading
       Translation2d offset = new Translation2d(distanceMeters, heading);
+
+      // Get the current pose of the robot
+      Pose2d currentPose = getPose();
 
       // Calculate the target pose by applying the offset to the current pose
       Pose2d targetPose = new Pose2d(
@@ -571,22 +602,13 @@ public class SwerveSubsystem extends SubsystemBase {
   public Command alignToTagCommand(int tagId, double xOffset, double yOffset) {
     return driveToPoseCommand(() -> {
       // Get the pose of the AprilTag from the field layout
-      var tagPose = FieldConstants.kFieldLayout.getTagPose(tagId);
+      Optional<Pose3d> tagPose = FieldConstants.kFieldLayout.getTagPose(tagId);
 
       // Calculate offset
       if (tagPose.isPresent()) {
-        // Option 1
         return tagPose.get().toPose2d().transformBy(
           new Transform2d(xOffset, yOffset, Rotation2d.fromDegrees(180))
         );
-
-        // Option 2
-        // return tagPose.get().toPose2d().transformBy(
-        //   new Transform2d(
-        //     new Translation2d(xOffset, yOffset), 
-        //     tagPose.get().toPose2d().getRotation().plus(Rotation2d.fromDegrees(180))
-        //   )
-        // );
       }
 
        // driveToPoseCommand will handle this null safely
@@ -615,7 +637,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * Stop the robot and set the wheels to an X formation
    */
   public Command stopAndLockWheelsCommand() {
-    return runOnce(this::stopAndLockWheels)
+    return run(this::stopAndLockWheels)
       .withName("Drive_StopAndLockWheels");
   }
 

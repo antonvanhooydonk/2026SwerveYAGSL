@@ -218,7 +218,12 @@ public class TurretSubsystem extends SubsystemBase {
       .withKV(TurretConstants.kFlywheelKV)
       .withKA(TurretConstants.kFlywheelKA);
 
+    // Apply configuration to both leader and follower
     flywheelLeader.getConfigurator().apply(flywheelConfig);
+    flywheelFollower.getConfigurator().apply(flywheelConfig);
+
+    // Configure follower to mirror leader
+    flywheelFollower.setControl(new Follower(CANConstants.kFlywheelLeaderMotorID, MotorAlignmentValue.Opposed));
 
     // Optimize CAN status frames on leader
     flywheelLeader.getVelocity().setUpdateFrequency(100.0);
@@ -228,11 +233,11 @@ public class TurretSubsystem extends SubsystemBase {
     flywheelLeader.getDeviceTemp().setUpdateFrequency(4.0);
     flywheelLeader.optimizeBusUtilization();
 
-    // Configure follower to mirror leader
-    flywheelFollower.setControl(new Follower(CANConstants.kFlywheelLeaderMotorID, MotorAlignmentValue.Opposed));
-
     // Minimize follower CAN traffic
+    flywheelFollower.getVelocity().setUpdateFrequency(100.0);
+    flywheelFollower.getMotorVoltage().setUpdateFrequency(50.0);
     flywheelFollower.getSupplyCurrent().setUpdateFrequency(50.0);
+    flywheelFollower.getTorqueCurrent().setUpdateFrequency(50.0);
     flywheelFollower.getDeviceTemp().setUpdateFrequency(4.0);
     flywheelFollower.optimizeBusUtilization();
   }
@@ -534,13 +539,12 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to home the turret to 0 degrees and stop the flywheel.
+   * Command to home the turret to 0 degrees.
    * @return Command to home the turret
    */
   public Command homeCommand() {
     return runOnce(() -> {
       setTurretAngle(0);
-      stopFlywheel();
     }).andThen(Commands.waitUntil(this::isTurretAtTarget));
   }
 

@@ -54,6 +54,12 @@ public final class SwerveConstants {
    */
   public static final double kVisionMaxTranslationJumpMeters = 1.0;
 
+  /**
+   * Maximum number of consecutive vision measurement rejections before forcing acceptance.
+   * This helps to account for genuine odometry drift rather than bad vision readings.
+   */
+  public static final int kMaxConsecutiveVisionRejections = 10;
+
   // ============================================================
   // BELOW THIS LINE SHOULDN'T BE CHANGED AT COMPETITION
   // ============================================================

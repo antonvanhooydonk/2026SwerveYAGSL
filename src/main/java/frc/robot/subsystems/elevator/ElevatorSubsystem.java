@@ -381,15 +381,14 @@ public class ElevatorSubsystem extends SubsystemBase {
       zeroEncoder();
       targetPositionMeters = 0.0;
       homing = false;
-      // Re-enable soft limits after homing
+    })
+    .finallyDo(() -> 
       leaderMotor.getConfigurator().apply(
         leaderConfig.SoftwareLimitSwitch
           .withForwardSoftLimitEnable(true)
-          .withForwardSoftLimitThreshold(ElevatorConstants.kMaxHeightMeters)
-          .withReverseSoftLimitEnable(true)
-          .withReverseSoftLimitThreshold(ElevatorConstants.kMinHeightMeters)
-      );
-    }))
+          .withReverseSoftLimitEnable(true))
+      )
+    )
     .withName("Elevator_Home");
   }
 
