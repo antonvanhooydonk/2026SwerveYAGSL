@@ -133,13 +133,13 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // manually reset odometry & climber home position
-    driverXbox.start().onTrue(Commands.parallel(
+    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(Commands.parallel(
       driveSubsystem.resetOdometryCommand(),
       climberSubsystem.setHomePositionCommand()
     ));
 
     // toggles the drive mode: field-relative vs robot-relative
-    driverXbox.back().onTrue(driveSubsystem.toggleFieldRelativeModeCommand());
+    RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeModeCommand());
 
     // teleop button bindings
     RobotModeTriggers.teleop().and(driverXbox.a()).onTrue(Commands.none());
