@@ -644,7 +644,7 @@ public class SwerveSubsystem extends SubsystemBase {
   /**
    * Enables/disables field-relative driving mode
    */
-  public Command toggleFieldRelativeModeCommand() {
+  public Command toggleFieldRelativeCommand() {
     return runOnce(() -> this.fieldRelative = !this.fieldRelative)
       .ignoringDisable(true)
       .withName("Drive_ToggleFieldRelativeMode");

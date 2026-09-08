@@ -90,6 +90,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("AIM_AT_TARGET", Commands.none());
     NamedCommands.registerCommand("INTAKE_FUEL", Commands.none());
     NamedCommands.registerCommand("LAUNCH_FUEL", Commands.none());
+    NamedCommands.registerCommand("PREPARE_TO_CLIMB", Commands.none());
+    NamedCommands.registerCommand("CLIMB_LEVEL_1", Commands.none());
+    NamedCommands.registerCommand("CLIMB_LEVEL_2", Commands.none());
   }
 
   /**
@@ -139,7 +142,7 @@ public class RobotContainer {
     ));
 
     // toggles the drive mode: field-relative vs robot-relative
-    RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeModeCommand());
+    RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeCommand());
 
     // teleop button bindings
     RobotModeTriggers.teleop().and(driverXbox.a()).onTrue(Commands.none());
