@@ -149,7 +149,9 @@ public class RobotContainer {
     RobotModeTriggers.teleop().and(driverXbox.b()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.x()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.y()).onTrue(Commands.none());
-    RobotModeTriggers.teleop().and(driverXbox.leftTrigger()).onTrue(Commands.none());
+    RobotModeTriggers.teleop().and(driverXbox.leftTrigger())
+      .onTrue(driveSubsystem.setSlowModeCommand(true))
+      .onFalse(driveSubsystem.setSlowModeCommand(false));
     RobotModeTriggers.teleop().and(driverXbox.leftBumper()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.rightTrigger()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.rightBumper()).onTrue(Commands.none());

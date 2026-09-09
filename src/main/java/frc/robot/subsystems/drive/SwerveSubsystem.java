@@ -651,21 +651,13 @@ public class SwerveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Enable slow mode
+   * Enable/disable slow mode
+   * @param slowMode True to enable slow mode, false to disable
    */
-  public Command enableSlowModeCommand() {
-    return runOnce(() -> this.slowMode = true)
+  public Command setSlowModeCommand(boolean slowMode) {
+    return runOnce(() -> this.slowMode = slowMode)
       .ignoringDisable(true)
-      .withName("Drive_EnableSlowMode");
-  }
-
-  /**
-   * Disable slow mode
-   */
-  public Command disableSlowModeCommand() {
-    return runOnce(() -> this.slowMode = false)
-      .ignoringDisable(true)
-      .withName("Drive_DisableSlowMode");
+      .withName("Drive_SetSlowMode");
   }
 
   /**
