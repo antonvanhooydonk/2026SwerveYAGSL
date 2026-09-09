@@ -41,8 +41,8 @@ public class RobotContainer {
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem::addVisionMeasurement);
  
   // Initalize command factories
-  private final Autos autos = new Autos(driveSubsystem, ledSubsystem, visionSubsystem, climberSubsystem);
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
+  private final Autos autos = new Autos(feedback, driveSubsystem, visionSubsystem, climberSubsystem);
 
   // Auto choosers
   private final SendableChooser<Command> delayChooser = new SendableChooser<>();

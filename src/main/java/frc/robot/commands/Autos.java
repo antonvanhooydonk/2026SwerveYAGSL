@@ -4,15 +4,14 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.SwerveSubsystem;
-import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 
 /**
  * Autos command factory that defines autonomous routines for the robot.
  */
 public class Autos {
+  private final Feedback feedback;
   private final SwerveSubsystem driveSubsystem;
-  private final LEDSubsystem ledSubsystem;
   private final VisionSubsystem visionSubsystem;
   private final ClimberSubsystem climberSubsystem;
 
@@ -24,13 +23,13 @@ public class Autos {
    * @param climberSubsystem the climber subsystem to control
    */
   public Autos(
-    SwerveSubsystem driveSubsystem, 
-    LEDSubsystem ledSubsystem,
+    Feedback feedback,
+    SwerveSubsystem driveSubsystem,
     VisionSubsystem visionSubsystem,
     ClimberSubsystem climberSubsystem
   ) {
+    this.feedback = feedback;
     this.driveSubsystem = driveSubsystem;
-    this.ledSubsystem = ledSubsystem;
     this.visionSubsystem = visionSubsystem;
     this.climberSubsystem = climberSubsystem;
   }
@@ -41,6 +40,6 @@ public class Autos {
    */
   public Command exampleAutoRoutine() {
     return driveSubsystem.alignToTagCommand(1, 0, 0).withTimeout(2)
-      .andThen(ledSubsystem.successCommand());
+      .andThen(feedback.successCommand());
   }
 }
