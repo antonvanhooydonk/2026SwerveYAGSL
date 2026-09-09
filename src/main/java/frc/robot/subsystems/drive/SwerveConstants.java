@@ -72,7 +72,7 @@ public final class SwerveConstants {
   public static final double kWheelDiameterMeters = Units.inchesToMeters(4.0);
   public static final double kWheelRadiusMeters = kWheelDiameterMeters / 2.0;
   public static final double kWheelCircumference = kWheelDiameterMeters * Math.PI;
-  public static final double kDriveGearRatio = 6.75; // Drive gear ratio for MKi L2
+  public static final double kDriveGearRatio = 6.75; // Drive gear ratio for MK4i L2
   public static final double kSteerGearRatio = 21.4285714286; // Steering gear ratio
   public static final double kWheelCOF = 1.19; // could try 1.0 to 1.3, coefficient of friction of wheel on carpet
   public static final double kRobotMassKg = Units.lbsToKilograms(134);
