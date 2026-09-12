@@ -66,8 +66,7 @@ public class Camera {
    * Gets target count from most recent cached result
    */
   public int getTargetCount() {
-    PhotonPipelineResult latestResult = getLatestResult();
-    return latestResult.getTargets().size();
+    return getLatestResult().getTargets().size();
   }
       
   /**
@@ -137,8 +136,7 @@ public class Camera {
   * Gets the timestamp of the most recent result
   */
   public double getLatestTimestamp() {
-    PhotonPipelineResult latest = getLatestResult();
-    return latest.getTimestampSeconds();
+    return getLatestResult().getTimestampSeconds();
   }
 
   /**
