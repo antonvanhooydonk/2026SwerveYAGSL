@@ -138,12 +138,12 @@ public class VisionSubsystem extends SubsystemBase {
           }
           
           // Skip further processing if the pose estimate is not valid
-          if (!isValidPose(result, estimate))  {
+          if (!isValidPose(estimate))  {
             continue;
           }
           
           // Calculate standard deviations
-          double[] stdDevs = calculateStandardDeviations(result);
+          double[] stdDevs = calculateStandardDeviations(estimate);
 
           // Push vision measurement to drive subsystem via the vision consumer callback
           visionConsumer.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds, stdDevs);
@@ -156,18 +156,17 @@ public class VisionSubsystem extends SubsystemBase {
 
   /**
    * Validates a pose estimate to reject obviously incorrect measurements
-   * @param result The photon camera pipeline result validate
    * @param estimate The estimated robot pose from the camera
    * @return True if the pose is valid
    */
-  private boolean isValidPose(PhotonPipelineResult result, EstimatedRobotPose estimate) {
+  private boolean isValidPose(EstimatedRobotPose estimate) {
     // Check for single tag estimates
-    if (result.getTargets().size() == 1) {
-      // Get the target
-      PhotonTrackedTarget target = result.getBestTarget();
+    if (estimate.targetsUsed.size() == 1) {
+      // Get the single target used for the estimate
+      PhotonTrackedTarget target = estimate.targetsUsed.get(0);
 
       // Ambiguity check
-      if (target == null || target.getPoseAmbiguity() > VisionConstants.kPoseAmbiguityThreshold) {
+      if (target.getPoseAmbiguity() > VisionConstants.kPoseAmbiguityThreshold) {
         return false;
       }
 
@@ -197,13 +196,14 @@ public class VisionSubsystem extends SubsystemBase {
 
   /**
    * Calculate standard deviations based on target quality
-   * @param result The photon camera pipeline result to calculate standard deviations for
+   * @param estimate The estimated robot pose to calculate standard deviations for
    * @return Array of standard deviations for x, y, and theta
    */
-  private double[] calculateStandardDeviations(PhotonPipelineResult result) {
-    int numTargets = result.getTargets().size();
+  private double[] calculateStandardDeviations(EstimatedRobotPose estimate) {
+    List<PhotonTrackedTarget> targetsUsed = estimate.targetsUsed;
+    int numTargets = targetsUsed.size();
 
-    double avgDistance = result.getTargets().stream()
+    double avgDistance = targetsUsed.stream()
       .mapToDouble(t -> {
         var transform = t.getBestCameraToTarget();
         return transform != null
@@ -215,7 +215,7 @@ public class VisionSubsystem extends SubsystemBase {
 
     avgDistance = Math.min(avgDistance, VisionConstants.kMaxDistanceMeters);
 
-    double avgAmbiguity = result.getTargets().stream()
+    double avgAmbiguity = targetsUsed.stream()
       .mapToDouble(PhotonTrackedTarget::getPoseAmbiguity)
       .average()
       .orElse(0.0);
