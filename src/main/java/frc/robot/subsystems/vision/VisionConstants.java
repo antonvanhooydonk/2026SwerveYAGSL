@@ -44,7 +44,7 @@ public final class VisionConstants {
   );
 
   // Vision configuration constants
-  public static final boolean kEnableVision             = false;
+  public static final boolean kEnableVision             = true;
   public static final double kPoseAmbiguityThreshold    = 0.20;
   public static final double kFieldBorderMargin         = 0.50; // meters
   public static final double kZMargin                   = 0.75; // meters
