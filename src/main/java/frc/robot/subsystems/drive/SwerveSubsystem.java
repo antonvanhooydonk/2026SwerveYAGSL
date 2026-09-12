@@ -76,7 +76,7 @@ public class SwerveSubsystem extends SubsystemBase {
   private long rejectedVisionCount = 0;
   private long consecutiveRejectedJumps = 0;
 
-  // Variables to cache pose info during alignment in disabledPeriodic()
+  // Cache pose info during alignment in disabledPeriodic()
   private String lastAlignAutoName = null;
   private Pose2d cachedStartingPose = null;
 
@@ -121,7 +121,7 @@ public class SwerveSubsystem extends SubsystemBase {
     // Initialize the swerve setpoint generator
     setpointGenerator = new SwerveSetpointGenerator(
       SwerveConstants.kRobotConfig, 
-      SwerveConstants.kMaxAngularSpeedRadsPerSecond
+      SwerveConstants.kSteerMaxAngularSpeedRadsPerSecond
     );
     
     // Initialize the drive setpoint
@@ -678,12 +678,14 @@ public class SwerveSubsystem extends SubsystemBase {
    * @param autoNameSupplier Supplies the name of the currently selected auto (e.g. autoChooser::getSelected)
    */
   public void publishStartingPoseAlignment(Supplier<String> autoNameSupplier) {
+    // Get the currently selected auto name from the supplier
     String autoName = autoNameSupplier.get();
     if (autoName == null || autoName.isEmpty()) {
       SmartDashboard.putString("Auto Align/Status", "No auto selected");
       return;
     }
 
+    // If the auto name has changed since last time, load & cache the new starting pose
     if (!autoName.equals(lastAlignAutoName)) {
       lastAlignAutoName = autoName;
       try {
@@ -697,18 +699,21 @@ public class SwerveSubsystem extends SubsystemBase {
       }
     }
 
+    // If we don't have a valid starting pose, we can't provide guidance
     if (cachedStartingPose == null) {
       return;
     }
 
+    // Flip the starting pose for red alliance if necessary
     Pose2d targetPose = Utils.isRedAlliance()
         ? FlippingUtil.flipFieldPose(cachedStartingPose)
         : cachedStartingPose;
 
+    // Get the current pose of the robot from the pose estimator (odometry + vision)
     Pose2d currentPose = getPose();
 
-    // Transform from current pose to target pose, in the ROBOT's current
-    // frame -- +X = need to move forward, +Y = need to move left,
+    // Transform from current pose to target pose, in the ROBOT's current frame:
+    // +X = need to move forward, +Y = need to move left,
     // +rotation = need to rotate CCW
     Transform2d error = targetPose.minus(currentPose);
     double forwardMeters = error.getX();

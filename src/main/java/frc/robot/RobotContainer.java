@@ -220,6 +220,7 @@ public class RobotContainer {
    */
   public void disabledPeriodic() {
     // Update the dashboard with the current auto starting pose
+    // TODO: ensure the getName() works 
     driveSubsystem.publishStartingPoseAlignment(() ->autoChooser.getSelected().getName());
   }
 

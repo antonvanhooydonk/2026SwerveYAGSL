@@ -84,7 +84,8 @@ public final class SwerveConstants {
   public static final double kRobotMassKg = Units.lbsToKilograms(134);
   public static final double kRobotMOI = 0.083333333 * kRobotMassKg * ((kTrackWidthMeters * kTrackWidthMeters) + (kWheelBaseMeters * kWheelBaseMeters)); // kg m^2, moment of inertia about center of robot
   public static final double kMaxDriveVelocityAt12VoltsMPS = Units.feetToMeters(15.5); // MK4i L2 Kraken non-FOC With 14t pinion (https://www.swervedrivespecialties.com/products/mk4i-swerve-module?variant=47316033798445)
-   
+  public static final double kSteerMaxAngularSpeedRadsPerSecond = Units.rotationsToRadians(10.0); // steering motor max rotational speed (not the same as robot rotational speed), conservative: 5.0 - 10.0, competitive: 10.0 - 15.0, aggressive: 15.0 - 20.0
+
   public static final double kGyroAngleOffsetDegrees = 0.0; // default 0.0 - Rotate the gyro X axis if the gyro was not installed facing forward
   public static final double kPeriodicTimeSeconds = 0.02; // 20ms (default)
 
