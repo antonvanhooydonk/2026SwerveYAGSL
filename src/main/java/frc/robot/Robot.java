@@ -34,7 +34,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    // Update the dashboard with the current auto starting pose
+    m_robotContainer.disabledPeriodic();
+  }
 
   @Override
   public void disabledExit() {}

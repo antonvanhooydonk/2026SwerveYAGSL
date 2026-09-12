@@ -41,6 +41,12 @@ public final class SwerveConstants {
   public static final double kJoystickDeadband  = 0.1; // typically 0.05 to 0.15
 
   // ------------------------------------------------------------
+  // Alignment tolerances for auto start pose
+  // ------------------------------------------------------------
+  public static final double kStartPoseTranslationToleranceMeters = Units.inchesToMeters(0.5);
+  public static final double kStartPoseRotationToleranceDegrees = 0.5;  
+
+  // ------------------------------------------------------------
   // Vision fusion measurement settings
   // ------------------------------------------------------------  
   /**

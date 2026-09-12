@@ -13,9 +13,11 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.util.DriveFeedforwards;
+import com.pathplanner.lib.util.FlippingUtil;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 
@@ -73,6 +75,10 @@ public class SwerveSubsystem extends SubsystemBase {
   private long acceptedVisionCount = 0;
   private long rejectedVisionCount = 0;
   private long consecutiveRejectedJumps = 0;
+
+  // Variables to cache pose info during alignment in disabledPeriodic()
+  private String lastAlignAutoName = null;
+  private Pose2d cachedStartingPose = null;
 
   /**
    * Creates a new SwerveSubsystem
@@ -507,7 +513,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
       // Apply 1D deadband and squaring for rotation
       double rSpeed = MathUtil.applyDeadband(rawR, SwerveConstants.kJoystickDeadband);
-      rSpeed = Math.copySign(Math.pow(rSpeed, SwerveConstants.kJoystickInputExponent), rSpeed);
+      rSpeed = Math.copySign(Math.pow(Math.abs(rSpeed), SwerveConstants.kJoystickInputExponent), rSpeed);
 
       // If slow mode is enabled, scale down speeds for finer control
       if (isSlowMode()) {
@@ -547,7 +553,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Creates a command to drive to a specified pose using PathPlanner
-   * @param targetPose The Pose2d to drive to
+   * @param targetSupplier A supplier of a Pose2d to drive to
    * @return Command to drive via PathPlanner to the target pose
    */
   public Command driveToPoseCommand(Supplier<Pose2d> targetSupplier) {
@@ -658,6 +664,71 @@ public class SwerveSubsystem extends SubsystemBase {
     return runOnce(() -> this.slowMode = slowMode)
       .ignoringDisable(true)
       .withName("Drive_SetSlowMode");
+  }
+
+  /**
+   * Publishes guidance to help the drive team manually place the robot at the
+   * starting pose of the currently selected auto. Call this repeatedly from
+   * Robot.disabledPeriodic() so it updates live as the robot gets nudged into
+   * place.
+   *
+   * Requires a valid, alliance-consistent current pose estimate (e.g. seeded
+   * by AprilTag vision) -- if getPose() isn't meaningful yet, neither is this.
+   *
+   * @param autoNameSupplier Supplies the name of the currently selected auto (e.g. autoChooser::getSelected)
+   */
+  public void publishStartingPoseAlignment(Supplier<String> autoNameSupplier) {
+    String autoName = autoNameSupplier.get();
+    if (autoName == null || autoName.isEmpty()) {
+      SmartDashboard.putString("Auto Align/Status", "No auto selected");
+      return;
+    }
+
+    if (!autoName.equals(lastAlignAutoName)) {
+      lastAlignAutoName = autoName;
+      try {
+        // Starting pose is always relative to a blue alliance origin
+        cachedStartingPose = new PathPlannerAuto(autoName).getStartingPose();
+        SmartDashboard.putString("Auto Align/Status", "Ready");
+      } catch (Exception e) {
+        cachedStartingPose = null;
+        SmartDashboard.putString("Auto Align/Status", "Couldn't load starting pose for \"" + autoName + "\"");
+        return;
+      }
+    }
+
+    if (cachedStartingPose == null) {
+      return;
+    }
+
+    Pose2d targetPose = Utils.isRedAlliance()
+        ? FlippingUtil.flipFieldPose(cachedStartingPose)
+        : cachedStartingPose;
+
+    Pose2d currentPose = getPose();
+
+    // Transform from current pose to target pose, in the ROBOT's current
+    // frame -- +X = need to move forward, +Y = need to move left,
+    // +rotation = need to rotate CCW
+    Transform2d error = targetPose.minus(currentPose);
+    double forwardMeters = error.getX();
+    double leftMeters = error.getY();
+    double rotateDegrees = error.getRotation().getDegrees();
+    double totalErrorMeters = error.getTranslation().getNorm();
+
+    SmartDashboard.putString("Auto Align/Selected Auto", autoName);
+    SmartDashboard.putString("Auto Align/Move", String.format(
+        "%s %.2fm, %s %.2fm, %s %.1f°",
+        forwardMeters >= 0 ? "Fwd" : "Back", Math.abs(forwardMeters),
+        leftMeters >= 0 ? "Left" : "Right", Math.abs(leftMeters),
+        rotateDegrees >= 0 ? "CCW" : "CW", Math.abs(rotateDegrees)));
+    SmartDashboard.putBoolean("Auto Align/In Position",
+        totalErrorMeters < SwerveConstants.kStartPoseTranslationToleranceMeters
+        && Math.abs(rotateDegrees) < SwerveConstants.kStartPoseRotationToleranceDegrees);
+
+    // Optional: overlay both poses on a Field2d for a visual "you are here" /
+    // "target" view on Shuffleboard/Glass, if you already keep one around
+    swerveDrive.field.getObject("Auto Start Pose").setPose(targetPose);
   }
 
   /**

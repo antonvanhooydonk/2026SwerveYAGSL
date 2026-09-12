@@ -216,6 +216,14 @@ public class RobotContainer {
   }
 
   /**
+   * This method is called periodically while the robot is disabled.
+   */
+  public void disabledPeriodic() {
+    // Update the dashboard with the current auto starting pose
+    driveSubsystem.publishStartingPoseAlignment(() ->autoChooser.getSelected().getName());
+  }
+
+  /**
    * Initializes all subsystems for autonomous mode. Should be called from Robot.autonomousInit().
    */
   public void autonomousInit() {
