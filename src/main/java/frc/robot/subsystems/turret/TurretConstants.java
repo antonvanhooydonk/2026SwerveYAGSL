@@ -8,14 +8,13 @@ package frc.robot.subsystems.turret;
  * Constants for the turret subsystem.
  */
 public final class TurretConstants {
-  // ============================================================
-  // Turret rotation constants
-  // ============================================================
-
   // ------------------------------------------------------------
   // Physical constants
   // ------------------------------------------------------------
-  public static final double kTurretGearRatio = 1.0; // Motor rotations per turret rotation
+  public static final double kTurretGearRatio = 1.0; // motor shaft rotations per one full 360 deg turret rotation
+  public static final double kMinAngleDegrees = 0.0; // minimum safe raw (unwrapped) turret position, in degrees
+  public static final double kMaxAngleDegrees = 330.0; // maximum safe raw (unwrapped) turret position, in degrees
+  public static final double kHomeTimeoutSeconds = 5.0; // timeout for homing the turret, in seconds
 
   // ------------------------------------------------------------
   // Control constants
@@ -38,38 +37,4 @@ public final class TurretConstants {
   public static final double kTurretKS = 0.0;
   public static final double kTurretKV = 0.0;
   public static final double kTurretKA = 0.0;
-
-  // ============================================================
-  // Flywheel constants
-  // ============================================================
-
-  // ------------------------------------------------------------
-  // Physical constants
-  // ------------------------------------------------------------
-  public static final boolean kFlywheelFollowerOpposesLeader = true; // True if motors are mechanically mirrored
-
-  // ------------------------------------------------------------
-  // Control constants
-  // ------------------------------------------------------------
-  public static final double kFlywheelToleranceRPM    = 50.0;  // RPM window to consider flywheel at target
-  public static final double kFlywheelMinSpinningRPM  = 100.0; // RPM threshold to consider flywheel spinning
-
-  // ------------------------------------------------------------
-  // Preset velocities - adjust for your game piece and target
-  // ------------------------------------------------------------
-  public static final double kFlywheelIdleRPM  = 0.0;
-  public static final double kFlywheelShortRPM = 2000.0;
-  public static final double kFlywheelMidRPM   = 3500.0;
-  public static final double kFlywheelLongRPM  = 5000.0;
-
-  // ------------------------------------------------------------
-  // PID / Feedforward gains (tune with SysId)
-  // Tuning: start with kV only (kP = 0), add kP if error remains
-  // ------------------------------------------------------------
-  public static final double kFlywheelKP = 0.0;
-  public static final double kFlywheelKI = 0.0;
-  public static final double kFlywheelKD = 0.0;
-  public static final double kFlywheelKS = 0.0; // Static friction - from SysId
-  public static final double kFlywheelKV = 0.0; // Velocity feedforward - from SysId
-  public static final double kFlywheelKA = 0.0; // Acceleration feedforward - from SysId
 }

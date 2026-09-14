@@ -47,7 +47,7 @@ public class ElevatorSubsystem extends SubsystemBase {
   // Hardware - leader and follower motors
   private final TalonFX leaderMotor;
   private final TalonFX followerMotor;
-  private final TalonFXConfiguration leaderConfig;
+  private final TalonFXConfiguration motorConfig;
 
   // Control requests
   private final MotionMagicVoltage motionMagicRequest;
@@ -69,7 +69,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     // Initialize hardware
     leaderMotor = new TalonFX(CANConstants.kElevatorLeaderMotorID);
     followerMotor = new TalonFX(CANConstants.kElevatorFollowerMotorID);
-    leaderConfig = new TalonFXConfiguration();
+    motorConfig = new TalonFXConfiguration();
 
     // Initialize control requests
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
@@ -117,13 +117,13 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   private void configureMotors() {
     // Motor output
-    leaderConfig.MotorOutput
+    motorConfig.MotorOutput
       .withNeutralMode(NeutralModeValue.Brake)
       .withInverted(InvertedValue.CounterClockwise_Positive)
       .withDutyCycleNeutralDeadband(0.001);
 
     // Current limits
-    leaderConfig.CurrentLimits
+    motorConfig.CurrentLimits
       .withSupplyCurrentLimitEnable(true)
       .withSupplyCurrentLimit(60)
       .withSupplyCurrentLowerLimit(40)
@@ -132,25 +132,25 @@ public class ElevatorSubsystem extends SubsystemBase {
       .withStatorCurrentLimit(80);
 
     // Voltage compensation
-    leaderConfig.Voltage
+    motorConfig.Voltage
       .withPeakForwardVoltage(12)
       .withPeakReverseVoltage(-12)
       .withSupplyVoltageTimeConstant(0.02);
 
     // Feedback - convert motor rotations to meters of elevator travel
     // rotationsToMeters = sprocket circumference / gear ratio
-    leaderConfig.Feedback
+    motorConfig.Feedback
       .withSensorToMechanismRatio(ElevatorConstants.kGearRatio / ElevatorConstants.kSpoolCircumferenceMeters);
 
     // Soft limits to protect the elevator without limit switches
-    leaderConfig.SoftwareLimitSwitch
+    motorConfig.SoftwareLimitSwitch
       .withForwardSoftLimitEnable(true)
       .withForwardSoftLimitThreshold(ElevatorConstants.kMaxHeightMeters)
       .withReverseSoftLimitEnable(true)
       .withReverseSoftLimitThreshold(ElevatorConstants.kMinHeightMeters);
 
     // Position PID with gravity compensation (slot 0)
-    leaderConfig.Slot0
+    motorConfig.Slot0
       .withKP(ElevatorConstants.kP)
       .withKI(ElevatorConstants.kI)
       .withKD(ElevatorConstants.kD)
@@ -161,13 +161,17 @@ public class ElevatorSubsystem extends SubsystemBase {
       .withGravityType(GravityTypeValue.Elevator_Static); // Constant gravity compensation
 
     // MotionMagic configuration
-    leaderConfig.MotionMagic
+    motorConfig.MotionMagic
       .withMotionMagicCruiseVelocity(ElevatorConstants.kCruiseVelocityMPS)
       .withMotionMagicAcceleration(ElevatorConstants.kAccelerationMPS2)
       .withMotionMagicJerk(ElevatorConstants.kJerkMPS3);
 
     // Apply configuration to leader
-    leaderMotor.getConfigurator().apply(leaderConfig);
+    leaderMotor.getConfigurator().apply(motorConfig);
+    followerMotor.getConfigurator().apply(motorConfig);
+
+    // Configure follower to be aligned with the leader
+    followerMotor.setControl(new Follower(CANConstants.kElevatorLeaderMotorID, MotorAlignmentValue.Aligned));
 
     // Optimize CAN status frames on leader
     leaderMotor.getPosition().setUpdateFrequency(100.0);
@@ -178,12 +182,12 @@ public class ElevatorSubsystem extends SubsystemBase {
     leaderMotor.getDeviceTemp().setUpdateFrequency(4.0);
     leaderMotor.optimizeBusUtilization();
 
-    // Configure follower to mirror leader in opposite direction
-    // OpposeMasterDirection=true if the follower is mechanically mirrored
-    followerMotor.setControl(new Follower(CANConstants.kElevatorLeaderMotorID, MotorAlignmentValue.Aligned));
-
     // Minimize follower CAN traffic since it mirrors the leader
+    followerMotor.getPosition().setUpdateFrequency(100.0);
+    followerMotor.getVelocity().setUpdateFrequency(100.0);
+    followerMotor.getMotorVoltage().setUpdateFrequency(50.0);
     followerMotor.getSupplyCurrent().setUpdateFrequency(50.0);
+    followerMotor.getTorqueCurrent().setUpdateFrequency(50.0);
     followerMotor.getDeviceTemp().setUpdateFrequency(4.0);
     followerMotor.optimizeBusUtilization();
   }
@@ -352,6 +356,7 @@ public class ElevatorSubsystem extends SubsystemBase {
   public Command moveToHeightCommand(double heightMeters) {
     return runOnce(() -> setHeight(heightMeters))
       .andThen(Commands.waitUntil(this::isAtTarget))
+      .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
       .withName("Elevator_MoveToHeight");
   }
 
@@ -362,32 +367,30 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to home the elevator
    */
   public Command homeCommand() {
-    return runOnce(() -> {
-      homing = true;
-      // Disable soft limits during homing so we can drive to the hard stop
-      leaderMotor.getConfigurator().apply(
-        leaderConfig.SoftwareLimitSwitch
-          .withForwardSoftLimitEnable(false)
-          .withReverseSoftLimitEnable(false)
-      );
-    })
-    // Drive slowly downward
-    .andThen(run(() -> setVoltage(ElevatorConstants.kHomingVoltage)))
-    // Wait until velocity is near zero (hit the hard stop)
-    .until(() -> Math.abs(getVelocityMPS()) < ElevatorConstants.kHomingVelocityThresholdMPS)
-    // Zero the encoder and re-enable soft limits
-    .andThen(runOnce(() -> {
-      stop();
-      zeroEncoder();
-      targetPositionMeters = 0.0;
-      homing = false;
-    })
-    .finallyDo(() -> 
-      leaderMotor.getConfigurator().apply(
-        leaderConfig.SoftwareLimitSwitch
-          .withForwardSoftLimitEnable(true)
-          .withReverseSoftLimitEnable(true))
-      )
+    return Commands.sequence(
+      runOnce(() -> {
+        homing = true;
+        leaderMotor.getConfigurator().apply(
+          motorConfig.SoftwareLimitSwitch
+            .withForwardSoftLimitEnable(false)
+            .withReverseSoftLimitEnable(false));
+      }),
+      run(() -> 
+        setVoltage(ElevatorConstants.kHomingVoltage))
+        .until(() -> 
+          Math.abs(leaderMotor.getSupplyCurrent().getValueAsDouble()) > ElevatorConstants.kHomingStallCurrentThreshold
+          && Math.abs(getVelocityMPS()) < ElevatorConstants.kHomingVelocityThresholdMPS),
+      runOnce(() -> {
+        stop();
+        zeroEncoder();
+        targetPositionMeters = 0.0;
+        homing = false;
+      })
+    )
+    .finallyDo(() -> leaderMotor.getConfigurator().apply(
+      motorConfig.SoftwareLimitSwitch
+        .withForwardSoftLimitEnable(true)
+        .withReverseSoftLimitEnable(true))
     )
     .withName("Elevator_Home");
   }

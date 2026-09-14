@@ -27,6 +27,10 @@ public class ClimberSubsystem extends SubsystemBase {
   // Hardware
   private final SparkMax climberMotor;
   private final RelativeEncoder climberEncoder;
+
+  // Used for cutting power in the event of a stall to prevent damage
+  private final Debouncer stallDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
+  private double lastAppliedPowerSign = 0;
   
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
@@ -105,6 +109,14 @@ public class ClimberSubsystem extends SubsystemBase {
       return;
     }    
     if (isAtLowerLimit() && clampedPower < 0) {
+      stop();
+      return;
+    }
+
+    // Safety: if stalled, only block continuing to push in the SAME direction
+    // that caused the stall -- still allow reversing to back off a jam
+    boolean stalled = stallDebouncer.calculate(isStalled());
+    if (stalled && Math.signum(clampedPower) == lastAppliedPowerSign) {
       stop();
       return;
     }

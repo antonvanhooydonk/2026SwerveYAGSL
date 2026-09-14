@@ -37,13 +37,15 @@ public final class ElevatorConstants {
   // Control constants
   // ------------------------------------------------------------
   public static final double kHeightToleranceMeters = Units.inchesToMeters(0.5); // Tolerance for isAtTarget
+  public static final double kMoveTimeoutSeconds = 5.0;
 
   // ------------------------------------------------------------
   // Homing constants
   // Without limit switches, we drive slowly down until stalled
   // ------------------------------------------------------------
-  public static final double kHomingVoltage              = -1.0; // Volts - slow downward voltage
-  public static final double kHomingVelocityThresholdMPS = 0.01; // m/s - velocity threshold to detect hard stop
+  public static final double kHomingVoltage               = -1.0; // Volts - slow downward voltage
+  public static final double kHomingVelocityThresholdMPS  = 0.01; // m/s - velocity threshold to detect hard stop
+  public static final double kHomingStallCurrentThreshold = 40.0; // Amps - current threshold to detect stall
 
   // ------------------------------------------------------------
   // MotionMagic constraints

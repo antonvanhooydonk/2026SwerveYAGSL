@@ -3,7 +3,9 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import frc.robot.subsystems.climber.ClimberSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 
 /**
@@ -12,6 +14,8 @@ import frc.robot.subsystems.vision.VisionSubsystem;
 public class Autos {
   private final Feedback feedback;
   private final SwerveSubsystem driveSubsystem;
+  private final ShooterSubsystem shooterSubsystem;
+  private final TurretSubsystem turretSubsystem;
   private final VisionSubsystem visionSubsystem;
   private final ClimberSubsystem climberSubsystem;
 
@@ -25,11 +29,15 @@ public class Autos {
   public Autos(
     Feedback feedback,
     SwerveSubsystem driveSubsystem,
+    ShooterSubsystem shooterSubsystem,
+    TurretSubsystem turretSubsystem,
     VisionSubsystem visionSubsystem,
     ClimberSubsystem climberSubsystem
   ) {
     this.feedback = feedback;
     this.driveSubsystem = driveSubsystem;
+    this.shooterSubsystem = shooterSubsystem;
+    this.turretSubsystem = turretSubsystem;
     this.visionSubsystem = visionSubsystem;
     this.climberSubsystem = climberSubsystem;
   }

@@ -21,12 +21,13 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-import frc.robot.commands.Autos;
 import frc.robot.commands.Feedback;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.rumble.RumbleSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 
 public class RobotContainer {
@@ -37,12 +38,13 @@ public class RobotContainer {
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
   private final RumbleSubsystem rumbleSubsystem = new RumbleSubsystem(driverXbox);
+  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  private final TurretSubsystem turretSubsystem = new TurretSubsystem();
   private final SwerveSubsystem driveSubsystem = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem::addVisionMeasurement);
  
   // Initalize command factories
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
-  private final Autos autos = new Autos(feedback, driveSubsystem, visionSubsystem, climberSubsystem);
 
   // Auto choosers
   private final SendableChooser<Command> delayChooser = new SendableChooser<>();
@@ -105,7 +107,6 @@ public class RobotContainer {
     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
     // ".auto" extension for the second argument.
     autoChooser.setDefaultOption("No auto", Commands.none());
-    autoChooser.addOption("Example", autos.exampleAutoRoutine());
     autoChooser.addOption("Two Piece Auto", AutoBuilder.buildAuto("TwoPieceAuto"));
     
     // Add auto chooser to dashboard
@@ -234,6 +235,8 @@ public class RobotContainer {
 
     // Initialze subsystems
     driveSubsystem.autonomousInit();
+    shooterSubsystem.autonomousInit();
+    turretSubsystem.autonomousInit();
   }
 
   /**
