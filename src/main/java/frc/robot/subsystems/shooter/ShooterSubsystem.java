@@ -88,6 +88,9 @@ public class ShooterSubsystem extends SubsystemBase {
       )
     );
 
+    // Set default command
+    setDefaultCommand(stopCommand());
+
     // Add data to dashboard
     SmartDashboard.putData("Shooter", this);
 

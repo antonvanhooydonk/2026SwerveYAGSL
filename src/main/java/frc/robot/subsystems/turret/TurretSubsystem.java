@@ -92,6 +92,9 @@ public class TurretSubsystem extends SubsystemBase {
       )
     );
 
+    // Set default command
+    setDefaultCommand(stopCommand());
+
     // Add data to dashboard
     SmartDashboard.putData("Turret", this);
 
