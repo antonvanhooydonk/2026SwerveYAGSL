@@ -24,14 +24,8 @@ public final class ShooterConstants {
   public static final double kFlywheelToleranceRPM    = 50.0;  // RPM window to consider flywheel at target
   public static final double kFlywheelMinSpinningRPM  = 100.0; // RPM threshold to consider flywheel spinning
 
-  // ------------------------------------------------------------
-  // Preset velocities - adjust for your game piece and target
-  // ------------------------------------------------------------
-  public static final double kFlywheelIdleRPM  = 0.0;
-  public static final double kFlywheelShortRPM = 2000.0;
-  public static final double kFlywheelMidRPM   = 3500.0;
-  public static final double kFlywheelLongRPM  = 5000.0;
-
+  public static final double kFlywheelDefaultDistanceToTarget = 2.0; // Default distance to target if robot or target pose is null
+  
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
   // Tuning: start with kV only (kP = 0), add kP if error remains

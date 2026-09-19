@@ -240,7 +240,7 @@ public class SwerveSubsystem extends SubsystemBase {
    * Gets the current pose of the robot as measured by odometry and vision fusion.
    * @return Current pose 
    */
-  private Pose2d getPose() {
+  public Pose2d getPose() {
     return swerveDrive.getPose();
   }
 

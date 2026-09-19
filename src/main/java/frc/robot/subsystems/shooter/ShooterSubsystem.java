@@ -6,6 +6,8 @@ package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -16,10 +18,11 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -32,10 +35,6 @@ import frc.robot.util.Utils;
  * follower configuration. Physically mounted on the turret, but kept as a
  * separate subsystem from TurretSubsystem so aiming and spin-up can be
  * commanded and scheduled independently of each other.
- *
- * REQUIRED CONSTANTS (in ShooterConstants, colocated in this package --
- * move/duplicate these out of the old TurretConstants' flywheel fields):
- *   kFlywheelKP/KI/KD/KS/KV/KA, kFlywheelToleranceRPM, kFlywheelMinSpinningRPM
  *
  * Flywheel tuning process:
  * 1. Run flywheel SysId to characterize kS, kV, kA
@@ -54,6 +53,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
   // Cached target (for telemetry)
   private double targetFlywheelRPM = 0.0;
+
+  // A TreeMap where Key = Distance (meters) and Value = Shooter RPM
+  private final InterpolatingDoubleTreeMap rpmTable = new InterpolatingDoubleTreeMap();
 
   // SysId routine
   private final SysIdRoutine flywheelSysIdRoutine;
@@ -88,14 +90,25 @@ public class ShooterSubsystem extends SubsystemBase {
       )
     );
 
-    // Set default command
-    setDefaultCommand(stopCommand());
+    // Initialize RPM table for distance-based shooting
+    initializeRPMTable();
 
     // Add data to dashboard
     SmartDashboard.putData("Shooter", this);
 
     // Output initialization progress
     Utils.logInfo("Shooter subsystem initialized");
+  }
+
+  /**
+   * Initializes the RPM table with distance-RPM pairs for interpolation
+   */
+  private void initializeRPMTable() {
+    // Example: Add distance-RPM pairs to the table
+    rpmTable.put(1.0, 3000.0); // 1 meter  -> 3000 RPM
+    rpmTable.put(2.0, 4000.0); // 2 meters -> 4000 RPM
+    rpmTable.put(3.0, 5000.0); // 3 meters -> 5000 RPM
+    // Add more pairs as needed
   }
 
   @Override
@@ -266,16 +279,6 @@ public class ShooterSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Command to spin the flywheel to a target velocity and wait until it is at speed.
-   * @param rpm Target velocity in RPM
-   * @return Command to spin up the flywheel
-   */
-  public Command spinUpCommand(double rpm) {
-    return runOnce(() -> setFlywheelRPM(rpm))
-      .andThen(Commands.waitUntil(this::isFlywheelAtTarget));
-  }
-
-  /**
    * Command to spin the flywheel to a target velocity without waiting.
    * Useful when pre-spinning during aiming.
    * @param rpm Target velocity in RPM
@@ -291,6 +294,37 @@ public class ShooterSubsystem extends SubsystemBase {
    */
   public Command stopCommand() {
     return runOnce(this::stopFlywheel);
+  }
+
+  /**
+   * Command to shoot at the current target pose by calculating the  
+   * required flywheel speed based on the distance to the target.
+   * @param robotPoseSupplier The supplier for the current pose of the robot
+   * @param targetPoseSupplier The supplier for the pose of the target (usually an alliance hub)
+   * @return Command to shoot at the target
+   */
+  public Command shootAtPoseCommand(
+    Supplier<Pose2d> robotPoseSupplier, 
+    Supplier<Pose2d> targetPoseSupplier
+  ) {
+    return run(() -> {
+      Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
+      Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
+
+      // Default distance if either pose is null so we don't prevent shooting
+      double distanceToTarget = ShooterConstants.kFlywheelDefaultDistanceToTarget; 
+
+      // Calculate distance to target
+      if (robotPose != null && targetPose != null) {
+        distanceToTarget = robotPose.getTranslation().getDistance(targetPose.getTranslation());
+      }
+
+      // Interpolated flywheel speed based on distance to target
+      double requiredRPM = rpmTable.get(distanceToTarget);
+
+      // Set flywheel speed
+      setFlywheelRPM(requiredRPM);
+    });
   }
 
   // ----------------------------------------------------------------------------------------

@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 import frc.robot.commands.Feedback;
+import frc.robot.commands.Scoring;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.SwerveSubsystem;
 import frc.robot.subsystems.led.LEDSubsystem;
@@ -45,6 +46,7 @@ public class RobotContainer {
  
   // Initalize command factories
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
+  private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, shooterSubsystem);
 
   // Auto choosers
   private final SendableChooser<Command> delayChooser = new SendableChooser<>();
@@ -154,8 +156,8 @@ public class RobotContainer {
       .onTrue(driveSubsystem.setSlowModeCommand(true))
       .onFalse(driveSubsystem.setSlowModeCommand(false));
     RobotModeTriggers.teleop().and(driverXbox.leftBumper()).onTrue(Commands.none());
-    RobotModeTriggers.teleop().and(driverXbox.rightTrigger()).onTrue(Commands.none());
-    RobotModeTriggers.teleop().and(driverXbox.rightBumper()).onTrue(Commands.none());
+    RobotModeTriggers.teleop().and(driverXbox.rightTrigger()).whileTrue(scoring.passCommand());
+    RobotModeTriggers.teleop().and(driverXbox.rightBumper()).whileTrue(scoring.scoreCommand());
     RobotModeTriggers.teleop().and(driverXbox.povUp()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.povRight()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.povDown()).onTrue(Commands.none());

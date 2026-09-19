@@ -6,6 +6,8 @@ package frc.robot;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
@@ -68,5 +70,9 @@ public final class Constants {
     public static final double kFieldWidthMeters = Units.inchesToMeters(317.69); // meters
     public static final Translation2d kBlueHubCenter = new Translation2d(Units.inchesToMeters(158.84), Units.inchesToMeters(182.11));
     public static final Translation2d kRedHubCenter = new Translation2d(Units.inchesToMeters(158.84), Units.inchesToMeters(469.11));
+    public static final Pose2d kBlueHubPose = new Pose2d(kBlueHubCenter, new Rotation2d());
+    public static final Pose2d kRedHubPose = new Pose2d(kRedHubCenter, new Rotation2d());
+    public static final Pose2d kBluePassPose = new Pose2d(kBlueHubCenter, new Rotation2d());
+    public static final Pose2d kRedPassPose = new Pose2d(kRedHubCenter, new Rotation2d());
   }
 }

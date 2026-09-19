@@ -11,10 +11,10 @@ public final class TurretConstants {
   // ------------------------------------------------------------
   // Physical constants
   // ------------------------------------------------------------
-  public static final double kTurretGearRatio = 1.0; // motor shaft rotations per one full 360 deg turret rotation
-  public static final double kMinAngleDegrees = 0.0; // minimum safe raw (unwrapped) turret position, in degrees
-  public static final double kMaxAngleDegrees = 330.0; // maximum safe raw (unwrapped) turret position, in degrees
-  public static final double kHomeTimeoutSeconds = 5.0; // timeout for homing the turret, in seconds
+  public static final double kTurretGearRatio    =  1.0; // motor shaft rotations per one full 360 deg turret rotation
+  public static final double kMinAngleDegrees    = -150.0; // minimum safe raw (unwrapped) turret position, in degrees
+  public static final double kMaxAngleDegrees    =  150.0; // maximum safe raw (unwrapped) turret position, in degrees
+  public static final double kMoveTimeoutSeconds =  5.0; // timeout for moving the turret, in seconds
 
   // ------------------------------------------------------------
   // Control constants

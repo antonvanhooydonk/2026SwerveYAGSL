@@ -23,12 +23,12 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.Conversions;
 import frc.robot.util.Utils;
 
 /**
@@ -133,12 +133,8 @@ public class TurretSubsystem extends SubsystemBase {
       .withPeakReverseVoltage(-12)
       .withSupplyVoltageTimeConstant(0.02);
 
-    // Map sensor rotations directly to "mechanism degrees" so that
-    // getPosition()/setPosition() and MotionMagic cruise/accel/jerk (already
-    // named in DPS/DPS^2/DPS^3) are all natively in degrees, with no manual
-    // conversion needed anywhere else in this class.
-    turretConfig.Feedback
-      .withSensorToMechanismRatio(TurretConstants.kTurretGearRatio / 360.0);
+    // Do NOT use withSensorToMechanismRatio, instead use Conversions methods
+    // in appropriate places within this subsystem code.
 
     // Software limits are the ONLY protection this turret has (no slip
     // rings, no physical limit switches). These are in raw (unwrapped)
@@ -189,7 +185,10 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Current angle in degrees
    */
   private double getTurretAngleDegrees() {
-    return normalizeAngleDegrees(turretMotor.getPosition().getValueAsDouble());
+    return normalizeAngleDegrees(Conversions.rotationsToDegrees(
+      turretMotor.getPosition().getValueAsDouble(), 
+      TurretConstants.kTurretGearRatio
+    ));
   }
 
   /**
@@ -202,51 +201,54 @@ public class TurretSubsystem extends SubsystemBase {
   private void setTurretAngle(double angleDegrees) {
     double normalizedAngle = normalizeAngleDegrees(angleDegrees);
 
-    // Raw (unwrapped) position in degrees - this is what MotionMagic and the
-    // software limits actually operate on, and can exceed +/-180
-    double currentRawPosition = turretMotor.getPosition().getValueAsDouble();
-    double currentAngle = normalizeAngleDegrees(currentRawPosition);
+    // Convert current motor rotations to tracking angle space
+    double currentRawPositionDegrees = Conversions.rotationsToDegrees(turretMotor.getPosition().getValueAsDouble(), TurretConstants.kTurretGearRatio);
+    double currentAngle = normalizeAngleDegrees(currentRawPositionDegrees);
 
-    // Shortest angular path from current angle to target, in (-180, 180]
+    // Calculate the shortest path to the target angle
     double shortestDelta = normalizeAngleDegrees(normalizedAngle - currentAngle);
-    double shortestPathTarget = currentRawPosition + shortestDelta;
+    double shortestPathTargetDegrees = currentRawPositionDegrees + shortestDelta;
+    double targetPositionDegrees = shortestPathTargetDegrees;
 
-    double targetPosition = shortestPathTarget;
-
-    // If the shortest path would wind outside the safe mechanical range,
-    // see if going the long way around stays inside the range instead of
-    // blindly commanding into a hard stop
+    // Check if the shortest path target is out of range
     boolean shortestPathOutOfRange =
-        shortestPathTarget > TurretConstants.kMaxAngleDegrees
-        || shortestPathTarget < TurretConstants.kMinAngleDegrees;
+        shortestPathTargetDegrees > TurretConstants.kMaxAngleDegrees
+        || shortestPathTargetDegrees < TurretConstants.kMinAngleDegrees;
 
+    // Check if the shortest path is out of range
     if (shortestPathOutOfRange) {
+      // Calculate the long path to the target angle
       double longDelta = shortestDelta > 0 ? shortestDelta - 360.0 : shortestDelta + 360.0;
-      double longPathTarget = currentRawPosition + longDelta;
+      double longPathTargetDegrees = currentRawPositionDegrees + longDelta;
 
+      // Check if the long path target is in range
       boolean longPathInRange =
-          longPathTarget <= TurretConstants.kMaxAngleDegrees
-          && longPathTarget >= TurretConstants.kMinAngleDegrees;
+          longPathTargetDegrees <= TurretConstants.kMaxAngleDegrees
+          && longPathTargetDegrees >= TurretConstants.kMinAngleDegrees;
 
+      // If the long path is in range
       if (longPathInRange) {
-        targetPosition = longPathTarget;
+        // Use the long path target
+        targetPositionDegrees = longPathTargetDegrees;
       } 
       else {
-        // Neither direction reaches the target without exceeding the range -
-        // get as close as the range allows rather than faulting into a limit
-        targetPosition = MathUtil.clamp(
-          shortestPathTarget,
+        // Otherwise clamp to the nearest limit
+        targetPositionDegrees = MathUtil.clamp(
+          shortestPathTargetDegrees,
           TurretConstants.kMinAngleDegrees,
           TurretConstants.kMaxAngleDegrees
         );
       }
     }
 
-    // Cache the normalized target angle for telemetry
+    // Update the cached target for telemetry
     targetTurretAngleDegrees = normalizedAngle;
 
-    // Command the turret to the target position
-    turretMotor.setControl(turretMotionMagicRequest.withPosition(targetPosition));
+    // Convert calculation space back to native motor rotations before updating target
+    double targetMotorRotations = Conversions.degreesToRotations(targetPositionDegrees, TurretConstants.kTurretGearRatio);
+    
+    // Command the turret motor to the target position using MotionMagic
+    turretMotor.setControl(turretMotionMagicRequest.withPosition(targetMotorRotations));
   }
 
   /**
@@ -266,20 +268,20 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
+   * Sets the turret motor to brake or coast mode
+   * @param brake True for brake, false for coast
+   */
+  private void setMotorBrake(boolean brake) {
+    turretMotor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
+  }
+
+  /**
    * Normalizes an angle to (-180, 180]
    * @param angleDegrees Angle in degrees
    * @return Normalized angle in degrees
    */
   private double normalizeAngleDegrees(double angleDegrees) {
     return MathUtil.inputModulus(angleDegrees, -180.0, 180.0);
-  }
-
-  /**
-   * Sets the turret motor to brake or coast mode
-   * @param brake True for brake, false for coast
-   */
-  private void setMotorBrake(boolean brake) {
-    turretMotor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
   }
 
   // ---------------------------------------------------------------------------------------
@@ -338,8 +340,11 @@ public class TurretSubsystem extends SubsystemBase {
    * @param angleDegrees The desired robot-relative angle in degrees
    * @return Command to rotate to the given angle
    */
-  public Command aimAtAngleCommand(double angleDegrees) {
-    return runOnce(() -> setTurretAngle(angleDegrees));
+  public Command setTurretAngleCommand(double angleDegrees) {
+    return runOnce(() -> setTurretAngle(angleDegrees))
+      .until(this::isTurretAtTarget)
+      .withTimeout(TurretConstants.kMoveTimeoutSeconds)
+      .withName("Turret_SetTurretAAngle");
   }
 
   /**
@@ -358,7 +363,8 @@ public class TurretSubsystem extends SubsystemBase {
         fieldAngleDegreesSupplier.getAsDouble() - robotHeadingDegreesSupplier.getAsDouble()
       );
       setTurretAngle(turretAngle);
-    });
+    })
+    .withName("Turret_AimAtFieldAngle");
   }
 
   /**
@@ -372,19 +378,25 @@ public class TurretSubsystem extends SubsystemBase {
     Supplier<Pose2d> targetPoseSupplier
   ) {
     return run(() -> {
-      Pose2d robotPose = robotPoseSupplier.get();
-      Pose2d targetPose = targetPoseSupplier.get();
+      Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
+      Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
 
+      // If either pose is null, we can't calculate the angle, so just return early
       if (robotPose == null || targetPose == null) {
+        stopTurret();
         return;
       }
 
+      // Calculate the angle to the target pose in field coordinates
       double dx = targetPose.getX() - robotPose.getX();
       double dy = targetPose.getY() - robotPose.getY();
       double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
       double turretAngle = normalizeAngleDegrees(fieldAngleDegrees - robotPose.getRotation().getDegrees());
+      
+      // Command the turret to the calculated angle
       setTurretAngle(turretAngle);
-    });
+    })
+    .withName("Turret_AimAtPose");
   }
 
   /**
@@ -392,16 +404,16 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Command to home the turret
    */
   public Command homeCommand() {
-    return runOnce(() -> setTurretAngle(0))
-      .andThen(Commands.waitUntil(this::isTurretAtTarget))
-      .withTimeout(TurretConstants.kHomeTimeoutSeconds);
+    return setTurretAngleCommand(0.0)
+      .withName("Turret_Home");
   }
 
   /**
    * Command to stop the turret.
    */
   public Command stopCommand() {
-    return runOnce(this::stopTurret);
+    return run(this::stopTurret)
+      .withName("Turret_Stop");
   }
 
   // ----------------------------------------------------------------------------------------
