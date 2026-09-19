@@ -42,6 +42,7 @@ public class RobotContainer {
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   private final TurretSubsystem turretSubsystem = new TurretSubsystem();
   private final SwerveSubsystem driveSubsystem = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
+  @SuppressWarnings("unused")
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem::addVisionMeasurement);
  
   // Initalize command factories
