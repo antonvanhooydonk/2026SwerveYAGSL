@@ -179,7 +179,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if at or past upper limit
    */
   private boolean isAtUpperLimit() {
-    return getPosition() <= ClimberConstants.kUpperLimitDegrees;
+    return getPosition() >= ClimberConstants.kUpperLimitDegrees;
   }
   
   /**
@@ -187,7 +187,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if at or past lower limit
    */
   private boolean isAtLowerLimit() {
-    return getPosition() >= ClimberConstants.kLowerLimitDegrees;
+    return getPosition() <= ClimberConstants.kLowerLimitDegrees;
   }
   
   /**
