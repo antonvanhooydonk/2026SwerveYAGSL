@@ -293,7 +293,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return Command to stop the flywheel
    */
   public Command stopCommand() {
-    return runOnce(this::stopFlywheel);
+    return run(this::stopFlywheel);
   }
 
   /**

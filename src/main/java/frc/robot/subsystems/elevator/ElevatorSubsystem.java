@@ -399,7 +399,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Command to stop the elevator
    */
   public Command stopCommand() {
-    return runOnce(this::stop)
+    return run(this::stop)
       .withName("Elevator_Stop");
   }
 

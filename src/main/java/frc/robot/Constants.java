@@ -36,8 +36,11 @@ public final class Constants {
     // Ensure that CAN constants defined here do not conflict with file definitions
     // Reserve CAN IDs 0 = Navx, 1-19 for swerve modules
 
+    // Arm motor ID
+    public static final int kArmMotorID = 20;
+
     // Climber motor ID
-    public static final int kClimberMotorID = 20;
+    public static final int kClimberMotorID = 21;
 
     // Elevator motor IDs
     public static final int kElevatorLeaderMotorID = 21;
