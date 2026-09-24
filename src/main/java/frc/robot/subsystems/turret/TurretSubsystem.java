@@ -52,7 +52,7 @@ public class TurretSubsystem extends SubsystemBase {
   private final TalonFXConfiguration turretConfig;
 
   // Turret control request
-  private final MotionMagicVoltage turretMotionMagicRequest;
+  private final MotionMagicVoltage motionMagicRequest;
 
   // Cached target (for telemetry)
   private double targetTurretAngleDegrees = 0.0;
@@ -69,13 +69,13 @@ public class TurretSubsystem extends SubsystemBase {
     turretConfig = new TalonFXConfiguration();
 
     // Initialize control request
-    turretMotionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
+    motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
 
     // Configure motor
-    configureTurretMotor();
+    configureMotor();
 
     // Zero turret encoder at startup - turret must be at home position
-    zeroTurretEncoder();
+    resetEncoder();
 
     // Initialize SysId routine
     turretSysIdRoutine = new SysIdRoutine(
@@ -114,7 +114,7 @@ public class TurretSubsystem extends SubsystemBase {
   /**
    * Configures the turret rotation motor
    */
-  private void configureTurretMotor() {
+  private void configureMotor() {
     turretConfig.MotorOutput
       .withNeutralMode(NeutralModeValue.Brake)
       .withInverted(InvertedValue.CounterClockwise_Positive)
@@ -176,7 +176,7 @@ public class TurretSubsystem extends SubsystemBase {
   /**
    * Zeros the turret encoder. Turret must be at home position when called.
    */
-  private void zeroTurretEncoder() {
+  private void resetEncoder() {
     turretMotor.setPosition(0);
   }
 
@@ -248,7 +248,7 @@ public class TurretSubsystem extends SubsystemBase {
     double targetMotorRotations = Conversions.degreesToRotations(targetPositionDegrees, TurretConstants.kTurretGearRatio);
     
     // Command the turret motor to the target position using MotionMagic
-    turretMotor.setControl(turretMotionMagicRequest.withPosition(targetMotorRotations));
+    turretMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
   }
 
   /**

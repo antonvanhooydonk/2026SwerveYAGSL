@@ -52,7 +52,6 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   // Control requests
   private final MotionMagicVoltage motionMagicRequest;
-  private final VoltageOut voltageRequest;
 
   // Target position (for telemetry)
   private double targetPositionMeters = 0.0;
@@ -71,7 +70,6 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     // Initialize control requests
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
-    voltageRequest = new VoltageOut(0);
 
     // Configure motors
     configureMotors();
@@ -82,13 +80,13 @@ public class ElevatorSubsystem extends SubsystemBase {
     // Initialize SysId routine (leader motor only)
     sysIdRoutine = new SysIdRoutine(
       new SysIdRoutine.Config(
-        null,   // Default ramp rate (1 V/s)
-        null,   // Default step voltage (7V)
-        null,   // Default timeout (10s)
-        state -> SignalLogger.writeString("elevator-sysid-state", state.toString())
+        null,
+        null,
+        null,
+        state -> SignalLogger.writeString("turret-sysid-state", state.toString())
       ),
       new SysIdRoutine.Mechanism(
-        volts -> leaderMotor.setControl(voltageRequest.withOutput(volts.in(Volts))),
+        volts -> leaderMotor.setControl(new VoltageOut(volts.in(Volts))),
         null,
         this
       )
