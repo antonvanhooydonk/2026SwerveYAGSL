@@ -55,7 +55,7 @@ public class TurretSubsystem extends SubsystemBase {
   private final MotionMagicVoltage motionMagicRequest;
 
   // Cached target (for telemetry)
-  private double targetTurretAngleDegrees = 0.0;
+  private double targetAngleDegrees = 0.0;
 
   // SysId routine
   private final SysIdRoutine turretSysIdRoutine;
@@ -224,7 +224,7 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     // Update the cached target for telemetry
-    targetTurretAngleDegrees = normalizedAngle;
+    targetAngleDegrees = normalizedAngle;
 
     // Convert calculation space back to native motor rotations before updating target
     double targetMotorRotations = Conversions.degreesToRotations(targetPositionDegrees, TurretConstants.kTurretGearRatio);
@@ -237,7 +237,7 @@ public class TurretSubsystem extends SubsystemBase {
    * Gets the current turret angle in degrees, normalized to (-180, 180]
    * @return Current angle in degrees
    */
-  private double getTurretAngleDegrees() {
+  private double getAngleDegrees() {
     return normalizeAngleDegrees(Conversions.rotationsToDegrees(
       turretMotor.getPosition().getValueAsDouble(), 
       TurretConstants.kTurretGearRatio
@@ -259,15 +259,6 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets whether the turret is at its target angle within tolerance
-   * @return True if at target
-   */
-  private boolean isAtTarget() {
-    return Math.abs(normalizeAngleDegrees(targetTurretAngleDegrees - getTurretAngleDegrees()))
-        < TurretConstants.kTurretAngleToleranceDegrees;
-  }
-
-  /**
    * Sets the turret motor to brake or coast mode
    * @param brake True for brake, false for coast
    */
@@ -282,6 +273,18 @@ public class TurretSubsystem extends SubsystemBase {
    */
   private double normalizeAngleDegrees(double angleDegrees) {
     return MathUtil.inputModulus(angleDegrees, -180.0, 180.0);
+  }
+
+  /**
+   * Gets whether the turret is at its target angle within tolerance
+   * @return True if at target
+   */
+  private boolean isAtTarget() {
+    return MathUtil.isNear(
+      targetAngleDegrees,
+      getAngleDegrees(),
+      TurretConstants.kTurretAngleToleranceDegrees
+    );
   }
 
   // ---------------------------------------------------------------------------------------
@@ -425,9 +428,9 @@ public class TurretSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetTurretAngleDegrees), null);
-    builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getTurretAngleDegrees()), null);
-    builder.addDoubleProperty("Angle Error (deg)",   () -> Utils.showDouble(normalizeAngleDegrees(targetTurretAngleDegrees - getTurretAngleDegrees())), null);
+    builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetAngleDegrees), null);
+    builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getAngleDegrees()), null);
+    builder.addDoubleProperty("Angle Error (deg)",   () -> Utils.showDouble(normalizeAngleDegrees(targetAngleDegrees - getAngleDegrees())), null);
     builder.addBooleanProperty("At Target",          this::isAtTarget, null);
     builder.addDoubleProperty("Voltage (V)",         () -> Utils.showDouble(turretMotor.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(turretMotor.getSupplyCurrent().getValueAsDouble()), null);
