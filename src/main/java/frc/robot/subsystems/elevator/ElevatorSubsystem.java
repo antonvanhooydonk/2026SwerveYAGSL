@@ -255,7 +255,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @param targetHeightMeters Target height in meters
    * @return True if at target
    */
-  private boolean isAtTarget(double targetHeightMeters) {
+  private boolean isAtHeight(double targetHeightMeters) {
     return MathUtil.isNear(
       targetHeightMeters,
       getHeightMeters(),
@@ -267,8 +267,8 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Gets whether the elevator is at its minimum height (home position)
    * @return True if at home
    */
-  private boolean isAtHome() {
-    return isAtTarget(ElevatorConstants.kMinHeightMeters);
+  private boolean isAtHomeHeight() {
+    return isAtHeight(ElevatorConstants.kMinHeightMeters);
   }
 
   /**
@@ -276,7 +276,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at max height
    */
   private boolean isAtMaxHeight() {
-    return isAtTarget(ElevatorConstants.kMaxHeightMeters);
+    return isAtHeight(ElevatorConstants.kMaxHeightMeters);
   }
 
   /**
@@ -284,7 +284,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at min height
    */
   private boolean isAtMinHeight() {
-    return isAtTarget(ElevatorConstants.kMinHeightMeters);
+    return isAtHeight(ElevatorConstants.kMinHeightMeters);
   }
 
   /**
@@ -292,7 +292,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at level 1 height
    */
   private boolean isAtLevelOneHeight() {
-    return isAtTarget(ElevatorConstants.kHeightL1Meters);
+    return isAtHeight(ElevatorConstants.kHeightL1Meters);
   }
 
   /**
@@ -300,7 +300,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at level 2 height
    */
   private boolean isAtLevelTwoHeight() {
-    return isAtTarget(ElevatorConstants.kHeightL2Meters);
+    return isAtHeight(ElevatorConstants.kHeightL2Meters);
   }
 
   /**
@@ -308,7 +308,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at level 3 height
    */
   private boolean isAtLevelThreeHeight() {
-    return isAtTarget(ElevatorConstants.kHeightL3Meters);
+    return isAtHeight(ElevatorConstants.kHeightL3Meters);
   }
 
   /**
@@ -316,14 +316,14 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at level 4 height
    */
   private boolean isAtLevelFourHeight() {
-    return isAtTarget(ElevatorConstants.kHeightL4Meters);
+    return isAtHeight(ElevatorConstants.kHeightL4Meters);
   }
 
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtHomeTrigger = new Trigger(this::isAtHome)
+  public final Trigger isAtHomeTrigger = new Trigger(this::isAtHomeHeight)
     .debounce(0.1, Debouncer.DebounceType.kRising);
   
   public final Trigger isAtMinHeightTrigger = new Trigger(this::isAtMinHeight)

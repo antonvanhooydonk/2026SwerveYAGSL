@@ -280,7 +280,7 @@ public class TurretSubsystem extends SubsystemBase {
    * Gets whether the turret is at its target angle within tolerance
    * @return True if at target
    */
-  private boolean isAtTarget() {
+  private boolean isAtAngle() {
     return MathUtil.isNear(
       targetAngleDegrees,
       getAngleDegrees(),
@@ -292,7 +292,7 @@ public class TurretSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtTargetTrigger = new Trigger(this::isAtTarget)
+  public final Trigger isAtAngleTrigger = new Trigger(this::isAtAngle)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
@@ -350,7 +350,7 @@ public class TurretSubsystem extends SubsystemBase {
       () -> setTurretAngle(angleDegrees),
       () -> {}
     )
-    .until(this::isAtTarget)
+    .until(this::isAtAngle)
     .withTimeout(TurretConstants.kMoveTimeoutSeconds)
     .withName("Turret_SetTurretAngle");
   }
@@ -433,7 +433,7 @@ public class TurretSubsystem extends SubsystemBase {
     builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetAngleDegrees), null);
     builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getAngleDegrees()), null);
     builder.addDoubleProperty("Angle Error (deg)",   () -> Utils.showDouble(normalizeAngleDegrees(targetAngleDegrees - getAngleDegrees())), null);
-    builder.addBooleanProperty("At Target",          this::isAtTarget, null);
+    builder.addBooleanProperty("At Angle",          this::isAtAngle, null);
     builder.addDoubleProperty("Voltage (V)",         () -> Utils.showDouble(turretMotor.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(turretMotor.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Temp (C)",            () -> Utils.showDouble(turretMotor.getDeviceTemp().getValueAsDouble()), null);

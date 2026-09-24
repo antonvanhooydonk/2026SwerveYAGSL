@@ -143,7 +143,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * Set the target position for the climber with safety limits
    * @param degrees Target position in degrees
    */
-  private void setTargetPosition(double degrees) {
+  private void setPosition(double degrees) {
     // Clamp target to valid range
     double clamped = MathUtil.clamp(
       degrees, 
@@ -207,7 +207,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param targetDegrees The target position in degrees to check against
    * @return true if within tolerance of the target position  
    */
-  private boolean isAtTarget(double targetDegrees) {
+  private boolean isAtPosition(double targetDegrees) {
     return MathUtil.isNear(
       targetDegrees,
       getPosition(),
@@ -220,7 +220,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if at or past upper limit
    */
   private boolean isAtUpperLimit() {
-    return isAtTarget(ClimberConstants.kUpperLimitDegrees);
+    return isAtPosition(ClimberConstants.kUpperLimitDegrees);
   }
   
   /**
@@ -228,7 +228,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if at or past lower limit
    */
   private boolean isAtLowerLimit() {
-    return isAtTarget(ClimberConstants.kLowerLimitDegrees);
+    return isAtPosition(ClimberConstants.kLowerLimitDegrees);
   }
   
   /**
@@ -236,7 +236,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of home position
    */
   private boolean isAtHomePosition() {
-    return isAtTarget(ClimberConstants.kHomeDegrees);
+    return isAtPosition(ClimberConstants.kHomeDegrees);
   }
   
   /**
@@ -244,7 +244,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of level 1 climb position
    */
   private boolean isAtLevelOneClimbPosition() {
-    return isAtTarget(ClimberConstants.kLevelOneClimbDegrees);
+    return isAtPosition(ClimberConstants.kLevelOneClimbDegrees);
   }
   
   /**
@@ -252,7 +252,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of level 2 climb position
    */
   private boolean isAtLevelTwoClimbPosition() {
-    return isAtTarget(ClimberConstants.kLevelTwoClimbDegrees);
+    return isAtPosition(ClimberConstants.kLevelTwoClimbDegrees);
   }
   
   /**
@@ -334,7 +334,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public Command toPositionCommand(double targetDegrees, BooleanSupplier atTarget) {
     return startEnd(
-      () -> setTargetPosition(targetDegrees),
+      () -> setPosition(targetDegrees),
       () -> {}
     )
     .until(atTarget)
