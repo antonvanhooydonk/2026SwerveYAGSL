@@ -292,7 +292,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param atTarget BooleanSupplier that returns true when the climber is at the target
    * @return Command that moves the climber to the target position
    */
-  public Command moveToPositionCommand(double targetDegrees, BooleanSupplier atTarget) {
+  public Command toPositionCommand(double targetDegrees, BooleanSupplier atTarget) {
     return startEnd(
       () -> setTargetPosition(targetDegrees),
       () -> {}
@@ -307,7 +307,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the home position
    */
   public Command toHomeCommand() {
-    return moveToPositionCommand(ClimberConstants.kHomeDegrees, this::isAtHomePosition)
+    return toPositionCommand(ClimberConstants.kHomeDegrees, this::isAtHomePosition)
       .withName("Climber_Home");
   }
 
@@ -316,7 +316,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the level one position
    */
   public Command toLevelOneCommand() {
-    return moveToPositionCommand(ClimberConstants.kLevelOneClimbDegrees, this::isAtLevelOneClimbPosition)
+    return toPositionCommand(ClimberConstants.kLevelOneClimbDegrees, this::isAtLevelOneClimbPosition)
       .withName("Climber_LevelOne");
   }
 
@@ -325,7 +325,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the level two position
    */
   public Command toLevelTwoCommand() {
-    return moveToPositionCommand(ClimberConstants.kLevelTwoClimbDegrees, this::isAtLevelTwoClimbPosition)
+    return toPositionCommand(ClimberConstants.kLevelTwoClimbDegrees, this::isAtLevelTwoClimbPosition)
       .withName("Climber_LevelTwo");
   }
   
@@ -334,7 +334,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to upper limit then stops
    */
   public Command toUpperLimitCommand() {
-    return moveToPositionCommand(ClimberConstants.kUpperLimitDegrees, this::isAtUpperLimit)
+    return toPositionCommand(ClimberConstants.kUpperLimitDegrees, this::isAtUpperLimit)
       .withName("Climber_UpToLimit");
   }
   
@@ -343,7 +343,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to lower limit then stops
    */
   public Command toLowerLimitCommand() {
-    return moveToPositionCommand(ClimberConstants.kLowerLimitDegrees, this::isAtLowerLimit)
+    return toPositionCommand(ClimberConstants.kLowerLimitDegrees, this::isAtLowerLimit)
       .withName("Climber_DownToLimit");
   }
 

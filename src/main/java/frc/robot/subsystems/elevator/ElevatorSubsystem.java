@@ -379,7 +379,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @param heightMeters Target height in meters
    * @return Command to move to the target height
    */
-  public Command moveToHeightCommand(double heightMeters, BooleanSupplier atTarget) {
+  public Command toHeightCommand(double heightMeters, BooleanSupplier atTarget) {
     return startEnd(
       () -> setHeight(heightMeters),
       () -> {}
@@ -396,7 +396,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the target height
    */
   public Command toLevelOneCommand() {
-    return moveToHeightCommand(ElevatorConstants.kHeightL1Meters, this::isAtLevelOneHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL1Meters, this::isAtLevelOneHeight)
       .withName("Elevator_MoveToLevelOne");
   }
 
@@ -406,7 +406,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the target height
    */
   public Command toLevelTwoCommand() {
-    return moveToHeightCommand(ElevatorConstants.kHeightL2Meters, this::isAtLevelTwoHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL2Meters, this::isAtLevelTwoHeight)
       .withName("Elevator_MoveToLevelTwo");
   }
 
@@ -416,7 +416,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the target height
    */
   public Command toLevelThreeCommand() {
-    return moveToHeightCommand(ElevatorConstants.kHeightL3Meters, this::isAtLevelThreeHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL3Meters, this::isAtLevelThreeHeight)
       .withName("Elevator_MoveToLevelThree");
   }
 
@@ -426,7 +426,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the target height
    */
   public Command toLevelFourCommand() {
-    return moveToHeightCommand(ElevatorConstants.kHeightL4Meters, this::isAtLevelFourHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL4Meters, this::isAtLevelFourHeight)
       .withName("Elevator_MoveToLevelFour");
   }
 
