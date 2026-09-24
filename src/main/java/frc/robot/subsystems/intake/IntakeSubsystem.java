@@ -8,26 +8,27 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
-import frc.robot.Constants.CANConstants;
 import frc.robot.util.Utils;
 
 /**
- * Intake subsystem using dual Kraken X60 (TalonFX) motors in a
- * follower configuration. 
+ * Intake subsystem using a single Kraken X60 (TalonFX) motor. 
  *
  * Roller tuning process:
  * 1. Run intake SysId to characterize kS, kV, kA
@@ -36,13 +37,17 @@ import frc.robot.util.Utils;
  * 4. Avoid kI and kD unless absolutely necessary
  */
 public class IntakeSubsystem extends SubsystemBase {
-  // Roller hardware - leader and follower
-  private final TalonFX rollerLeader;
-  private final TalonFX rollerFollower;
+  // Intake hardware
+  private final TalonFX rollerMotor;
   private final TalonFXConfiguration rollerConfig;
+  private final DoubleSolenoid deploySolenoid;
 
-  // Flywheel control request
+  // Roller control request
   private final VelocityVoltage rollerVelocityRequest;
+
+  // Cached target (for telemetry)
+  private double targetRPM = 0.0;
+  private boolean isDeployed = false;
   
   // SysId routine
   private final SysIdRoutine rollerSysIdRoutine;
@@ -52,15 +57,22 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   public IntakeSubsystem() {
     // Initialize roller hardware
-    rollerLeader = new TalonFX(1);
-    rollerFollower = new TalonFX(2);
+    rollerMotor = new TalonFX(1);
     rollerConfig = new TalonFXConfiguration();
+    
+    // Initialize deploy/retract solenoid
+    deploySolenoid = new DoubleSolenoid(
+      0,
+      PneumaticsModuleType.REVPH,
+      1,
+      2
+    );
 
     // Initialize control request
     rollerVelocityRequest = new VelocityVoltage(0).withSlot(0);
 
     // Configure motors
-    configureRollerMotors();
+    configureMotor();
 
     // Initialize SysId routine (leader motor only)
     rollerSysIdRoutine = new SysIdRoutine(
@@ -71,11 +83,14 @@ public class IntakeSubsystem extends SubsystemBase {
         state -> SignalLogger.writeString("roller-sysid-state", state.toString())
       ),
       new SysIdRoutine.Mechanism(
-        volts -> rollerLeader.setControl(new VoltageOut(volts.in(Volts))),
+        volts -> rollerMotor.setControl(new VoltageOut(volts.in(Volts))),
         null,
         this
       )
     );
+    
+    // set the default command for this subsystem
+    setDefaultCommand(stopCommand());
 
     // Add data to dashboard
     SmartDashboard.putData("Intake", this);
@@ -94,9 +109,9 @@ public class IntakeSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Configures the roller leader and follower motors
+   * Configures the roller leader motor
    */
-  private void configureRollerMotors() {
+  private void configureMotor() {
     rollerConfig.MotorOutput
       .withNeutralMode(NeutralModeValue.Coast) // Coast so roller spins down naturally
       .withInverted(InvertedValue.CounterClockwise_Positive)
@@ -117,35 +132,23 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // Velocity PID (slot 0) - velocity in RPS
     rollerConfig.Slot0
-      .withKP(IntakeConstants.kFlywheelKP)
-      .withKI(IntakeConstants.kFlywheelKI)
-      .withKD(IntakeConstants.kFlywheelKD)
-      .withKS(IntakeConstants.kFlywheelKS)
-      .withKV(IntakeConstants.kFlywheelKV)
-      .withKA(IntakeConstants.kFlywheelKA);
+      .withKP(IntakeConstants.kRollerKP)
+      .withKI(IntakeConstants.kRollerKI)
+      .withKD(IntakeConstants.kRollerKD)
+      .withKS(IntakeConstants.kRollerKS)
+      .withKV(IntakeConstants.kRollerKV)
+      .withKA(IntakeConstants.kRollerKA);
 
-    // Apply configuration to both leader and follower
-    rollerLeader.getConfigurator().apply(rollerConfig);
-    rollerFollower.getConfigurator().apply(rollerConfig);
-
-    // Configure follower to mirror leader
-    rollerFollower.setControl(new Follower(1, MotorAlignmentValue.Opposed));
+    // Apply configuration to roller motor
+    rollerMotor.getConfigurator().apply(rollerConfig);
     
-    // Optimize CAN status frames on leader
-    rollerLeader.getVelocity().setUpdateFrequency(100.0);
-    rollerLeader.getMotorVoltage().setUpdateFrequency(50.0);
-    rollerLeader.getSupplyCurrent().setUpdateFrequency(50.0);
-    rollerLeader.getTorqueCurrent().setUpdateFrequency(50.0);
-    rollerLeader.getDeviceTemp().setUpdateFrequency(4.0);
-    rollerLeader.optimizeBusUtilization();
-
-    // Minimize follower CAN traffic
-    rollerFollower.getVelocity().setUpdateFrequency(100.0);
-    rollerFollower.getMotorVoltage().setUpdateFrequency(50.0);
-    rollerFollower.getSupplyCurrent().setUpdateFrequency(50.0);
-    rollerFollower.getTorqueCurrent().setUpdateFrequency(50.0);
-    rollerFollower.getDeviceTemp().setUpdateFrequency(4.0);
-    rollerFollower.optimizeBusUtilization();
+    // Optimize CAN status frames on roller motor
+    rollerMotor.getVelocity().setUpdateFrequency(100.0);
+    rollerMotor.getMotorVoltage().setUpdateFrequency(50.0);
+    rollerMotor.getSupplyCurrent().setUpdateFrequency(50.0);
+    rollerMotor.getTorqueCurrent().setUpdateFrequency(50.0);
+    rollerMotor.getDeviceTemp().setUpdateFrequency(4.0);
+    rollerMotor.optimizeBusUtilization();
   }
 
   // ----------------------------------------------------------------------------------------
@@ -158,7 +161,7 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   private double getRollerRPM() {
     // TalonFX velocity is in RPS, convert to RPM
-    return rollerLeader.getVelocity().getValueAsDouble() * 60.0;
+    return rollerMotor.getVelocity().getValueAsDouble() * 60.0;
   }
 
   /**
@@ -166,8 +169,8 @@ public class IntakeSubsystem extends SubsystemBase {
    * @param rpm Target velocity in RPM
    */
   private void setRollerRPM(double rpm) {
-    double rps = rpm / 60.0;
-    rollerLeader.setControl(rollerVelocityRequest.withVelocity(rps));
+    targetRPM = rpm;
+    rollerMotor.setControl(rollerVelocityRequest.withVelocity(rpm / 60.0));
   }
 
   /**
@@ -185,18 +188,42 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
+   * Deploys the intake
+   */
+  private void deploy() {
+    deploySolenoid.set(Value.kForward);
+    isDeployed = true;
+  }
+
+  /**
+   * Retracts the intake
+   */
+  private void retract() {
+    deploySolenoid.set(Value.kReverse);
+    isDeployed = false;
+  }
+
+  /**
    * Stops the roller
    */
   private void stopRoller() {
-    rollerLeader.stopMotor();
+    rollerMotor.stopMotor();
+  }
+
+  /**
+   * Returns true if the intake is deployed
+   * @return true if the intake is deployed
+   */
+  private boolean isIntakeDeployed() {
+    return isDeployed;
   }
 
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  // public final Trigger isFlywheelAtTargetTrigger = new Trigger(this::isFlywheelAtTarget);
-
+  public final Trigger isDeployedTrigger = new Trigger(this::isIntakeDeployed)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
   // Public methods to run at different phases of the match
@@ -206,7 +233,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Initializes the roller at the start of the autonomous phase.
    */
   public void autonomousInit() {
-    stopRoller();
+    targetRPM = 0.0;
     Utils.logInfo("Intake subsystem initialized for autonomous");
   }
 
@@ -214,7 +241,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Initializes the roller at the start of the teleop phase.
    */
   public void teleopInit() {
-    stopRoller();
+    targetRPM = 0.0;
     Utils.logInfo("Intake subsystem initialized for teleop");
   }
 
@@ -222,7 +249,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Initializes the roller for post match (disabled) state.
    */
   public void postMatch() {
-    stopRoller();
+    targetRPM = 0.0;
     Utils.logInfo("Intake subsystem initialized for post match");
   }
 
@@ -243,35 +270,39 @@ public class IntakeSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Command to stop the flywheel.
-   * @return Command to stop the flywheel
+   * Command to deploy the intake.
+   * @return Command to deploy the intake
    */
   public Command deployCommand() {
-    return run(this::stopRoller);
+    return runOnce(this::deploy)
+      .withName("Intake_Deploy");
   }
 
   /**
-   * Command to stop the flywheel.
-   * @return Command to stop the flywheel
+   * Command to retract the intake.
+   * @return Command to retract the intake
    */
   public Command retractCommand() {
-    return run(this::stopRoller);
+    return runOnce(this::retract)
+      .withName("Intake_Retract");
   }
 
   /**
-   * Command to stop the flywheel.
-   * @return Command to stop the flywheel
+   * Command to run the intake in the forward direction.
+   * @return Command to run the intake in the forward direction
    */
-  public Command intakeCommand() {
-    return run(this::forwardRoller);
+  public Command forwardCommand() {
+    return run(this::forwardRoller)
+      .withName("Intake_Forward");
   }
 
   /**
    * Command to run the roller in reverse.
    * @return Command to run the roller in reverse
    */
-  public Command ejectCommand() {
-    return run(this::reverseRoller);
+  public Command reverseCommand() {
+    return run(this::reverseRoller)
+      .withName("Intake_Reverse");
   }
 
   /**
@@ -279,7 +310,8 @@ public class IntakeSubsystem extends SubsystemBase {
    * @return Command to stop the roller
    */
   public Command stopCommand() {
-    return run(this::stopRoller);
+    return run(this::stopRoller)
+      .withName("Intake_Stop");
   }
 
   // ----------------------------------------------------------------------------------------
@@ -288,6 +320,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
-
+    builder.addDoubleProperty("Target RPM",  () -> Utils.showDouble(targetRPM), null);
+    builder.addDoubleProperty("Current RPM", () -> Utils.showDouble(getRollerRPM()), null);
+    builder.addDoubleProperty("Current (A)", () -> Utils.showDouble(rollerMotor.getSupplyCurrent().getValueAsDouble()), null);
+    builder.addDoubleProperty("Temp (C)",    () -> Utils.showDouble(rollerMotor.getDeviceTemp().getValueAsDouble()), null);
   }
 }
