@@ -433,9 +433,6 @@ public class TurretSubsystem extends SubsystemBase {
   public void initSendable(SendableBuilder builder) {
     builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetAngleDegrees), null);
     builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getAngleDegrees()), null);
-    builder.addDoubleProperty("Angle Error (deg)",   () -> Utils.showDouble(normalizeAngleDegrees(targetAngleDegrees - getAngleDegrees())), null);
-    builder.addBooleanProperty("At Angle",          this::isAtAngle, null);
-    builder.addDoubleProperty("Voltage (V)",         () -> Utils.showDouble(turretMotor.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(turretMotor.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Temp (C)",            () -> Utils.showDouble(turretMotor.getDeviceTemp().getValueAsDouble()), null);
   }

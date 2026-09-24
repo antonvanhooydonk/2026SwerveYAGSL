@@ -216,14 +216,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   private double getHeightMeters() {
     return leaderMotor.getPosition().getValueAsDouble();
   }
-
-  /**
-   * Gets the current elevator velocity in meters per second
-   * @return Current velocity in m/s
-   */
-  private double getVelocityMPS() {
-    return leaderMotor.getVelocity().getValueAsDouble();
-  }
   
   /**
    * Reset the encoder position to zero.
@@ -471,13 +463,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   public void initSendable(SendableBuilder builder) {
     builder.addDoubleProperty("Target Height (m)",   () -> Utils.showDouble(targetPositionMeters), null);
     builder.addDoubleProperty("Current Height (m)",  () -> Utils.showDouble(getHeightMeters()), null);
-    builder.addDoubleProperty("Height Error (m)",    () -> Utils.showDouble(targetPositionMeters - getHeightMeters()), null);
-    builder.addDoubleProperty("Velocity (mps)",      () -> Utils.showDouble(getVelocityMPS()), null);
-    builder.addBooleanProperty("At Level One Height", this::isAtLevelOneHeight, null);
-    builder.addBooleanProperty("At Level Two Height", this::isAtLevelTwoHeight, null);
-    builder.addBooleanProperty("At Level Three Height", this::isAtLevelThreeHeight, null);
-    builder.addBooleanProperty("At Level Four Height", this::isAtLevelFourHeight, null);
-    builder.addDoubleProperty("Leader Voltage (V)",  () -> Utils.showDouble(leaderMotor.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Current (A)",  () -> Utils.showDouble(leaderMotor.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Temp (C)",     () -> Utils.showDouble(leaderMotor.getDeviceTemp().getValueAsDouble()), null);
     builder.addDoubleProperty("Follower Current (A)",() -> Utils.showDouble(followerMotor.getSupplyCurrent().getValueAsDouble()), null);

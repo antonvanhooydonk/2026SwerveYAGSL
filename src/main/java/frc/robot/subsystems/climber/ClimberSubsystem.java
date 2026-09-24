@@ -36,6 +36,9 @@ public class ClimberSubsystem extends SubsystemBase {
   private final RelativeEncoder climberEncoder;
   private final SparkClosedLoopController climberController;
 
+  // Cached target (for telemetry)
+  private double targetAngleDegrees = 0.0;
+
   // SysId routine
   private final SysIdRoutine sysIdRoutine;
  
@@ -145,14 +148,14 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   private void setPosition(double degrees) {
     // Clamp target to valid range
-    double clamped = MathUtil.clamp(
+    targetAngleDegrees = MathUtil.clamp(
       degrees, 
       ClimberConstants.kLowerLimitDegrees, 
       ClimberConstants.kUpperLimitDegrees
     );
 
     // Set the target position using max motion control
-    climberController.setSetpoint(clamped, ControlType.kMAXMotionPositionControl);
+    climberController.setSetpoint(targetAngleDegrees, ControlType.kMAXMotionPositionControl);
   }
     
   /**
@@ -161,30 +164,6 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   private double getPosition() {
     return climberEncoder.getPosition();
-  }
-  
-  /**
-   * Get the current speed of the climber
-   * @return Speed in degrees per second
-   */
-  private double getSpeed() {
-    return climberEncoder.getVelocity();
-  }
-
-  /**
-   * Get the current draw of the climber motor
-   * @return Current in amps
-   */
-  private double getCurrent() {
-    return climberMotor.getOutputCurrent();
-  }
-  
-  /**
-   * Get the temperature of the climber motor
-   * @return Temperature in Celsius
-   */
-  private double getTemperature() {
-    return climberMotor.getMotorTemperature();
   }
   
   /**
@@ -261,7 +240,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if motor appears stalled
    */
   private boolean isStalled() {
-    return Math.abs(getCurrent()) > ClimberConstants.kStallCurrentThreshold &&
+    return Math.abs(climberMotor.getOutputCurrent()) > ClimberConstants.kStallCurrentThreshold &&
            Math.abs(climberEncoder.getVelocity()) < ClimberConstants.kStallVelocityThreshold;
   }
 
@@ -414,14 +393,9 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.setSmartDashboardType("ClimberSubsystem");
-    builder.addDoubleProperty("Position (deg)", () -> Utils.showDouble(getPosition()), null);
-    builder.addDoubleProperty("Velocity (deg per sec)", () -> Utils.showDouble(getSpeed()), null);
-    builder.addDoubleProperty("Current (A)", () -> Utils.showDouble(getCurrent()), null);
-    builder.addDoubleProperty("Temperature (C)", () -> Utils.showDouble(getTemperature()), null);
-    builder.addBooleanProperty("At Upper Limit", this::isAtUpperLimit, null);
-    builder.addBooleanProperty("At Lower Limit", this::isAtLowerLimit, null);
-    builder.addBooleanProperty("At Home Position", this::isAtHomePosition, null);
-    builder.addBooleanProperty("Stalled", this::isStalled, null);
+    builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetAngleDegrees), null);
+    builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getPosition()), null);
+    builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(climberMotor.getOutputCurrent()), null);
+    builder.addDoubleProperty("Temp (C)",            () -> Utils.showDouble(climberMotor.getMotorTemperature()), null);
   }
 }
