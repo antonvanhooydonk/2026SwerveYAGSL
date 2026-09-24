@@ -6,6 +6,8 @@ package frc.robot.subsystems.climber;
 
 import java.util.function.BooleanSupplier;
 
+import com.ctre.phoenix6.SignalLogger;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -23,6 +25,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
 import frc.robot.util.Utils;
@@ -32,6 +35,9 @@ public class ClimberSubsystem extends SubsystemBase {
   private final SparkMax climberMotor;
   private final RelativeEncoder climberEncoder;
   private final SparkClosedLoopController climberController;
+
+  // SysId routine
+  private final SysIdRoutine sysIdRoutine;
  
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
@@ -49,6 +55,21 @@ public class ClimberSubsystem extends SubsystemBase {
 
     // Reset the encoder (assumes climber starts at the home position)
     resetEncoder();
+
+    // Initialize SysId routine (leader motor only)
+    sysIdRoutine = new SysIdRoutine(
+      new SysIdRoutine.Config(
+        null,
+        null,
+        null,
+        state -> SignalLogger.writeString("climber-sysid-state", state.toString())
+      ),
+      new SysIdRoutine.Mechanism(
+        volts -> climberMotor.setVoltage(volts),
+        null,
+        this
+      )
+    );
     
     // set the default command for this subsystem
     setDefaultCommand(stopCommand());
@@ -114,39 +135,26 @@ public class ClimberSubsystem extends SubsystemBase {
   @Override
   public void periodic() {}
     
-  // ==================== Internal State Modifiers ====================
+  // ----------------------------------------------------------------------------------------
+  // Private state methods
+  // ----------------------------------------------------------------------------------------
   
   /**
    * Set the target position for the climber with safety limits
    * @param degrees Target position in degrees
    */
   private void setTargetPosition(double degrees) {
+    // Clamp target to valid range
     double clamped = MathUtil.clamp(
       degrees, 
       ClimberConstants.kLowerLimitDegrees, 
       ClimberConstants.kUpperLimitDegrees
     );
 
+    // Set the target position using max motion control
     climberController.setSetpoint(clamped, ControlType.kMAXMotionPositionControl);
   }
-  
-  /**
-   * Reset the encoder position to zero.
-   * This should only be called when the climber is physically in the "home" position.
-   */
-  private void resetEncoder() {
-    climberEncoder.setPosition(0);
-  }
-
-  /**
-   * Stop the climber motor immediately
-   */
-  private void stop() {
-    climberMotor.stopMotor();
-  }
-  
-  // ==================== State Methods ====================
-  
+    
   /**
    * Get the current position of the climber
    * @return Position in degrees
@@ -177,6 +185,21 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   private double getTemperature() {
     return climberMotor.getMotorTemperature();
+  }
+  
+  /**
+   * Reset the encoder position to zero.
+   * This should only be called when the climber is physically in the "home" position.
+   */
+  private void resetEncoder() {
+    climberEncoder.setPosition(0);
+  }
+
+  /**
+   * Stop the climber motor immediately
+   */
+  private void stop() {
+    climberMotor.stopMotor();
   }
 
   /**
@@ -242,17 +265,9 @@ public class ClimberSubsystem extends SubsystemBase {
            Math.abs(climberEncoder.getVelocity()) < ClimberConstants.kStallVelocityThreshold;
   }
 
-  /**
-   * Initialize the climber for autonomous mode. This resets the encoder zero position.
-   * This should be called at the start of autonomous to ensure the drive is in a known state.
-   * The climber should be physically positioned at the home position before this is called, 
-   * as it does not have limit switches and relies on the encoder zero for accurate positioning.
-   */
-  public void autonomousInit() {
-    resetEncoder();
-  }
-
-  // ==================== State Triggers ====================
+  // ---------------------------------------------------------------------------------------
+  // Public triggers that expose private state
+  // ---------------------------------------------------------------------------------------
 
   public final Trigger isAtUpperLimitTrigger = new Trigger(this::isAtUpperLimit)
     .debounce(0.1, Debouncer.DebounceType.kRising);
@@ -268,8 +283,48 @@ public class ClimberSubsystem extends SubsystemBase {
 
   public final Trigger isStalledTrigger = new Trigger(this::isStalled)
     .debounce(0.1, Debouncer.DebounceType.kRising);
-  
-  // ==================== Command Factories ====================  
+
+  // ----------------------------------------------------------------------------------------
+  // Public methods to run at different phases of the match
+  // ----------------------------------------------------------------------------------------
+
+  /**
+   * Initializes the climber at the start of the autonomous phase.
+   */
+  public void autonomousInit() {
+    resetEncoder();
+    Utils.logInfo("Climber subsystem initialized for autonomous");
+  }
+
+  /**
+   * Initializes the climber at the start of the teleop phase.
+   */
+  public void teleopInit() {
+    Utils.logInfo("Climber subsystem initialized for teleop");
+  }
+
+  /**
+   * Initializes the climber for post match (disabled) state.
+   */
+  public void postMatch() {
+    Utils.logInfo("Climber subsystem initialized for post match");
+  }
+
+  // ----------------------------------------------------------------------------------------
+  // SysId Command Factories
+  // ----------------------------------------------------------------------------------------
+
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return sysIdRoutine.quasistatic(direction);
+  }
+
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return sysIdRoutine.dynamic(direction);
+  }
+
+  // ----------------------------------------------------------------------------------------
+  // Public Command Factory Methods
+  // ----------------------------------------------------------------------------------------
 
   /**
    * Command to move the climber to a specific position

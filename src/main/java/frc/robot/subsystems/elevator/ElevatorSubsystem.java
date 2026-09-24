@@ -84,7 +84,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         null,
         null,
         null,
-        state -> SignalLogger.writeString("turret-sysid-state", state.toString())
+        state -> SignalLogger.writeString("elevator-sysid-state", state.toString())
       ),
       new SysIdRoutine.Mechanism(
         volts -> leaderMotor.setControl(new VoltageOut(volts.in(Volts))),
@@ -205,6 +205,7 @@ public class ElevatorSubsystem extends SubsystemBase {
       ElevatorConstants.kMaxHeightMeters
     );
 
+    // Set the target position using MotionMagic with gravity compensation
     leaderMotor.setControl(motionMagicRequest.withPosition(targetPositionMeters));
   }
 
