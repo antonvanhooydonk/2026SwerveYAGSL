@@ -352,6 +352,7 @@ public class TurretSubsystem extends SubsystemBase {
     )
     .until(this::isAtAngle)
     .withTimeout(TurretConstants.kMoveTimeoutSeconds)
+    .finallyDo(this::stop)
     .withName("Turret_SetTurretAngle");
   }
 
