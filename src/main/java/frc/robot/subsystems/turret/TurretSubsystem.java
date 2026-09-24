@@ -174,24 +174,6 @@ public class TurretSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Zeros the turret encoder. Turret must be at home position when called.
-   */
-  private void resetEncoder() {
-    turretMotor.setPosition(0);
-  }
-
-  /**
-   * Gets the current turret angle in degrees, normalized to (-180, 180]
-   * @return Current angle in degrees
-   */
-  private double getTurretAngleDegrees() {
-    return normalizeAngleDegrees(Conversions.rotationsToDegrees(
-      turretMotor.getPosition().getValueAsDouble(), 
-      TurretConstants.kTurretGearRatio
-    ));
-  }
-
-  /**
    * Sets the turret to a target angle using MotionMagic, taking the shortest
    * path UNLESS that path would exceed the turret's mechanical range, in
    * which case the long way around is used instead, or the target is
@@ -252,9 +234,27 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the current turret angle in degrees, normalized to (-180, 180]
+   * @return Current angle in degrees
+   */
+  private double getTurretAngleDegrees() {
+    return normalizeAngleDegrees(Conversions.rotationsToDegrees(
+      turretMotor.getPosition().getValueAsDouble(), 
+      TurretConstants.kTurretGearRatio
+    ));
+  }
+
+  /**
+   * Zeros the turret encoder. Turret must be at home position when called.
+   */
+  private void resetEncoder() {
+    turretMotor.setPosition(0);
+  }
+
+  /**
    * Stops the turret motor
    */
-  private void stopTurret() {
+  private void stop() {
     turretMotor.stopMotor();
   }
 
@@ -386,7 +386,7 @@ public class TurretSubsystem extends SubsystemBase {
 
       // If either pose is null, we can't calculate the angle, so just return early
       if (robotPose == null || targetPose == null) {
-        stopTurret();
+        stop();
         return;
       }
 
@@ -415,7 +415,7 @@ public class TurretSubsystem extends SubsystemBase {
    * Command to stop the turret.
    */
   public Command stopCommand() {
-    return run(this::stopTurret)
+    return run(this::stop)
       .withName("Turret_Stop");
   }
 
