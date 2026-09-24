@@ -51,4 +51,12 @@ public final class ClimberConstants {
    * Formula: position conversion factor / 60 (to convert minutes to seconds)
    */
   public static final double kVelocityConversionFactor = kPositionConversionFactor / 60.0;
+
+  public static final double kMoveTimeoutSeconds = 5.0; // Timeout for move commands
+  public static final double kClimberKP = 0.05; // Proportional gain for position control
+  public static final double kClimberKI = 0.0; // Integral gain for position control
+  public static final double kClimberKD = 0.0; // Derivative gain for position control
+
+  public static final double kMaxVelocityDegPerSec = 100.0; // Maximum velocity for position control
+  public static final double kMaxAccelDegPerSec2 = 200.0; // Maximum acceleration for position control
 }

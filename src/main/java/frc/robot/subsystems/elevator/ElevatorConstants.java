@@ -37,7 +37,7 @@ public final class ElevatorConstants {
   // Control constants
   // ------------------------------------------------------------
   public static final double kHeightToleranceMeters = Units.inchesToMeters(0.5); // Tolerance for isAtTarget
-  public static final double kMoveTimeoutSeconds = 5.0;
+  public static final double kMoveTimeoutSeconds = 3.0;
 
   // ------------------------------------------------------------
   // Homing constants

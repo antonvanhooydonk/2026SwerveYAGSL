@@ -6,6 +6,8 @@ package frc.robot.subsystems.elevator;
 
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.function.BooleanSupplier;
+
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -21,7 +23,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -56,9 +57,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   // Target position (for telemetry)
   private double targetPositionMeters = 0.0;
 
-  // Whether the elevator is homing
-  private boolean homing = false;
-
   // SysId routine
   private final SysIdRoutine sysIdRoutine;
 
@@ -79,7 +77,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     configureMotors();
 
     // Zero encoder at startup - elevator must be at home position
-    zeroEncoder();
+    resetEncoder();
 
     // Initialize SysId routine (leader motor only)
     sysIdRoutine = new SysIdRoutine(
@@ -197,10 +195,18 @@ public class ElevatorSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Zeros the encoder. Elevator must be at home (bottom) position when called.
+   * Sets the elevator to a target height using MotionMagic
+   * @param heightMeters Target height in meters
    */
-  private void zeroEncoder() {
-    leaderMotor.setPosition(0);
+  private void setHeight(double heightMeters) {
+    // Clamp target to valid range
+    targetPositionMeters = MathUtil.clamp(
+      heightMeters,
+      ElevatorConstants.kMinHeightMeters,
+      ElevatorConstants.kMaxHeightMeters
+    );
+
+    leaderMotor.setControl(motionMagicRequest.withPosition(targetPositionMeters));
   }
 
   /**
@@ -218,28 +224,13 @@ public class ElevatorSubsystem extends SubsystemBase {
   private double getVelocityMPS() {
     return leaderMotor.getVelocity().getValueAsDouble();
   }
-
+  
   /**
-   * Sets the elevator to a target height using MotionMagic
-   * @param heightMeters Target height in meters
+   * Reset the encoder position to zero.
+   * This should only be called when the elevator is physically in the "home" position.
    */
-  private void setHeight(double heightMeters) {
-    // Clamp target to valid range
-    targetPositionMeters = MathUtil.clamp(
-      heightMeters,
-      ElevatorConstants.kMinHeightMeters,
-      ElevatorConstants.kMaxHeightMeters
-    );
-
-    leaderMotor.setControl(motionMagicRequest.withPosition(targetPositionMeters));
-  }
-
-  /**
-   * Drives the elevator at a raw voltage. Used for homing.
-   * @param volts Voltage to apply
-   */
-  private void setVoltage(double volts) {
-    leaderMotor.setControl(voltageRequest.withOutput(volts));
+  private void resetEncoder() {
+    leaderMotor.setPosition(0);
   }
 
   /**
@@ -261,10 +252,15 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   /**
    * Gets whether the elevator is at its target height within tolerance
+   * @param targetHeightMeters Target height in meters
    * @return True if at target
    */
-  private boolean isAtTarget() {
-    return Math.abs(targetPositionMeters - getHeightMeters()) < ElevatorConstants.kHeightToleranceMeters;
+  private boolean isAtTarget(double targetHeightMeters) {
+    return MathUtil.isNear(
+      targetHeightMeters,
+      getHeightMeters(),
+      ElevatorConstants.kHeightToleranceMeters
+    );
   }
 
   /**
@@ -272,7 +268,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at home
    */
   private boolean isAtHome() {
-    return getHeightMeters() <= ElevatorConstants.kMinHeightMeters + ElevatorConstants.kHeightToleranceMeters;
+    return isAtTarget(ElevatorConstants.kMinHeightMeters);
   }
 
   /**
@@ -280,25 +276,60 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return True if at max height
    */
   private boolean isAtMaxHeight() {
-    return getHeightMeters() >= ElevatorConstants.kMaxHeightMeters - ElevatorConstants.kHeightToleranceMeters;
+    return isAtTarget(ElevatorConstants.kMaxHeightMeters);
   }
 
   /**
-   * Gets whether the elevator is currently homing
-   * @return True if homing
+   * Gets whether the elevator is at its minimum height
+   * @return True if at min height
    */
-  private boolean isHoming() {
-    return homing;
+  private boolean isAtMinHeight() {
+    return isAtTarget(ElevatorConstants.kMinHeightMeters);
+  }
+
+  /**
+   * Gets whether the elevator is at its level 1 height
+   * @return True if at level 1 height
+   */
+  private boolean isAtLevelOneHeight() {
+    return isAtTarget(ElevatorConstants.kHeightL1Meters);
+  }
+
+  /**
+   * Gets whether the elevator is at its level 2 height
+   * @return True if at level 2 height
+   */
+  private boolean isAtLevelTwoHeight() {
+    return isAtTarget(ElevatorConstants.kHeightL2Meters);
+  }
+
+  /**
+   * Gets whether the elevator is at level 3 height
+   * @return True if at level 3 height
+   */
+  private boolean isAtLevelThreeHeight() {
+    return isAtTarget(ElevatorConstants.kHeightL3Meters);
+  }
+
+  /**
+   * Gets whether the elevator is at level 4 height
+   * @return True if at level 4 height
+   */
+  private boolean isAtLevelFourHeight() {
+    return isAtTarget(ElevatorConstants.kHeightL4Meters);
   }
 
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtTargetTrigger    = new Trigger(this::isAtTarget);
-  public final Trigger isAtHomeTrigger      = new Trigger(this::isAtHome);
-  public final Trigger isAtMaxHeightTrigger = new Trigger(this::isAtMaxHeight);
-  public final Trigger isHomingTrigger      = new Trigger(this::isHoming);
+  public final Trigger isAtHomeTrigger              = new Trigger(this::isAtHome);
+  public final Trigger isAtMinHeightTrigger         = new Trigger(this::isAtMinHeight);
+  public final Trigger isAtMaxHeightTrigger         = new Trigger(this::isAtMaxHeight);
+  public final Trigger isAtLevelOneHeightTrigger    = new Trigger(this::isAtLevelOneHeight);
+  public final Trigger isAtLevelTwoHeightTrigger    = new Trigger(this::isAtLevelTwoHeight);
+  public final Trigger isAtLevelThreeHeightTrigger  = new Trigger(this::isAtLevelThreeHeight);
+  public final Trigger isAtLevelFourHeightTrigger   = new Trigger(this::isAtLevelFourHeight);
 
   // ----------------------------------------------------------------------------------------
   // Public methods to run at different phases of the match
@@ -309,7 +340,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public void autonomousInit() {
     setMotorBrake(true);
-    homing = false;
     setHeight(ElevatorConstants.kMinHeightMeters);
     Utils.logInfo("Elevator subsystem initialized for autonomous");
   }
@@ -319,7 +349,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public void teleopInit() {
     setMotorBrake(true);
-    homing = false;
     Utils.logInfo("Elevator subsystem initialized for teleop");
   }
 
@@ -328,7 +357,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public void postMatch() {
     setMotorBrake(false);
-    homing = false;
     Utils.logInfo("Elevator subsystem initialized for post match");
   }
 
@@ -353,46 +381,55 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @param heightMeters Target height in meters
    * @return Command to move to the target height
    */
-  public Command moveToHeightCommand(double heightMeters) {
-    return runOnce(() -> setHeight(heightMeters))
-      .andThen(Commands.waitUntil(this::isAtTarget))
-      .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
-      .withName("Elevator_MoveToHeight");
+  public Command moveToHeightCommand(double heightMeters, BooleanSupplier atTarget) {
+    return startEnd(
+      () -> setHeight(heightMeters),
+      () -> {}
+    )
+    .until(atTarget)
+    .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
+    .finallyDo(this::stop)
+    .withName("Elevator_MoveToHeight");
   }
 
   /**
-   * Command to move the elevator to its minimum (home) position and rezero the encoder.
-   * Since there are no limit switches, homing uses a slow downward voltage until
-   * the elevator stops moving, then zeros the encoder.
-   * @return Command to home the elevator
+   * Command to move the elevator to a target height in meters and wait until it arrives.
+   * @param heightMeters Target height in meters
+   * @return Command to move to the target height
    */
-  public Command homeCommand() {
-    return Commands.sequence(
-      runOnce(() -> {
-        homing = true;
-        leaderMotor.getConfigurator().apply(
-          motorConfig.SoftwareLimitSwitch
-            .withForwardSoftLimitEnable(false)
-            .withReverseSoftLimitEnable(false));
-      }),
-      run(() -> 
-        setVoltage(ElevatorConstants.kHomingVoltage))
-        .until(() -> 
-          Math.abs(leaderMotor.getSupplyCurrent().getValueAsDouble()) > ElevatorConstants.kHomingStallCurrentThreshold
-          && Math.abs(getVelocityMPS()) < ElevatorConstants.kHomingVelocityThresholdMPS),
-      runOnce(() -> {
-        stop();
-        zeroEncoder();
-        targetPositionMeters = 0.0;
-        homing = false;
-      })
-    )
-    .finallyDo(() -> leaderMotor.getConfigurator().apply(
-      motorConfig.SoftwareLimitSwitch
-        .withForwardSoftLimitEnable(true)
-        .withReverseSoftLimitEnable(true))
-    )
-    .withName("Elevator_Home");
+  public Command toLevelOneCommand() {
+    return moveToHeightCommand(ElevatorConstants.kHeightL1Meters, this::isAtLevelOneHeight)
+      .withName("Elevator_MoveToLevelOne");
+  }
+
+  /**
+   * Command to move the elevator to a target height in meters and wait until it arrives.
+   * @param heightMeters Target height in meters
+   * @return Command to move to the target height
+   */
+  public Command toLevelTwoCommand() {
+    return moveToHeightCommand(ElevatorConstants.kHeightL2Meters, this::isAtLevelTwoHeight)
+      .withName("Elevator_MoveToLevelTwo");
+  }
+
+  /**
+   * Command to move the elevator to a target height in meters and wait until it arrives.
+   * @param heightMeters Target height in meters
+   * @return Command to move to the target height
+   */
+  public Command toLevelThreeCommand() {
+    return moveToHeightCommand(ElevatorConstants.kHeightL3Meters, this::isAtLevelThreeHeight)
+      .withName("Elevator_MoveToLevelThree");
+  }
+
+  /**
+   * Command to move the elevator to a target height in meters and wait until it arrives.
+   * @param heightMeters Target height in meters
+   * @return Command to move to the target height
+   */
+  public Command toLevelFourCommand() {
+    return moveToHeightCommand(ElevatorConstants.kHeightL4Meters, this::isAtLevelFourHeight)
+      .withName("Elevator_MoveToLevelFour");
   }
 
   /**
@@ -401,6 +438,16 @@ public class ElevatorSubsystem extends SubsystemBase {
   public Command stopCommand() {
     return run(this::stop)
       .withName("Elevator_Stop");
+  }
+  
+  /**
+   * Command to reset the encoder to zero at the current position
+   * @return Command that resets the encoder
+   */
+  public Command setHomePositionCommand() {
+    return runOnce(this::resetEncoder)
+      .ignoringDisable(true)
+      .withName("Elevator_SetHomePosition");
   }
 
   // ----------------------------------------------------------------------------------------
@@ -413,10 +460,10 @@ public class ElevatorSubsystem extends SubsystemBase {
     builder.addDoubleProperty("Current Height (m)",  () -> Utils.showDouble(getHeightMeters()), null);
     builder.addDoubleProperty("Height Error (m)",    () -> Utils.showDouble(targetPositionMeters - getHeightMeters()), null);
     builder.addDoubleProperty("Velocity (mps)",      () -> Utils.showDouble(getVelocityMPS()), null);
-    builder.addBooleanProperty("At Target",          this::isAtTarget, null);
-    builder.addBooleanProperty("At Home",            this::isAtHome, null);
-    builder.addBooleanProperty("At Max Height",      this::isAtMaxHeight, null);
-    builder.addBooleanProperty("Homing",             this::isHoming, null);
+    builder.addBooleanProperty("At Level One Height", this::isAtLevelOneHeight, null);
+    builder.addBooleanProperty("At Level Two Height", this::isAtLevelTwoHeight, null);
+    builder.addBooleanProperty("At Level Three Height", this::isAtLevelThreeHeight, null);
+    builder.addBooleanProperty("At Level Four Height", this::isAtLevelFourHeight, null);
     builder.addDoubleProperty("Leader Voltage (V)",  () -> Utils.showDouble(leaderMotor.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Current (A)",  () -> Utils.showDouble(leaderMotor.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Temp (C)",     () -> Utils.showDouble(leaderMotor.getDeviceTemp().getValueAsDouble()), null);

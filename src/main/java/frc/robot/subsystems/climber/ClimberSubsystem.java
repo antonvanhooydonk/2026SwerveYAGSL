@@ -4,9 +4,13 @@
 
 package frc.robot.subsystems.climber;
 
+import java.util.function.BooleanSupplier;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -27,11 +31,8 @@ public class ClimberSubsystem extends SubsystemBase {
   // Hardware
   private final SparkMax climberMotor;
   private final RelativeEncoder climberEncoder;
-
-  // Used for cutting power in the event of a stall to prevent damage
-  private final Debouncer stallDebouncer = new Debouncer(0.1, Debouncer.DebounceType.kBoth);
-  private double lastAppliedPowerSign = 0;
-  
+  private final SparkClosedLoopController climberController;
+ 
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
     // Initialize hardware (we're using a brushed CIM for the climber)
@@ -39,6 +40,9 @@ public class ClimberSubsystem extends SubsystemBase {
     
     // Configure motor
     configureMotor();
+
+    // Initialize closed-loop controller
+    climberController = climberMotor.getClosedLoopController();
     
     // Initialize encoder
     climberEncoder = climberMotor.getEncoder();
@@ -67,6 +71,22 @@ public class ClimberSubsystem extends SubsystemBase {
       .smartCurrentLimit(30) // amps
       .voltageCompensation(12) // Consistent behavior across battery voltage
       .idleMode(IdleMode.kBrake); // CRITICAL: Brake mode prevents falling
+
+    climbConfig.closedLoop
+      .p(ClimberConstants.kClimberKP)
+      .i(ClimberConstants.kClimberKI)
+      .d(ClimberConstants.kClimberKD)
+      .outputRange(-1, 1)
+      .maxMotion
+        .cruiseVelocity(ClimberConstants.kMaxVelocityDegPerSec)
+        .maxAcceleration(ClimberConstants.kMaxAccelDegPerSec2)
+        .allowedProfileError(ClimberConstants.kPositionToleranceDegrees);
+
+    climbConfig.softLimit
+      .forwardSoftLimitEnabled(true)
+      .forwardSoftLimit(ClimberConstants.kUpperLimitDegrees)
+      .reverseSoftLimitEnabled(true)
+      .reverseSoftLimit(ClimberConstants.kLowerLimitDegrees);
       
     climbConfig.encoder
       .countsPerRevolution(ClimberConstants.kEncoderTicksPerRevolution) 
@@ -97,32 +117,17 @@ public class ClimberSubsystem extends SubsystemBase {
   // ==================== Internal State Modifiers ====================
   
   /**
-   * Set climber motor power with safety limits
-   * @param power Power to apply (-1.0 to 1.0)
+   * Set the target position for the climber with safety limits
+   * @param degrees Target position in degrees
    */
-  private void setPower(double power) {
-    double clampedPower = MathUtil.clamp(power, -1, 1);
+  private void setTargetPosition(double degrees) {
+    double clamped = MathUtil.clamp(
+      degrees, 
+      ClimberConstants.kLowerLimitDegrees, 
+      ClimberConstants.kUpperLimitDegrees
+    );
 
-    // Safety: Stop at limits to prevent damage
-    if (isAtUpperLimit() && clampedPower > 0) {
-      stop();
-      return;
-    }    
-    if (isAtLowerLimit() && clampedPower < 0) {
-      stop();
-      return;
-    }
-
-    // Safety: if stalled, only block continuing to push in the SAME direction
-    // that caused the stall -- still allow reversing to back off a jam
-    boolean stalled = stallDebouncer.calculate(isStalled());
-    if (stalled && Math.signum(clampedPower) == lastAppliedPowerSign) {
-      stop();
-      return;
-    }
-    
-    // If within limits, set the motor power
-    climberMotor.set(clampedPower);
+    climberController.setSetpoint(clamped, ControlType.kMAXMotionPositionControl);
   }
   
   /**
@@ -173,13 +178,26 @@ public class ClimberSubsystem extends SubsystemBase {
   private double getTemperature() {
     return climberMotor.getMotorTemperature();
   }
+
+  /**
+   * Check if climber is at a specific target position within tolerance
+   * @param targetDegrees The target position in degrees to check against
+   * @return true if within tolerance of the target position  
+   */
+  private boolean isAtTarget(double targetDegrees) {
+    return MathUtil.isNear(
+      targetDegrees,
+      getPosition(),
+      ClimberConstants.kPositionToleranceDegrees
+    );
+  }
   
   /**
    * Check if climber is at or above upper position limit
    * @return true if at or past upper limit
    */
   private boolean isAtUpperLimit() {
-    return getPosition() >= ClimberConstants.kUpperLimitDegrees;
+    return isAtTarget(ClimberConstants.kUpperLimitDegrees);
   }
   
   /**
@@ -187,7 +205,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if at or past lower limit
    */
   private boolean isAtLowerLimit() {
-    return getPosition() <= ClimberConstants.kLowerLimitDegrees;
+    return isAtTarget(ClimberConstants.kLowerLimitDegrees);
   }
   
   /**
@@ -195,11 +213,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of home position
    */
   private boolean isAtHomePosition() {
-    return MathUtil.isNear(
-      ClimberConstants.kHomeDegrees,
-      getPosition(),
-      ClimberConstants.kPositionToleranceDegrees
-    );
+    return isAtTarget(ClimberConstants.kHomeDegrees);
   }
   
   /**
@@ -207,11 +221,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of level 1 climb position
    */
   private boolean isAtLevelOneClimbPosition() {
-    return MathUtil.isNear(
-      ClimberConstants.kLevelOneClimbDegrees,
-      getPosition(),
-      ClimberConstants.kPositionToleranceDegrees
-    );
+    return isAtTarget(ClimberConstants.kLevelOneClimbDegrees);
   }
   
   /**
@@ -219,11 +229,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of level 2 climb position
    */
   private boolean isAtLevelTwoClimbPosition() {
-    return MathUtil.isNear(
-      ClimberConstants.kLevelTwoClimbDegrees,
-      getPosition(),
-      ClimberConstants.kPositionToleranceDegrees
-    );
+    return isAtTarget(ClimberConstants.kLevelTwoClimbDegrees);
   }
   
   /**
@@ -279,7 +285,68 @@ public class ClimberSubsystem extends SubsystemBase {
     .debounce(0.1, Debouncer.DebounceType.kRising);
   
   // ==================== Command Factories ====================  
+
+  /**
+   * Command to move the climber to a specific position
+   * @param targetDegrees Target position in degrees
+   * @param atTarget BooleanSupplier that returns true when the climber is at the target
+   * @return Command that moves the climber to the target position
+   */
+  public Command moveToPositionCommand(double targetDegrees, BooleanSupplier atTarget) {
+    return startEnd(
+      () -> setTargetPosition(targetDegrees),
+      () -> {}
+    )
+    .until(atTarget)
+    .withTimeout(3.0)
+    .withName("Climber_MoveToPosition");
+  }
+
+  /**
+   * Command to move the climber to the home position
+   * @return Command that moves the climber to the home position
+   */
+  public Command toHomeCommand() {
+    return moveToPositionCommand(ClimberConstants.kHomeDegrees, this::isAtHomePosition)
+      .withName("Climber_Home");
+  }
+
+  /**
+   * Command to move the climber to the level one position
+   * @return Command that moves the climber to the level one position
+   */
+  public Command toLevelOneCommand() {
+    return moveToPositionCommand(ClimberConstants.kLevelOneClimbDegrees, this::isAtLevelOneClimbPosition)
+      .withName("Climber_LevelOne");
+  }
+
+  /**
+   * Command to move the climber to the level two position
+   * @return Command that moves the climber to the level two position
+   */
+  public Command toLevelTwoCommand() {
+    return moveToPositionCommand(ClimberConstants.kLevelTwoClimbDegrees, this::isAtLevelTwoClimbPosition)
+      .withName("Climber_LevelTwo");
+  }
   
+  /**
+   * Command the climber to the upper limit
+   * @return Command that rotates to upper limit then stops
+   */
+  public Command toUpperLimitCommand() {
+    return moveToPositionCommand(ClimberConstants.kUpperLimitDegrees, this::isAtUpperLimit)
+      .withName("Climber_UpToLimit");
+  }
+  
+  /**
+   * Command the climber to the lower limit
+   * @return Command that rotates to lower limit then stops
+   */
+  public Command toLowerLimitCommand() {
+    return moveToPositionCommand(ClimberConstants.kLowerLimitDegrees, this::isAtLowerLimit)
+      .withName("Climber_DownToLimit");
+  }
+
   /**
    * Command to stop the climber
    * @return Command that stops the climber motor
@@ -287,97 +354,6 @@ public class ClimberSubsystem extends SubsystemBase {
   public Command stopCommand() {
     return run(this::stop)
       .withName("Climber_Stop");
-  }
-
-  /**
-   * Command to extend the climber upward
-   * @return Command that runs climber up at configured speed
-   */
-  public Command upCommand() {
-    return run(() -> setPower(ClimberConstants.kUpPercent))
-      .withName("Climber_Up");
-  }
-  
-  /**
-   * Command to retract the climber downward
-   * @return Command that runs climber down at configured speed
-   */
-  public Command downCommand() {
-    return run(() -> setPower(ClimberConstants.kDownPercent))
-      .withName("Climber_Down");
-  }
-  
-  /**
-   * Command the climber up until upper limit
-   * @return Command that rotates to upper limit then stops
-   */
-  public Command upToLimitCommand() {
-    return run(() -> setPower(ClimberConstants.kUpPercent))
-      .until(this::isAtUpperLimit)
-      .finallyDo(this::stop)
-      .withName("Climber_UpToLimit");
-  }
-  
-  /**
-   * Command the climber down until lower limit
-   * @return Command that rotates to lower limit then stops
-   */
-  public Command downToLimitCommand() {
-    return run(() -> setPower(ClimberConstants.kDownPercent))
-      .until(this::isAtLowerLimit)
-      .finallyDo(this::stop)
-      .withName("Climber_DownToLimit");
-  }
-  
-  /**
-   * Command the climber to move to the upright home position
-   * @return Command that moves to the home position then stops
-   */
-  public Command homeCommand() {
-    return run(() -> {
-      if (getPosition() < ClimberConstants.kHomeDegrees) {
-        setPower(ClimberConstants.kDownPercent);
-      } else {
-        setPower(ClimberConstants.kUpPercent);
-      }
-    })
-    .until(this::isAtHomePosition)
-    .finallyDo(this::stop)
-    .withName("Climber_Home");
-  }
-  
-  /**
-   * Command the climber to move to the level one climb position
-   * @return Command that moves to the level one climb position then stops
-   */
-  public Command levelOneClimbCommand() {
-    return run(() -> {
-      if (getPosition() < ClimberConstants.kLevelOneClimbDegrees) {
-        setPower(ClimberConstants.kDownPercent);
-      } else {
-        setPower(ClimberConstants.kUpPercent);
-      }
-    })
-    .until(this::isAtLevelOneClimbPosition)
-    .finallyDo(this::stop)
-    .withName("Climber_LevelOneClimb");
-  }
-  
-  /**
-   * Command the climber to move to the level two climb position
-   * @return Command that moves to the level two climb position then stops
-   */
-  public Command levelTwoClimbCommand() {
-    return run(() -> {
-      if (getPosition() < ClimberConstants.kLevelTwoClimbDegrees) {
-        setPower(ClimberConstants.kDownPercent);
-      } else {
-        setPower(ClimberConstants.kUpPercent);
-      }
-    })
-    .until(this::isAtLevelTwoClimbPosition)
-    .finallyDo(this::stop)
-    .withName("Climber_LevelTwoClimb");
   }
   
   /**

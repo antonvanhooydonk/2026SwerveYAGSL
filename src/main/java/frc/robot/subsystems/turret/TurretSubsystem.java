@@ -341,10 +341,13 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Command to rotate to the given angle
    */
   public Command setTurretAngleCommand(double angleDegrees) {
-    return runOnce(() -> setTurretAngle(angleDegrees))
-      .until(this::isTurretAtTarget)
-      .withTimeout(TurretConstants.kMoveTimeoutSeconds)
-      .withName("Turret_SetTurretAAngle");
+    return startEnd(
+      () -> setTurretAngle(angleDegrees),
+      () -> {}
+    )
+    .until(this::isTurretAtTarget)
+    .withTimeout(TurretConstants.kMoveTimeoutSeconds)
+    .withName("Turret_SetTurretAngle");
   }
 
   /**
