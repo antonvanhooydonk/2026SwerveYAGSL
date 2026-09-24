@@ -254,33 +254,18 @@ public class ClimberSubsystem extends SubsystemBase {
 
   // ==================== State Triggers ====================
 
-  /**
-   * Fires when climber reaches upper limit
-   */
   public final Trigger isAtUpperLimitTrigger = new Trigger(this::isAtUpperLimit)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  /**
-   * Fires when climber reaches lower limit
-   */
   public final Trigger isAtLowerLimitTrigger = new Trigger(this::isAtLowerLimit)
     .debounce(0.1, Debouncer.DebounceType.kRising);
-  
-  /**
-   * Fires when climber is at level 1 climb position
-   */
+
   public final Trigger isAtLevelOneClimbPositionTrigger = new Trigger(this::isAtLevelOneClimbPosition)
     .debounce(0.1, Debouncer.DebounceType.kRising);
-  
-  /**
-   * Fires when climber is at level 2 climb position
-   */
+
   public final Trigger isAtLevelTwoClimbPositionTrigger = new Trigger(this::isAtLevelTwoClimbPosition)
     .debounce(0.1, Debouncer.DebounceType.kRising);
-  
-  /**
-   * Fires when climber is stalled
-   */
+
   public final Trigger isStalledTrigger = new Trigger(this::isStalled)
     .debounce(0.1, Debouncer.DebounceType.kRising);
   

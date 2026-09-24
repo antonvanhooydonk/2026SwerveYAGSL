@@ -20,6 +20,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -321,13 +322,26 @@ public class ElevatorSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtHomeTrigger              = new Trigger(this::isAtHome);
-  public final Trigger isAtMinHeightTrigger         = new Trigger(this::isAtMinHeight);
-  public final Trigger isAtMaxHeightTrigger         = new Trigger(this::isAtMaxHeight);
-  public final Trigger isAtLevelOneHeightTrigger    = new Trigger(this::isAtLevelOneHeight);
-  public final Trigger isAtLevelTwoHeightTrigger    = new Trigger(this::isAtLevelTwoHeight);
-  public final Trigger isAtLevelThreeHeightTrigger  = new Trigger(this::isAtLevelThreeHeight);
-  public final Trigger isAtLevelFourHeightTrigger   = new Trigger(this::isAtLevelFourHeight);
+  public final Trigger isAtHomeTrigger = new Trigger(this::isAtHome)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+  
+  public final Trigger isAtMinHeightTrigger = new Trigger(this::isAtMinHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtMaxHeightTrigger = new Trigger(this::isAtMaxHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtLevelOneHeightTrigger = new Trigger(this::isAtLevelOneHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtLevelTwoHeightTrigger = new Trigger(this::isAtLevelTwoHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtLevelThreeHeightTrigger = new Trigger(this::isAtLevelThreeHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtLevelFourHeightTrigger = new Trigger(this::isAtLevelFourHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
   // Public methods to run at different phases of the match

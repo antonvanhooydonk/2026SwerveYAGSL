@@ -18,6 +18,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -291,7 +292,8 @@ public class TurretSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtTargetTrigger = new Trigger(this::isAtTarget);
+  public final Trigger isAtTargetTrigger = new Trigger(this::isAtTarget)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
   // Public methods to run at different phases of the match
