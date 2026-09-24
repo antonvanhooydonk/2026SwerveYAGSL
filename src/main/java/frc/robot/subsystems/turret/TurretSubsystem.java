@@ -262,7 +262,7 @@ public class TurretSubsystem extends SubsystemBase {
    * Gets whether the turret is at its target angle within tolerance
    * @return True if at target
    */
-  private boolean isTurretAtTarget() {
+  private boolean isAtTarget() {
     return Math.abs(normalizeAngleDegrees(targetTurretAngleDegrees - getTurretAngleDegrees()))
         < TurretConstants.kTurretAngleToleranceDegrees;
   }
@@ -288,7 +288,7 @@ public class TurretSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isTurretAtTargetTrigger = new Trigger(this::isTurretAtTarget);
+  public final Trigger isAtTargetTrigger = new Trigger(this::isAtTarget);
 
   // ----------------------------------------------------------------------------------------
   // Public methods to run at different phases of the match
@@ -345,7 +345,7 @@ public class TurretSubsystem extends SubsystemBase {
       () -> setTurretAngle(angleDegrees),
       () -> {}
     )
-    .until(this::isTurretAtTarget)
+    .until(this::isAtTarget)
     .withTimeout(TurretConstants.kMoveTimeoutSeconds)
     .withName("Turret_SetTurretAngle");
   }
@@ -428,7 +428,7 @@ public class TurretSubsystem extends SubsystemBase {
     builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetTurretAngleDegrees), null);
     builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getTurretAngleDegrees()), null);
     builder.addDoubleProperty("Angle Error (deg)",   () -> Utils.showDouble(normalizeAngleDegrees(targetTurretAngleDegrees - getTurretAngleDegrees())), null);
-    builder.addBooleanProperty("At Target",          this::isTurretAtTarget, null);
+    builder.addBooleanProperty("At Target",          this::isAtTarget, null);
     builder.addDoubleProperty("Voltage (V)",         () -> Utils.showDouble(turretMotor.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(turretMotor.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Temp (C)",            () -> Utils.showDouble(turretMotor.getDeviceTemp().getValueAsDouble()), null);
