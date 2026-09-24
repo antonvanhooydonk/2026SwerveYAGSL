@@ -283,7 +283,7 @@ public class ClimberSubsystem extends SubsystemBase {
       () -> {}
     )
     .until(atTarget)
-    .withTimeout(3.0)
+    .withTimeout(ClimberConstants.kMoveTimeoutSeconds)
     .withName("Climber_MoveToPosition");
   }
 

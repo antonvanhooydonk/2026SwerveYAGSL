@@ -52,7 +52,7 @@ public final class ClimberConstants {
    */
   public static final double kVelocityConversionFactor = kPositionConversionFactor / 60.0;
 
-  public static final double kMoveTimeoutSeconds = 5.0; // Timeout for move commands
+  public static final double kMoveTimeoutSeconds = 3.0; // Timeout for move commands
   public static final double kClimberKP = 0.05; // Proportional gain for position control
   public static final double kClimberKI = 0.0; // Integral gain for position control
   public static final double kClimberKD = 0.0; // Derivative gain for position control
