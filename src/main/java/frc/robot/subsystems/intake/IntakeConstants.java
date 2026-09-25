@@ -9,9 +9,13 @@ package frc.robot.subsystems.intake;
  * All values should be tuned based on your specific robot
  */
 public final class IntakeConstants {
-  // Motor power percentages
+  // Motor power RPM values for the roller
   public static final double kRollerForwardRPM =  2000;  // Power for climbing up
   public static final double kRollerReverseRPM = -2000;  // Power for climbing down (negative)
+
+  // Safety limits for the roller RPM to prevent mechanical damage
+  public static final double kRollerMaxRPM =  5000;  // Maximum RPM for the roller
+  public static final double kRollerMinRPM = -5000;  // Minimum RPM for the roller
   
   // It is crucial to set these limits correctly to prevent mechanical damage. 
   public static final double kRollerKP = 1.0; // Maximum up was -250

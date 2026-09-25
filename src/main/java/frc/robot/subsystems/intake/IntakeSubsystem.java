@@ -14,6 +14,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -156,21 +157,26 @@ public class IntakeSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
+   * Sets the roller to a target velocity in RPM
+   * @param rpm Target velocity in RPM
+   */
+  private void setRollerRPM(double rpm) {
+    double clampedRPM = MathUtil.clamp(
+      rpm, 
+      IntakeConstants.kRollerMinRPM, 
+      IntakeConstants.kRollerMaxRPM
+    );
+    targetRPM = clampedRPM;
+    rollerMotor.setControl(rollerVelocityRequest.withVelocity(clampedRPM / 60.0));
+  }
+
+  /**
    * Gets the current flywheel velocity in RPM
    * @return Current velocity in RPM
    */
   private double getRollerRPM() {
     // TalonFX velocity is in RPS, convert to RPM
     return rollerMotor.getVelocity().getValueAsDouble() * 60.0;
-  }
-
-  /**
-   * Sets the roller to a target velocity in RPM
-   * @param rpm Target velocity in RPM
-   */
-  private void setRollerRPM(double rpm) {
-    targetRPM = rpm;
-    rollerMotor.setControl(rollerVelocityRequest.withVelocity(rpm / 60.0));
   }
 
   /**
