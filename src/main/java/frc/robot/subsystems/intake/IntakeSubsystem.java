@@ -291,9 +291,9 @@ public class IntakeSubsystem extends SubsystemBase {
    * Command to run the intake in the forward direction.
    * @return Command to run the intake in the forward direction
    */
-  public Command forwardCommand() {
+  public Command pickupCommand() {
     return run(this::forwardRoller)
-      .withName("Intake_Forward");
+      .withName("Intake_Pickup");
   }
 
   /**
@@ -320,6 +320,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
+    builder.addBooleanProperty("Deployed",   this::isIntakeDeployed, null);
     builder.addDoubleProperty("Target RPM",  () -> Utils.showDouble(targetRPM), null);
     builder.addDoubleProperty("Current RPM", () -> Utils.showDouble(getRollerRPM()), null);
     builder.addDoubleProperty("Current (A)", () -> Utils.showDouble(rollerMotor.getSupplyCurrent().getValueAsDouble()), null);
