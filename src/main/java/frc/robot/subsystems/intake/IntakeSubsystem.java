@@ -161,12 +161,17 @@ public class IntakeSubsystem extends SubsystemBase {
    * @param rpm Target velocity in RPM
    */
   private void setRollerRPM(double rpm) {
+    // Clamp target to valid range
     double clampedRPM = MathUtil.clamp(
       rpm, 
       IntakeConstants.kRollerMinRPM, 
       IntakeConstants.kRollerMaxRPM
     );
+
+    // Update cached target for telemetry
     targetRPM = clampedRPM;
+
+    // Set the motor control request (TalonFX velocity is in RPS)
     rollerMotor.setControl(rollerVelocityRequest.withVelocity(clampedRPM / 60.0));
   }
 
