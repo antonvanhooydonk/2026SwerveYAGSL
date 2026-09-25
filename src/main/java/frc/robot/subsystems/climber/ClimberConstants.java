@@ -10,9 +10,9 @@ package frc.robot.subsystems.climber;
  */
 public final class ClimberConstants {
   // Motor power percentages
-  public static final double kUpPercent                 =  0.80;  // Power for climbing up
-  public static final double kDownPercent               = -0.80;  // Power for climbing down (negative)
-  
+  public static final double kManualUpVoltage          =  12.0;   // Voltage for manual up control
+  public static final double kManualDownVoltage        = -12.0;   // Voltage for manual down control
+
   // It is crucial to set these limits correctly to prevent mechanical damage. 
   // Limits should be based on zero being when the climber is straight up.
   // If the climber is zeroed in a different position, then the chain 

@@ -287,12 +287,42 @@ public class TurretSubsystem extends SubsystemBase {
       TurretConstants.kTurretAngleToleranceDegrees
     );
   }
+  
+  /**
+   * Check if turret is at or above upper position limit
+   * @return true if at or past upper limit
+   */
+  private boolean isAtUpperLimit() {
+    return MathUtil.isNear(
+      TurretConstants.kMaxAngleDegrees,
+      getAngleDegrees(),
+      TurretConstants.kTurretAngleToleranceDegrees
+    );
+  }
+  
+  /**
+   * Check if turret is at or below lower position limit
+   * @return true if at or past lower limit
+   */
+  private boolean isAtLowerLimit() {
+    return MathUtil.isNear(
+      TurretConstants.kMinAngleDegrees,
+      getAngleDegrees(),
+      TurretConstants.kTurretAngleToleranceDegrees
+    );
+  }
 
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
   public final Trigger isAtAngleTrigger = new Trigger(this::isAtAngle)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtUpperLimitTrigger = new Trigger(this::isAtUpperLimit)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
+  public final Trigger isAtLowerLimitTrigger = new Trigger(this::isAtLowerLimit)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------

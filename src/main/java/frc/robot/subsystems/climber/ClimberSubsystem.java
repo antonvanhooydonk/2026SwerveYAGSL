@@ -157,6 +157,30 @@ public class ClimberSubsystem extends SubsystemBase {
     // Set the target position using max motion control
     climberController.setSetpoint(targetAngleDegrees, ControlType.kMAXMotionPositionControl);
   }
+
+  /**
+   * Set the voltage for the climber motor (open-loop control)
+   * @param volts Voltage to apply to the motor
+   */
+  private void setVoltage(double volts) {
+    // Clamp voltage to safe range
+    volts = MathUtil.clamp(volts, -12, 12);
+
+    // Check if the climber is at the upper limit and trying to move up
+    if (isAtUpperLimit() && volts > 0) {
+      stop();
+      return;
+    }
+
+    // Check if the climber is at the lower limit and trying to move down
+    if (isAtLowerLimit() && volts < 0) {
+      stop();
+      return;
+    }
+
+    // Apply voltage to the motor
+    climberMotor.setVoltage(volts);
+  }
     
   /**
    * Get the current position of the climber
@@ -374,6 +398,24 @@ public class ClimberSubsystem extends SubsystemBase {
   public Command stopCommand() {
     return run(this::stop)
       .withName("Climber_Stop");
+  }
+
+  /**
+   * Command to move the climber up (open-loop control)
+   * @return Command that moves the climber up
+   */
+  public Command upCommand() {
+    return run(() -> setVoltage(ClimberConstants.kManualUpVoltage))
+      .withName("Climber_ManualUp");
+  }
+
+  /**
+   * Command to move the climber up (open-loop control)
+   * @return Command that moves the climber up
+   */
+  public Command downCommand() {
+    return run(() -> setVoltage(ClimberConstants.kManualDownVoltage))
+      .withName("Climber_ManualDown");
   }
   
   /**
