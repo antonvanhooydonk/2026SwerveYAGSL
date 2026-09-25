@@ -282,7 +282,7 @@ public class TurretSubsystem extends SubsystemBase {
    */
   private boolean isAtAngle(double targetAngleDegrees) {
     return MathUtil.isNear(
-      targetAngleDegrees,
+      normalizeAngleDegrees(targetAngleDegrees),
       getAngleDegrees(),
       TurretConstants.kTurretAngleToleranceDegrees
     );
