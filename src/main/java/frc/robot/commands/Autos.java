@@ -47,7 +47,14 @@ public class Autos {
    * @return the command representing the autonomous routine
    */
   public Command exampleAutoRoutine() {
-    return driveSubsystem.alignToTagCommand(1, 0, 0).withTimeout(2)
-      .andThen(feedback.successCommand());
+    return driveSubsystem.alignToTagCommand(
+      () -> 1, 
+      () -> 0.25, 
+      () -> 0.25
+    )
+    .withTimeout(15)
+    .andThen(turretSubsystem.aimAtPoseCommand(null, null))
+    .andThen(shooterSubsystem.shootAtPoseCommand(null, null))
+    .andThen(feedback.successCommand());
   }
 }
