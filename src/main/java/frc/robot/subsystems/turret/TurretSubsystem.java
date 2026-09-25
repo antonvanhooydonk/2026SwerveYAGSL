@@ -280,12 +280,20 @@ public class TurretSubsystem extends SubsystemBase {
    * Gets whether the turret is at its target angle within tolerance
    * @return True if at target
    */
-  private boolean isAtAngle() {
+  private boolean isAtAngle(double targetAngleDegrees) {
     return MathUtil.isNear(
       targetAngleDegrees,
       getAngleDegrees(),
       TurretConstants.kTurretAngleToleranceDegrees
     );
+  }
+
+  /**
+   * Gets whether the turret is at its target angle within tolerance
+   * @return True if at target
+   */
+  private boolean isAtAngle() {
+    return isAtAngle(targetAngleDegrees);
   }
   
   /**
@@ -293,11 +301,7 @@ public class TurretSubsystem extends SubsystemBase {
    * @return true if at or past upper limit
    */
   private boolean isAtUpperLimit() {
-    return MathUtil.isNear(
-      TurretConstants.kMaxAngleDegrees,
-      getAngleDegrees(),
-      TurretConstants.kTurretAngleToleranceDegrees
-    );
+    return isAtAngle(TurretConstants.kMaxAngleDegrees);
   }
   
   /**
@@ -305,11 +309,7 @@ public class TurretSubsystem extends SubsystemBase {
    * @return true if at or past lower limit
    */
   private boolean isAtLowerLimit() {
-    return MathUtil.isNear(
-      TurretConstants.kMinAngleDegrees,
-      getAngleDegrees(),
-      TurretConstants.kTurretAngleToleranceDegrees
-    );
+    return isAtAngle(TurretConstants.kMinAngleDegrees);
   }
 
   // ---------------------------------------------------------------------------------------
