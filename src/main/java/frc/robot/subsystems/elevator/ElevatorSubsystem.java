@@ -93,6 +93,9 @@ public class ElevatorSubsystem extends SubsystemBase {
       )
     );
 
+    // Set default command
+    setDefaultCommand(stopCommand());
+
     // Add data to dashboard
     SmartDashboard.putData("Elevator", this);
 
