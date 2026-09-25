@@ -10,6 +10,7 @@ import java.io.File;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -600,13 +601,22 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Creates a command to align the robot at a specified AprilTag
-   * @param tagId The fiducial ID of the AprilTag to align with
+   * @param tagIdSupplier A supplier of the fiducial ID of the AprilTag to align with
    * @param xOffset The X offset from the tag in meters (positive is forward, negative is backward)
    * @param yOffset The Y offset from the tag in meters (positive is left, negative is right)
    * @return Command to align with the AprilTag
    */  
-  public Command alignToTagCommand(int tagId, double xOffset, double yOffset) {
+  public Command alignToTagCommand(
+    IntSupplier tagIdSupplier, 
+    DoubleSupplier xOffsetSupplier, 
+    DoubleSupplier yOffsetSupplier
+  ) {
     return driveToPoseCommand(() -> {
+      // Get the tag ID and offsets from the suppliers
+      int tagId = tagIdSupplier.getAsInt();
+      double xOffset = xOffsetSupplier.getAsDouble();
+      double yOffset = yOffsetSupplier.getAsDouble();
+
       // Get the pose of the AprilTag from the field layout
       Optional<Pose3d> tagPose = FieldConstants.kFieldLayout.getTagPose(tagId);
 
