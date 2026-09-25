@@ -185,20 +185,6 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   /**
-   * Forwards the roller at a fixed speed defined in IntakeConstants
-   */
-  private void forwardRoller() {
-    setRollerRPM(IntakeConstants.kRollerForwardRPM);
-  }
-
-  /**
-   * Reverses the roller at a fixed speed defined in IntakeConstants
-   */
-  private void reverseRoller() {
-    setRollerRPM(IntakeConstants.kRollerReverseRPM);
-  }
-
-  /**
    * Deploys the intake
    */
   private void deploy() {
@@ -303,7 +289,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * @return Command to run the intake in the forward direction
    */
   public Command pickupCommand() {
-    return run(this::forwardRoller)
+    return run(() -> setRollerRPM(IntakeConstants.kRollerForwardRPM))
       .withName("Intake_Pickup");
   }
 
@@ -312,7 +298,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * @return Command to run the roller in reverse
    */
   public Command reverseCommand() {
-    return run(this::reverseRoller)
+    return run(() -> setRollerRPM(IntakeConstants.kRollerReverseRPM))
       .withName("Intake_Reverse");
   }
 
