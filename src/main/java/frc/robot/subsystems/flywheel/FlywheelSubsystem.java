@@ -304,7 +304,7 @@ public class FlywheelSubsystem extends SubsystemBase {
    * @return Command to set flywheel velocity
    */
   public Command setRPMCommand(double rpm) {
-    return runOnce(() -> setRPM(rpm))
+    return run(() -> setRPM(rpm))
       .withName("Shooter_setRPM");
   }
 
