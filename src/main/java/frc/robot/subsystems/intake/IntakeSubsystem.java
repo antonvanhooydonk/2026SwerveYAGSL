@@ -227,7 +227,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Initializes the roller at the start of the autonomous phase.
    */
   public void autonomousInit() {
-    targetRPM = 0.0;
+    setRollerRPM(0.0);
     Utils.logInfo("Intake subsystem initialized for autonomous");
   }
 
@@ -235,7 +235,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Initializes the roller at the start of the teleop phase.
    */
   public void teleopInit() {
-    targetRPM = 0.0;
+    setRollerRPM(0.0);
     Utils.logInfo("Intake subsystem initialized for teleop");
   }
 
@@ -243,7 +243,7 @@ public class IntakeSubsystem extends SubsystemBase {
    * Initializes the roller for post match (disabled) state.
    */
   public void postMatch() {
-    targetRPM = 0.0;
+    setRollerRPM(0.0);
     Utils.logInfo("Intake subsystem initialized for post match");
   }
 
