@@ -24,28 +24,6 @@ public final class Conversions {
   // ============================================================
 
   /**
-   * Converts drive motor velocity (RPS) to wheel velocity (m/s)
-   * @param motorRPS Motor velocity in rotations per second
-   * @param gearRatio Motor rotations per wheel rotation
-   * @param circumferenceMeters Circumference in meters
-   * @return Wheel velocity in meters per second
-   */
-  public static double motorRPSToWheelMPS(double motorRPS, double gearRatio, double circumferenceMeters) {
-    return (motorRPS / gearRatio) * circumferenceMeters;
-  }
-
-  /**
-   * Converts wheel velocity (m/s) to drive motor velocity (RPS)
-   * @param wheelMPS Wheel velocity in meters per second
-   * @param gearRatio Motor rotations per wheel rotation
-   * @param circumferenceMeters Circumference in meters
-   * @return Motor velocity in rotations per second
-   */
-  public static double wheelMPSToMotorRPS(double wheelMPS, double gearRatio, double circumferenceMeters) {
-    return (wheelMPS / circumferenceMeters) * gearRatio;
-  }
-
-  /**
    * Converts motor rotations to distance (meters)
    * @param motorRotations Motor position in rotations
    * @param gearRatio Motor rotations per wheel rotation
