@@ -21,6 +21,8 @@ public final class FlywheelConstants {
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------
+  public static final double kFlywheelMinRPM = 0.0;    // Minimum RPM for flywheel
+  public static final double kFlywheelMaxRPM = 6000.0; // Maximum RPM for flywheel
   public static final double kFlywheelToleranceRPM    = 50.0;  // RPM window to consider flywheel at target
   public static final double kFlywheelMinSpinningRPM  = 100.0; // RPM threshold to consider flywheel spinning
 

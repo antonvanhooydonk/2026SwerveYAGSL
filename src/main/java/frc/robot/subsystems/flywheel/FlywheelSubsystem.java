@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.subsystems.intake.IntakeConstants;
 import frc.robot.util.Utils;
 
 /**
@@ -189,8 +190,18 @@ public class FlywheelSubsystem extends SubsystemBase {
    * @param rpm Target velocity in RPM
    */
   private void setRPM(double rpm) {
-    targetRPM = rpm;
-    flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(rpm / 60.0));
+    // Clamp target to valid range
+    double clampedRPM = MathUtil.clamp(
+      rpm, 
+      FlywheelConstants.kFlywheelMinRPM, 
+      FlywheelConstants.kFlywheelMaxRPM
+    );
+
+    // Update cached target for telemetry    
+    targetRPM = clampedRPM;
+
+    // Set the flywheel velocity (TalonFX velocity is in RPS, convert RPM to RPS)
+    flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(clampedRPM / 60.0));
   }
 
   /**
