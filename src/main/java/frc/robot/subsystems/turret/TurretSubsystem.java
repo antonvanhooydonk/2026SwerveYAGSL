@@ -421,7 +421,7 @@ public class TurretSubsystem extends SubsystemBase {
       fieldAngleDegreesSupplier,
       () -> robotPoseSupplier.get().getRotation().getDegrees()
     );
-}
+  }
 
   /**
    * Command to continuously rotate the turret to face a target pose on the field.
@@ -460,7 +460,7 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Command to home the turret
    */
   public Command homeCommand() {
-    return setTurretAngleCommand(0.0)
+    return setTurretAngleCommand(TurretConstants.kHomeAngleDegrees)
       .withName("Turret_Home");
   }
 
