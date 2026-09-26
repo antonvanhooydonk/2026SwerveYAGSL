@@ -546,7 +546,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   /**
    * Drive the robot using the raw joystick inputs.
-   * This function applies deadband, input shaping, input squaring and slow mode scaling. 
+   * This function applies deadbands, shaping, and slow mode scaling. 
    * Joystick inputs are converted to robot chassis speeds in m/s and rad/s.
    * Field relative driving is automatically disabled if the gyro is disconnected. 
    * @param xSpeedSupplier Speed in x direction (-1 to 1)
