@@ -18,6 +18,8 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -52,7 +54,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final VelocityVoltage flywheelVelocityRequest;
 
   // Cached target (for telemetry)
-  private double targetFlywheelRPM = 0.0;
+  private double targetRPM = 0.0;
 
   // A TreeMap where Key = Distance (meters) and Value = Shooter RPM
   private final InterpolatingDoubleTreeMap rpmTable = new InterpolatingDoubleTreeMap();
@@ -73,7 +75,7 @@ public class ShooterSubsystem extends SubsystemBase {
     flywheelVelocityRequest = new VelocityVoltage(0).withSlot(0);
 
     // Configure motors
-    configureFlywheelMotors();
+    configureMotors();
 
     // Initialize SysId routine (leader motor only)
     flywheelSysIdRoutine = new SysIdRoutine(
@@ -92,6 +94,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Initialize RPM table for distance-based shooting
     initializeRPMTable();
+    
+    // set the default command for this subsystem
+    setDefaultCommand(stopCommand());
 
     // Add data to dashboard
     SmartDashboard.putData("Shooter", this);
@@ -123,7 +128,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Configures the flywheel leader and follower motors
    */
-  private void configureFlywheelMotors() {
+  private void configureMotors() {
     flywheelConfig.MotorOutput
       .withNeutralMode(NeutralModeValue.Coast) // Coast so flywheel spins down naturally
       .withInverted(InvertedValue.CounterClockwise_Positive)
@@ -183,7 +188,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * Gets the current flywheel velocity in RPM
    * @return Current velocity in RPM
    */
-  private double getFlywheelRPM() {
+  private double getRPM() {
     // TalonFX velocity is in RPS, convert to RPM
     return flywheelLeader.getVelocity().getValueAsDouble() * 60.0;
   }
@@ -192,47 +197,48 @@ public class ShooterSubsystem extends SubsystemBase {
    * Sets the flywheel to a target velocity in RPM
    * @param rpm Target velocity in RPM
    */
-  private void setFlywheelRPM(double rpm) {
-    targetFlywheelRPM = rpm;
-    // Convert RPM to RPS for TalonFX
-    double rps = rpm / 60.0;
-    flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(rps));
+  private void setRPM(double rpm) {
+    targetRPM = rpm;
+    flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(rpm / 60.0));
   }
 
   /**
    * Stops the flywheel
    */
-  private void stopFlywheel() {
-    targetFlywheelRPM = 0.0;
+  private void stop() {
+    targetRPM = 0.0;
     flywheelLeader.stopMotor();
   }
 
   /**
-   * Gets whether the flywheel is at its target velocity within tolerance
-   * @return True if at target velocity
+   * Check if flywheel is at the current target RPM within tolerance
+   * @return true if within tolerance of the target RPM  
    */
-  private boolean isFlywheelAtTarget() {
-    // Don't report at target if flywheel is stopped
-    if (targetFlywheelRPM == 0.0) {
-      return false;
-    }
-    return Math.abs(targetFlywheelRPM - getFlywheelRPM()) < ShooterConstants.kFlywheelToleranceRPM;
+  private boolean isAtTargetRPM() {
+    return MathUtil.isNear(
+      targetRPM,
+      getRPM(),
+      ShooterConstants.kFlywheelToleranceRPM
+    );
   }
 
   /**
    * Gets whether the flywheel is spinning (above a minimum threshold)
    * @return True if spinning
    */
-  private boolean isFlywheelSpinning() {
-    return getFlywheelRPM() > ShooterConstants.kFlywheelMinSpinningRPM;
+  private boolean isSpinning() {
+    return getRPM() > ShooterConstants.kFlywheelMinSpinningRPM;
   }
 
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isFlywheelAtTargetTrigger = new Trigger(this::isFlywheelAtTarget);
-  public final Trigger isFlywheelSpinningTrigger = new Trigger(this::isFlywheelSpinning);
+  public final Trigger isFlywheelAtTargetTrigger = new Trigger(this::isAtTargetRPM)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+    
+  public final Trigger isFlywheelSpinningTrigger = new Trigger(this::isSpinning)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
   // Public methods to run at different phases of the match
@@ -242,7 +248,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * Initializes the shooter at the start of the autonomous phase.
    */
   public void autonomousInit() {
-    stopFlywheel();
+    stop();
     Utils.logInfo("Shooter subsystem initialized for autonomous");
   }
 
@@ -250,7 +256,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * Initializes the shooter at the start of the teleop phase.
    */
   public void teleopInit() {
-    stopFlywheel();
+    stop();
     Utils.logInfo("Shooter subsystem initialized for teleop");
   }
 
@@ -258,7 +264,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * Initializes the shooter for post match (disabled) state.
    */
   public void postMatch() {
-    stopFlywheel();
+    stop();
     Utils.logInfo("Shooter subsystem initialized for post match");
   }
 
@@ -284,8 +290,9 @@ public class ShooterSubsystem extends SubsystemBase {
    * @param rpm Target velocity in RPM
    * @return Command to set flywheel velocity
    */
-  public Command setFlywheelRPMCommand(double rpm) {
-    return runOnce(() -> setFlywheelRPM(rpm));
+  public Command setRPMCommand(double rpm) {
+    return runOnce(() -> setRPM(rpm))
+      .withName("Shooter_setRPM");
   }
 
   /**
@@ -293,7 +300,8 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return Command to stop the flywheel
    */
   public Command stopCommand() {
-    return run(this::stopFlywheel);
+    return run(this::stop)
+      .withName("Shooter_Stop");
   }
 
   /**
@@ -323,8 +331,9 @@ public class ShooterSubsystem extends SubsystemBase {
       double requiredRPM = rpmTable.get(distanceToTarget);
 
       // Set flywheel speed
-      setFlywheelRPM(requiredRPM);
-    });
+      setRPM(requiredRPM);
+    })
+    .withName("Shooter_ShootAtPose");
   }
 
   // ----------------------------------------------------------------------------------------
@@ -333,11 +342,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.addDoubleProperty("Target RPM",         () -> Utils.showDouble(targetFlywheelRPM), null);
-    builder.addDoubleProperty("Current RPM",        () -> Utils.showDouble(getFlywheelRPM()), null);
-    builder.addDoubleProperty("RPM Error",          () -> Utils.showDouble(targetFlywheelRPM - getFlywheelRPM()), null);
-    builder.addBooleanProperty("At Target",         this::isFlywheelAtTarget, null);
-    builder.addBooleanProperty("Spinning",          this::isFlywheelSpinning, null);
+    builder.addDoubleProperty("Target RPM",         () -> Utils.showDouble(targetRPM), null);
+    builder.addDoubleProperty("Current RPM",        () -> Utils.showDouble(getRPM()), null);
+    builder.addDoubleProperty("RPM Error",          () -> Utils.showDouble(targetRPM - getRPM()), null);
+    builder.addBooleanProperty("At Target",         this::isAtTargetRPM, null);
+    builder.addBooleanProperty("Spinning",          this::isSpinning, null);
     builder.addDoubleProperty("Leader Voltage (V)", () -> Utils.showDouble(flywheelLeader.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Current (A)", () -> Utils.showDouble(flywheelLeader.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Temp (C)",    () -> Utils.showDouble(flywheelLeader.getDeviceTemp().getValueAsDouble()), null);
