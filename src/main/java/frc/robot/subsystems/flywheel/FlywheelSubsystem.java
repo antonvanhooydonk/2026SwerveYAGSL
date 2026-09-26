@@ -190,17 +190,14 @@ public class FlywheelSubsystem extends SubsystemBase {
    */
   private void setRPM(double rpm) {
     // Clamp target to valid range
-    double clampedRPM = MathUtil.clamp(
+    targetRPM = MathUtil.clamp(
       rpm, 
       FlywheelConstants.kFlywheelMinRPM, 
       FlywheelConstants.kFlywheelMaxRPM
     );
 
-    // Update cached target for telemetry    
-    targetRPM = clampedRPM;
-
     // Set the flywheel velocity (TalonFX velocity is in RPS, convert RPM to RPS)
-    flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(clampedRPM / 60.0));
+    flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(targetRPM / 60.0));
   }
 
   /**

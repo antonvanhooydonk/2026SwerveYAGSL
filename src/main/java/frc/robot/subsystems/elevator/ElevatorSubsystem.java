@@ -55,7 +55,7 @@ public class ElevatorSubsystem extends SubsystemBase {
   private final MotionMagicVoltage motionMagicRequest;
 
   // Target position (for telemetry)
-  private double targetPositionMeters = 0.0;
+  private double targetHeightMeters = 0.0;
 
   // SysId routine
   private final SysIdRoutine sysIdRoutine;
@@ -202,14 +202,14 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   private void setHeight(double heightMeters) {
     // Clamp target to valid range
-    targetPositionMeters = MathUtil.clamp(
+    targetHeightMeters = MathUtil.clamp(
       heightMeters,
       ElevatorConstants.kMinHeightMeters,
       ElevatorConstants.kMaxHeightMeters
     );
 
     // Set the target position using MotionMagic with gravity compensation
-    leaderMotor.setControl(motionMagicRequest.withPosition(targetPositionMeters));
+    leaderMotor.setControl(motionMagicRequest.withPosition(targetHeightMeters));
   }
 
   /**
@@ -464,7 +464,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.addDoubleProperty("Target Height (m)",   () -> Utils.showDouble(targetPositionMeters), null);
+    builder.addDoubleProperty("Target Height (m)",   () -> Utils.showDouble(targetHeightMeters), null);
     builder.addDoubleProperty("Current Height (m)",  () -> Utils.showDouble(getHeightMeters()), null);
     builder.addDoubleProperty("Leader Current (A)",  () -> Utils.showDouble(leaderMotor.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Temp (C)",     () -> Utils.showDouble(leaderMotor.getDeviceTemp().getValueAsDouble()), null);
