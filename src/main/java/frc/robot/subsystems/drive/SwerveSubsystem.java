@@ -430,6 +430,76 @@ public class SwerveSubsystem extends SubsystemBase {
     }
   }
 
+  /**
+   * Publishes guidance to help the drive team manually place the robot at the
+   * starting pose of the currently selected auto. Call this repeatedly from
+   * Robot.disabledPeriodic() so it updates live as the robot gets nudged into
+   * place.
+   *
+   * Requires a valid, alliance-consistent current pose estimate (e.g. seeded
+   * by AprilTag vision) -- if getPose() isn't meaningful yet, neither is this.
+   *
+   * @param autoNameSupplier Supplies the name of the currently selected auto (e.g. autoChooser::getSelected)
+   */
+  public void publishStartingPoseAlignment(Supplier<String> autoNameSupplier) {
+    // Get the currently selected auto name from the supplier
+    String autoName = autoNameSupplier.get();
+    if (autoName == null || autoName.isEmpty()) {
+      SmartDashboard.putString("Auto Align/Status", "No auto selected");
+      return;
+    }
+
+    // If the auto name has changed since last time, load & cache the new starting pose
+    if (!autoName.equals(lastAlignAutoName)) {
+      lastAlignAutoName = autoName;
+      try {
+        // Starting pose is always relative to a blue alliance origin
+        cachedStartingPose = new PathPlannerAuto(autoName).getStartingPose();
+        SmartDashboard.putString("Auto Align/Status", "Ready");
+      } catch (Exception e) {
+        cachedStartingPose = null;
+        SmartDashboard.putString("Auto Align/Status", "Couldn't load starting pose for \"" + autoName + "\"");
+        return;
+      }
+    }
+
+    // If we don't have a valid starting pose, we can't provide guidance
+    if (cachedStartingPose == null) {
+      return;
+    }
+
+    // Flip the starting pose for red alliance if necessary
+    Pose2d targetPose = Utils.isRedAlliance()
+        ? FlippingUtil.flipFieldPose(cachedStartingPose)
+        : cachedStartingPose;
+
+    // Get the current pose of the robot from the pose estimator (odometry + vision)
+    Pose2d currentPose = getPose();
+
+    // Transform from current pose to target pose, in the ROBOT's current frame:
+    // +X = need to move forward, +Y = need to move left,
+    // +rotation = need to rotate CCW
+    Transform2d error = targetPose.minus(currentPose);
+    double forwardMeters = error.getX();
+    double leftMeters = error.getY();
+    double rotateDegrees = error.getRotation().getDegrees();
+    double totalErrorMeters = error.getTranslation().getNorm();
+
+    SmartDashboard.putString("Auto Align/Selected Auto", autoName);
+    SmartDashboard.putString("Auto Align/Move", String.format(
+        "%s %.2fm, %s %.2fm, %s %.1f°",
+        forwardMeters >= 0 ? "Fwd" : "Back", Math.abs(forwardMeters),
+        leftMeters >= 0 ? "Left" : "Right", Math.abs(leftMeters),
+        rotateDegrees >= 0 ? "CCW" : "CW", Math.abs(rotateDegrees)));
+    SmartDashboard.putBoolean("Auto Align/In Position",
+        totalErrorMeters < SwerveConstants.kStartPoseTranslationToleranceMeters
+        && Math.abs(rotateDegrees) < SwerveConstants.kStartPoseRotationToleranceDegrees);
+
+    // Optional: overlay both poses on a Field2d for a visual "you are here" /
+    // "target" view on Shuffleboard/Glass, if you already keep one around
+    swerveDrive.field.getObject("Auto Start Pose").setPose(targetPose);
+  }
+
   // ----------------------------------------------------------------------------------------
   // SysId Command Factories
   // ----------------------------------------------------------------------------------------
@@ -549,7 +619,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
       // Drive the robot with robot-relative speeds
       driveRobotRelative(chassisSpeeds);
-    });
+    })
+    .withName("Drive_Drive");
   }
 
   /**
@@ -571,7 +642,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
       // Since AutoBuilder is configured, we can use it to build pathfinding commands
       return AutoBuilder.pathfindToPose(targetPose, SwerveConstants.kPathfindingConstraints, 0.0);
-    }, Set.of(this));
+    }, Set.of(this))
+    .withName("Drive_DriveToPose");
   }
 
   /**
@@ -596,7 +668,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
       // Return a command to drive to the target pose
       return driveToPoseCommand(() -> targetPose);
-    }, Set.of(this));
+    }, Set.of(this))
+    .withName("Drive_DriveDistance");
   }
 
   /**
@@ -629,7 +702,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
        // driveToPoseCommand will handle this null safely
       return null;
-    });
+    })
+    .withName("Drive_AlignToTag");
   }
 
   /**
@@ -637,7 +711,9 @@ public class SwerveSubsystem extends SubsystemBase {
    * NOTE: Should never need to call this if vision is working properly.
    */
   public Command resetOdometryCommand() {
-    return resetOdometryCommand(null);
+    return resetOdometryCommand(null)
+      .ignoringDisable(true)
+      .withName("Drive_ResetOdometry");
   }
 
   /**
@@ -674,76 +750,6 @@ public class SwerveSubsystem extends SubsystemBase {
     return runOnce(() -> this.slowMode = slowMode)
       .ignoringDisable(true)
       .withName("Drive_SetSlowMode");
-  }
-
-  /**
-   * Publishes guidance to help the drive team manually place the robot at the
-   * starting pose of the currently selected auto. Call this repeatedly from
-   * Robot.disabledPeriodic() so it updates live as the robot gets nudged into
-   * place.
-   *
-   * Requires a valid, alliance-consistent current pose estimate (e.g. seeded
-   * by AprilTag vision) -- if getPose() isn't meaningful yet, neither is this.
-   *
-   * @param autoNameSupplier Supplies the name of the currently selected auto (e.g. autoChooser::getSelected)
-   */
-  public void publishStartingPoseAlignment(Supplier<String> autoNameSupplier) {
-    // Get the currently selected auto name from the supplier
-    String autoName = autoNameSupplier.get();
-    if (autoName == null || autoName.isEmpty()) {
-      SmartDashboard.putString("Auto Align/Status", "No auto selected");
-      return;
-    }
-
-    // If the auto name has changed since last time, load & cache the new starting pose
-    if (!autoName.equals(lastAlignAutoName)) {
-      lastAlignAutoName = autoName;
-      try {
-        // Starting pose is always relative to a blue alliance origin
-        cachedStartingPose = new PathPlannerAuto(autoName).getStartingPose();
-        SmartDashboard.putString("Auto Align/Status", "Ready");
-      } catch (Exception e) {
-        cachedStartingPose = null;
-        SmartDashboard.putString("Auto Align/Status", "Couldn't load starting pose for \"" + autoName + "\"");
-        return;
-      }
-    }
-
-    // If we don't have a valid starting pose, we can't provide guidance
-    if (cachedStartingPose == null) {
-      return;
-    }
-
-    // Flip the starting pose for red alliance if necessary
-    Pose2d targetPose = Utils.isRedAlliance()
-        ? FlippingUtil.flipFieldPose(cachedStartingPose)
-        : cachedStartingPose;
-
-    // Get the current pose of the robot from the pose estimator (odometry + vision)
-    Pose2d currentPose = getPose();
-
-    // Transform from current pose to target pose, in the ROBOT's current frame:
-    // +X = need to move forward, +Y = need to move left,
-    // +rotation = need to rotate CCW
-    Transform2d error = targetPose.minus(currentPose);
-    double forwardMeters = error.getX();
-    double leftMeters = error.getY();
-    double rotateDegrees = error.getRotation().getDegrees();
-    double totalErrorMeters = error.getTranslation().getNorm();
-
-    SmartDashboard.putString("Auto Align/Selected Auto", autoName);
-    SmartDashboard.putString("Auto Align/Move", String.format(
-        "%s %.2fm, %s %.2fm, %s %.1f°",
-        forwardMeters >= 0 ? "Fwd" : "Back", Math.abs(forwardMeters),
-        leftMeters >= 0 ? "Left" : "Right", Math.abs(leftMeters),
-        rotateDegrees >= 0 ? "CCW" : "CW", Math.abs(rotateDegrees)));
-    SmartDashboard.putBoolean("Auto Align/In Position",
-        totalErrorMeters < SwerveConstants.kStartPoseTranslationToleranceMeters
-        && Math.abs(rotateDegrees) < SwerveConstants.kStartPoseRotationToleranceDegrees);
-
-    // Optional: overlay both poses on a Field2d for a visual "you are here" /
-    // "target" view on Shuffleboard/Glass, if you already keep one around
-    swerveDrive.field.getObject("Auto Start Pose").setPose(targetPose);
   }
 
   /**
