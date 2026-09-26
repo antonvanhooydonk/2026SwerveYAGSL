@@ -29,7 +29,6 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
-import frc.robot.subsystems.elevator.ElevatorConstants;
 import frc.robot.util.Conversions;
 import frc.robot.util.Utils;
 
