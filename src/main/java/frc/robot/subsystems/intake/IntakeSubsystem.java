@@ -285,18 +285,18 @@ public class IntakeSubsystem extends SubsystemBase {
    * Command to run the intake in the forward direction.
    * @return Command to run the intake in the forward direction
    */
-  public Command pickupCommand() {
+  public Command inCommand() {
     return run(() -> setRollerRPM(IntakeConstants.kRollerForwardRPM))
-      .withName("Intake_Pickup");
+      .withName("Intake_In");
   }
 
   /**
    * Command to run the roller in reverse.
    * @return Command to run the roller in reverse
    */
-  public Command reverseCommand() {
+  public Command outCommand() {
     return run(() -> setRollerRPM(IntakeConstants.kRollerReverseRPM))
-      .withName("Intake_Reverse");
+      .withName("Intake_Out");
   }
 
   /**
