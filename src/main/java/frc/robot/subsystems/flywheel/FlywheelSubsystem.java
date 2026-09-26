@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems.shooter;
+package frc.robot.subsystems.flywheel;
 
 import static edu.wpi.first.units.Units.Volts;
 
@@ -44,7 +44,7 @@ import frc.robot.util.Utils;
  * 3. Add minimal kP if steady-state error remains (usually 0.05 - 0.2)
  * 4. Avoid kI and kD unless absolutely necessary
  */
-public class ShooterSubsystem extends SubsystemBase {
+public class FlywheelSubsystem extends SubsystemBase {
   // Flywheel hardware - leader and follower
   private final TalonFX flywheelLeader;
   private final TalonFX flywheelFollower;
@@ -65,7 +65,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /**
    * Creates a new ShooterSubsystem
    */
-  public ShooterSubsystem() {
+  public FlywheelSubsystem() {
     // Initialize flywheel hardware
     flywheelLeader = new TalonFX(CANConstants.kFlywheelLeaderMotorID);
     flywheelFollower = new TalonFX(CANConstants.kFlywheelFollowerMotorID);
@@ -149,12 +149,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Velocity PID (slot 0) - velocity in RPS
     flywheelConfig.Slot0
-      .withKP(ShooterConstants.kFlywheelKP)
-      .withKI(ShooterConstants.kFlywheelKI)
-      .withKD(ShooterConstants.kFlywheelKD)
-      .withKS(ShooterConstants.kFlywheelKS)
-      .withKV(ShooterConstants.kFlywheelKV)
-      .withKA(ShooterConstants.kFlywheelKA);
+      .withKP(FlywheelConstants.kFlywheelKP)
+      .withKI(FlywheelConstants.kFlywheelKI)
+      .withKD(FlywheelConstants.kFlywheelKD)
+      .withKS(FlywheelConstants.kFlywheelKS)
+      .withKV(FlywheelConstants.kFlywheelKV)
+      .withKA(FlywheelConstants.kFlywheelKA);
 
     // Apply configuration to both leader and follower
     flywheelLeader.getConfigurator().apply(flywheelConfig);
@@ -218,7 +218,7 @@ public class ShooterSubsystem extends SubsystemBase {
     return MathUtil.isNear(
       targetRPM,
       getRPM(),
-      ShooterConstants.kFlywheelToleranceRPM
+      FlywheelConstants.kFlywheelToleranceRPM
     );
   }
 
@@ -227,7 +227,7 @@ public class ShooterSubsystem extends SubsystemBase {
    * @return True if spinning
    */
   private boolean isSpinning() {
-    return getRPM() > ShooterConstants.kFlywheelMinSpinningRPM;
+    return getRPM() > FlywheelConstants.kFlywheelMinSpinningRPM;
   }
 
   // ---------------------------------------------------------------------------------------
@@ -320,7 +320,7 @@ public class ShooterSubsystem extends SubsystemBase {
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
 
       // Default distance if either pose is null so we don't prevent shooting
-      double distanceToTarget = ShooterConstants.kFlywheelDefaultDistanceToTarget; 
+      double distanceToTarget = FlywheelConstants.kFlywheelDefaultDistanceToTarget; 
 
       // Calculate distance to target
       if (robotPose != null && targetPose != null) {

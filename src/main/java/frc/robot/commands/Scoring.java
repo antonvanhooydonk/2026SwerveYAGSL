@@ -5,7 +5,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.drive.SwerveSubsystem;
-import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.util.Utils;
 
@@ -17,22 +17,22 @@ import frc.robot.util.Utils;
 public class Scoring {
   private final SwerveSubsystem driveSubsystem;
   private final TurretSubsystem turretSubsystem;
-  private final ShooterSubsystem shooterSubsystem;
+  private final FlywheelSubsystem flywheelSubsystem;
 
   /**
    * Creates a scoring command factory that can coordinate the turret and shooter subsystems.
    * @param driveSubsystem the drive subsystem to control
    * @param turretSubsystem the turret subsystem to control
-   * @param shooterSubsystem the shooter subsystem to control
+   * @param flywheelSubsystem the flywheel subsystem to control
    */
   public Scoring(
     SwerveSubsystem driveSubsystem,
     TurretSubsystem turretSubsystem, 
-    ShooterSubsystem shooterSubsystem
+    FlywheelSubsystem flywheelSubsystem
   ) {
     this.driveSubsystem = driveSubsystem;
     this.turretSubsystem = turretSubsystem;
-    this.shooterSubsystem = shooterSubsystem;
+    this.flywheelSubsystem = flywheelSubsystem;
   }
 
   /**
@@ -45,7 +45,7 @@ public class Scoring {
       turretSubsystem.aimAtPoseCommand(driveSubsystem::getPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       ),
-      shooterSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
+      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       )
     );
@@ -61,7 +61,7 @@ public class Scoring {
       turretSubsystem.aimAtPoseCommand(driveSubsystem::getPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
       ),
-      shooterSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
+      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
       )
     );

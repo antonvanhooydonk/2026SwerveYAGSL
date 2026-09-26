@@ -25,9 +25,9 @@ import frc.robot.commands.Feedback;
 import frc.robot.commands.Scoring;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.rumble.RumbleSubsystem;
-import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 
@@ -39,7 +39,7 @@ public class RobotContainer {
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
   private final RumbleSubsystem rumbleSubsystem = new RumbleSubsystem(driverXbox);
-  private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+  private final FlywheelSubsystem shooterSubsystem = new FlywheelSubsystem();
   private final TurretSubsystem turretSubsystem = new TurretSubsystem();
   private final SwerveSubsystem driveSubsystem = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   @SuppressWarnings("unused")
