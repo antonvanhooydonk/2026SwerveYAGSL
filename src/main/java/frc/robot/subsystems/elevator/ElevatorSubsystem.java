@@ -225,6 +225,30 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
+   * Sets the elevator motor voltage directly (open-loop), with safety checks for limits.
+   * @param volts Voltage to apply to the motor
+   */
+  private void setVoltage(double volts) {
+    // Clamp voltage to safe range
+    volts = MathUtil.clamp(volts, -12, 12);
+
+    // Check if the elevator is at the upper limit and trying to move up
+    if (isAtMaxHeight() && volts > 0) {
+      stop();
+      return;
+    }
+
+    // Check if the elevator is at the lower limit and trying to move down
+    if (isAtMinHeight() && volts < 0) {
+      stop();
+      return;
+    }
+
+    // Set the voltage to the leader motor (follower will mirror)
+    leaderMotor.setControl(new VoltageOut(volts));
+  }
+
+  /**
    * Gets the current elevator height in meters
    * @return Current height in meters
    */
@@ -467,6 +491,24 @@ public class ElevatorSubsystem extends SubsystemBase {
   public Command stopCommand() {
     return run(this::stop)
       .withName("Elevator_Stop");
+  }
+
+  /**
+   * Command to move the elevator up (open-loop control)
+   * @return Command that moves the elevator up
+   */
+  public Command upCommand() {
+    return run(() -> setVoltage(ElevatorConstants.kManualUpVoltage))
+      .withName("Elevator_ManualUp");
+  }
+
+  /**
+   * Command to move the climber up (open-loop control)
+   * @return Command that moves the climber up
+   */
+  public Command downCommand() {
+    return run(() -> setVoltage(ElevatorConstants.kManualDownVoltage))
+      .withName("Elevator_ManualDown");
   }
   
   /**

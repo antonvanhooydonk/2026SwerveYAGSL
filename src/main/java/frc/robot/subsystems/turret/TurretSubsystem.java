@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.subsystems.elevator.ElevatorConstants;
 import frc.robot.util.Conversions;
 import frc.robot.util.Utils;
 
@@ -236,6 +237,30 @@ public class TurretSubsystem extends SubsystemBase {
     
     // Command the turret motor to the target position using MotionMagic
     turretMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
+  }
+
+  /**
+   * Sets the turret motor voltage directly (open-loop), with safety checks for limits.
+   * @param volts Voltage to apply to the motor
+   */
+  private void setVoltage(double volts) {
+    // Clamp voltage to safe range
+    volts = MathUtil.clamp(volts, -12, 12);
+
+    // Check if the turret is at the upper limit and trying to move up
+    if (isAtUpperLimit() && volts > 0) {
+      stop();
+      return;
+    }
+
+    // Check if the turret is at the lower limit and trying to move down
+    if (isAtLowerLimit() && volts < 0) {
+      stop();
+      return;
+    }
+
+    // Set the voltage to the turret motor
+    turretMotor.setControl(new VoltageOut(volts));
   }
 
   /**
@@ -465,6 +490,24 @@ public class TurretSubsystem extends SubsystemBase {
   public Command stopCommand() {
     return run(this::stop)
       .withName("Turret_Stop");
+  }
+
+  /**
+   * Command to move the elevator up (open-loop control)
+   * @return Command that moves the elevator up
+   */
+  public Command clockwiseCommand() {
+    return run(() -> setVoltage(TurretConstants.kManualClockwiseVoltage))
+      .withName("Turret_ManualClockwise");
+  }
+
+  /**
+   * Command to move the turret counter-clockwise (open-loop control)
+   * @return Command that moves the turret counter-clockwise
+   */
+  public Command counterClockwiseCommand() {
+    return run(() -> setVoltage(TurretConstants.kManualCounterClockwiseVoltage))
+      .withName("Turret_ManualCounterClockwise");
   }
 
   // ----------------------------------------------------------------------------------------
