@@ -143,9 +143,13 @@ public class TurretSubsystem extends SubsystemBase {
     // position across multiple tracking commands.
     turretConfig.SoftwareLimitSwitch
       .withForwardSoftLimitEnable(true)
-      .withForwardSoftLimitThreshold(TurretConstants.kMaxAngleDegrees)
+      .withForwardSoftLimitThreshold(Conversions.degreesToRotations(
+        TurretConstants.kMaxAngleDegrees,
+        TurretConstants.kTurretGearRatio))
       .withReverseSoftLimitEnable(true)
-      .withReverseSoftLimitThreshold(TurretConstants.kMinAngleDegrees);
+      .withReverseSoftLimitThreshold(Conversions.degreesToRotations(
+        TurretConstants.kMinAngleDegrees,
+        TurretConstants.kTurretGearRatio));
 
     turretConfig.Slot0
       .withKP(TurretConstants.kTurretKP)
@@ -156,9 +160,9 @@ public class TurretSubsystem extends SubsystemBase {
       .withKA(TurretConstants.kTurretKA);
 
     turretConfig.MotionMagic
-      .withMotionMagicCruiseVelocity(TurretConstants.kTurretCruiseVelocityDPS)
-      .withMotionMagicAcceleration(TurretConstants.kTurretAccelerationDPS2)
-      .withMotionMagicJerk(TurretConstants.kTurretJerkDPS3);
+      .withMotionMagicCruiseVelocity(TurretConstants.kCruiseVelocity)
+      .withMotionMagicAcceleration(TurretConstants.kAcceleration)
+      .withMotionMagicJerk(TurretConstants.kJerk);
 
     turretMotor.getConfigurator().apply(turretConfig);
 

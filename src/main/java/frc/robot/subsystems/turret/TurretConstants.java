@@ -24,10 +24,11 @@ public final class TurretConstants {
 
   // ------------------------------------------------------------
   // MotionMagic constraints
+  // Tuning: start low, increase until motion is fast but smooth
   // ------------------------------------------------------------
-  public static final double kTurretCruiseVelocityDPS = 180.0; // degrees per second
-  public static final double kTurretAccelerationDPS2  = 360.0; // degrees per second squared
-  public static final double kTurretJerkDPS3          = 3600.0; // degrees per second cubed
+  public static final double kCruiseVelocity = 180.0; // rotations per second
+  public static final double kAcceleration   = 360.0; // rotations per second squared
+  public static final double kJerk           = 3600.0; // rotations per second cubed
 
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)

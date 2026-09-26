@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.Conversions;
 import frc.robot.util.Utils;
 
 /**
@@ -137,17 +138,21 @@ public class ElevatorSubsystem extends SubsystemBase {
       .withPeakReverseVoltage(-12)
       .withSupplyVoltageTimeConstant(0.02);
 
-    // Feedback - convert motor rotations to meters of elevator travel
-    // rotationsToMeters = sprocket circumference / gear ratio
-    motorConfig.Feedback
-      .withSensorToMechanismRatio(ElevatorConstants.kGearRatio / ElevatorConstants.kSpoolCircumferenceMeters);
+    // Do NOT use withSensorToMechanismRatio, instead use Conversions methods
+    // in appropriate places within this subsystem code.
 
     // Soft limits to protect the elevator without limit switches
     motorConfig.SoftwareLimitSwitch
       .withForwardSoftLimitEnable(true)
-      .withForwardSoftLimitThreshold(ElevatorConstants.kMaxHeightMeters)
+      .withForwardSoftLimitThreshold(Conversions.metersToRotations(
+        ElevatorConstants.kMaxHeightMeters, 
+        ElevatorConstants.kGearRatio, 
+        ElevatorConstants.kSpoolCircumferenceMeters))
       .withReverseSoftLimitEnable(true)
-      .withReverseSoftLimitThreshold(ElevatorConstants.kMinHeightMeters);
+      .withReverseSoftLimitThreshold(Conversions.metersToRotations(
+        ElevatorConstants.kMinHeightMeters, 
+        ElevatorConstants.kGearRatio, 
+        ElevatorConstants.kSpoolCircumferenceMeters));
 
     // Position PID with gravity compensation (slot 0)
     motorConfig.Slot0
@@ -162,9 +167,9 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     // MotionMagic configuration
     motorConfig.MotionMagic
-      .withMotionMagicCruiseVelocity(ElevatorConstants.kCruiseVelocityMPS)
-      .withMotionMagicAcceleration(ElevatorConstants.kAccelerationMPS2)
-      .withMotionMagicJerk(ElevatorConstants.kJerkMPS3);
+      .withMotionMagicCruiseVelocity(ElevatorConstants.kCruiseVelocity)
+      .withMotionMagicAcceleration(ElevatorConstants.kAcceleration)
+      .withMotionMagicJerk(ElevatorConstants.kJerk);
 
     // Apply configuration to leader
     leaderMotor.getConfigurator().apply(motorConfig);
@@ -208,8 +213,15 @@ public class ElevatorSubsystem extends SubsystemBase {
       ElevatorConstants.kMaxHeightMeters
     );
 
+    // Convert target height to motor rotations
+    double targetMotorRotations = Conversions.metersToRotations(
+      targetHeightMeters, 
+      ElevatorConstants.kGearRatio, 
+      ElevatorConstants.kSpoolCircumferenceMeters
+    );
+
     // Set the target position using MotionMagic with gravity compensation
-    leaderMotor.setControl(motionMagicRequest.withPosition(targetHeightMeters));
+    leaderMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
   }
 
   /**
@@ -217,7 +229,11 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Current height in meters
    */
   private double getHeightMeters() {
-    return leaderMotor.getPosition().getValueAsDouble();
+    return Conversions.rotationsToMeters(
+      leaderMotor.getPosition().getValueAsDouble(),
+      ElevatorConstants.kGearRatio,
+      ElevatorConstants.kSpoolCircumferenceMeters
+    );
   }
   
   /**

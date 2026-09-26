@@ -51,9 +51,9 @@ public final class ElevatorConstants {
   // MotionMagic constraints
   // Tuning: start low, increase until motion is fast but smooth
   // ------------------------------------------------------------
-  public static final double kCruiseVelocityMPS = 1.0;  // meters per second
-  public static final double kAccelerationMPS2  = 2.0;  // meters per second squared
-  public static final double kJerkMPS3          = 20.0; // meters per second cubed (0 to disable)
+  public static final double kCruiseVelocity = 1.0;  // rotations per second
+  public static final double kAcceleration   = 2.0;  // rotations per second squared
+  public static final double kJerk           = 20.0; // rotations per second cubed (0 to disable)
 
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
