@@ -48,7 +48,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   // Cached target (for telemetry)
   private double targetRPM = 0.0;
-  private boolean isDeployed = false;
+  private boolean deployed = false;
   
   // SysId routine
   private final SysIdRoutine rollerSysIdRoutine;
@@ -186,7 +186,7 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   private void deploy() {
     deploySolenoid.set(Value.kForward);
-    isDeployed = true;
+    deployed = true;
   }
 
   /**
@@ -194,7 +194,7 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   private void retract() {
     deploySolenoid.set(Value.kReverse);
-    isDeployed = false;
+    deployed = false;
   }
 
   /**
@@ -208,15 +208,15 @@ public class IntakeSubsystem extends SubsystemBase {
    * Returns true if the intake is deployed
    * @return true if the intake is deployed
    */
-  private boolean isIntakeDeployed() {
-    return isDeployed;
+  private boolean isDeployed() {
+    return deployed;
   }
 
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isDeployedTrigger = new Trigger(this::isIntakeDeployed)
+  public final Trigger isDeployedTrigger = new Trigger(this::isDeployed)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
@@ -314,7 +314,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.addBooleanProperty("Deployed",   this::isIntakeDeployed, null);
+    builder.addBooleanProperty("Deployed",   this::isDeployed, null);
     builder.addDoubleProperty("Target RPM",  () -> Utils.showDouble(targetRPM), null);
     builder.addDoubleProperty("Current RPM", () -> Utils.showDouble(getRollerRPM()), null);
     builder.addDoubleProperty("Current (A)", () -> Utils.showDouble(rollerMotor.getSupplyCurrent().getValueAsDouble()), null);
