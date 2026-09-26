@@ -186,14 +186,14 @@ public class TurretSubsystem extends SubsystemBase {
    * @param angleDegrees Target angle in degrees
    */
   private void setTurretAngle(double angleDegrees) {
-    double normalizedAngle = normalizeAngleDegrees(angleDegrees);
+    double normalizedAngle = Utils.normalizeAngleDegrees(angleDegrees);
 
     // Convert current motor rotations to tracking angle space
     double currentRawPositionDegrees = Conversions.rotationsToDegrees(turretMotor.getPosition().getValueAsDouble(), TurretConstants.kTurretGearRatio);
-    double currentAngle = normalizeAngleDegrees(currentRawPositionDegrees);
+    double currentAngle = Utils.normalizeAngleDegrees(currentRawPositionDegrees);
 
     // Calculate the shortest path to the target angle
-    double shortestDelta = normalizeAngleDegrees(normalizedAngle - currentAngle);
+    double shortestDelta = Utils.normalizeAngleDegrees(normalizedAngle - currentAngle);
     double shortestPathTargetDegrees = currentRawPositionDegrees + shortestDelta;
     double targetPositionDegrees = shortestPathTargetDegrees;
 
@@ -243,7 +243,7 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Current angle in degrees
    */
   private double getAngleDegrees() {
-    return normalizeAngleDegrees(Conversions.rotationsToDegrees(
+    return Utils.normalizeAngleDegrees(Conversions.rotationsToDegrees(
       turretMotor.getPosition().getValueAsDouble(), 
       TurretConstants.kTurretGearRatio
     ));
@@ -272,21 +272,12 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Normalizes an angle to (-180, 180]
-   * @param angleDegrees Angle in degrees
-   * @return Normalized angle in degrees
-   */
-  private double normalizeAngleDegrees(double angleDegrees) {
-    return MathUtil.inputModulus(angleDegrees, -180.0, 180.0);
-  }
-
-  /**
    * Gets whether the turret is at its target angle within tolerance
    * @return True if at target
    */
   private boolean isAtAngle(double targetAngleDegrees) {
     return MathUtil.isNear(
-      normalizeAngleDegrees(targetAngleDegrees),
+      Utils.normalizeAngleDegrees(targetAngleDegrees),
       getAngleDegrees(),
       TurretConstants.kTurretAngleToleranceDegrees
     );
@@ -402,7 +393,7 @@ public class TurretSubsystem extends SubsystemBase {
     DoubleSupplier robotHeadingDegreesSupplier
   ) {
     return run(() -> {
-      double turretAngle = normalizeAngleDegrees(
+      double turretAngle = Utils.normalizeAngleDegrees(
         fieldAngleDegreesSupplier.getAsDouble() - robotHeadingDegreesSupplier.getAsDouble()
       );
       setTurretAngle(turretAngle);
@@ -451,7 +442,7 @@ public class TurretSubsystem extends SubsystemBase {
       double dx = targetPose.getX() - robotPose.getX();
       double dy = targetPose.getY() - robotPose.getY();
       double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
-      double turretAngle = normalizeAngleDegrees(fieldAngleDegrees - robotPose.getRotation().getDegrees());
+      double turretAngle = Utils.normalizeAngleDegrees(fieldAngleDegrees - robotPose.getRotation().getDegrees());
       
       // Command the turret to the calculated angle
       setTurretAngle(turretAngle);

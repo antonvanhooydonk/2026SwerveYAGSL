@@ -206,22 +206,13 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Normalizes an angle to (-180, 180]
-   * @param angleDegrees Angle in degrees
-   * @return Normalized angle in degrees
-   */
-  private double normalizeAngleDegrees(double angleDegrees) {
-    return MathUtil.inputModulus(angleDegrees, -180.0, 180.0);
-  }
-
-  /**
    * Check if climber is at a specific target position within tolerance
    * @param targetDegrees The target position in degrees to check against
    * @return true if within tolerance of the target position  
    */
   private boolean isAtPosition(double targetDegrees) {
     return MathUtil.isNear(
-      normalizeAngleDegrees(targetDegrees),
+      Utils.normalizeAngleDegrees(targetDegrees),
       getPosition(),
       ClimberConstants.kPositionToleranceDegrees
     );

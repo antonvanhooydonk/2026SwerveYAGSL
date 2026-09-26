@@ -44,8 +44,17 @@ public final class Utils {
    * @param angleRadians Angle in radians
    * @return Normalized angle in radians
    */
-  public static double normalizeAngle(double angleRadians) {
+  public static double normalizeAngleRadian(double angleRadians) {
     return MathUtil.inputModulus(angleRadians, -Math.PI, Math.PI);
+  }
+
+  /**
+   * Normalizes an angle to the range (-180°, 180°)
+   * @param angleDegrees Angle in degrees
+   * @return Normalized angle in degrees
+   */
+  public static double normalizeAngleDegrees(double angleDegrees) {
+    return MathUtil.inputModulus(angleDegrees, -180.0, 180.0);
   }
 
   /**
