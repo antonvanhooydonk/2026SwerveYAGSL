@@ -106,14 +106,20 @@ public class FlywheelSubsystem extends SubsystemBase {
   }
 
   /**
-   * Initializes the RPM table with distance-RPM pairs for interpolation
+   * Initializes the RPM table with distanceMeters-RPM pairs for interpolation
    */
   private void initializeRPMTable() {
-    // Example: Add distance-RPM pairs to the table
-    rpmTable.put(1.0, 3000.0); // 1 meter  -> 3000 RPM
-    rpmTable.put(2.0, 4000.0); // 2 meters -> 4000 RPM
-    rpmTable.put(3.0, 5000.0); // 3 meters -> 5000 RPM
-    // Add more pairs as needed
+    rpmTable.put(0.0, 1000.0);
+    rpmTable.put(1.0, 2000.0); 
+    rpmTable.put(2.0, 2500.0);
+    rpmTable.put(3.0, 3000.0); 
+    rpmTable.put(4.0, 3500.0); 
+    rpmTable.put(5.0, 4000.0); 
+    rpmTable.put(6.0, 4500.0); 
+    rpmTable.put(7.0, 5000.0); 
+    rpmTable.put(8.0, 5500.0); 
+    rpmTable.put(9.0, 5500.0); 
+    rpmTable.put(10.0, 6000.0); 
   }
 
   @Override
