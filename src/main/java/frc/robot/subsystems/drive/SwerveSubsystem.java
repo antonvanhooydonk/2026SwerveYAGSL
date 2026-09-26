@@ -564,6 +564,11 @@ public class SwerveSubsystem extends SubsystemBase {
       double rawX = xSpeedSupplier.getAsDouble();
       double rawY = ySpeedSupplier.getAsDouble();
       double rawR = rSpeedSupplier.getAsDouble();
+
+      // Clamp the raw inputs to -1..1 to avoid any unexpected values
+      rawX = MathUtil.clamp(rawX, -1.0, 1.0);
+      rawY = MathUtil.clamp(rawY, -1.0, 1.0);
+      rawR = MathUtil.clamp(rawR, -1.0, 1.0);
       
       double magnitude = Math.hypot(rawX, rawY);
       double xSpeed = 0;
