@@ -30,7 +30,8 @@ public class Feedback {
    * @return Command to run the success feedback routine
    */
   public Command successCommand() {
-    return successCommand(1.0);
+    return successCommand(1.0)
+      .withName("Feedback_Success");
   }
 
   /**
@@ -50,7 +51,8 @@ public class Feedback {
    * @return Command to run the info feedback routine
    */
   public Command infoCommand() {
-    return infoCommand(1.0);
+    return infoCommand(1.0)
+      .withName("Feedback_Info");
   }
 
   /**
@@ -70,7 +72,8 @@ public class Feedback {
    * @return Command to run the warning feedback routine
    */
   public Command warningCommand() {
-    return warningCommand(1.0);
+    return warningCommand(1.0)
+      .withName("Feedback_Warning");
   }
 
   /**
@@ -90,7 +93,8 @@ public class Feedback {
    * @return Command to run the error feedback routine
    */
   public Command errorCommand() {
-    return errorCommand(1.0);
+    return errorCommand(1.0)
+      .withName("Feedback_Error");
   }
 
   /**
