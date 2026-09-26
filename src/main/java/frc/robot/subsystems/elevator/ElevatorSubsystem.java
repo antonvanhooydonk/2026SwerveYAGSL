@@ -404,9 +404,9 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Command to move the elevator to the bottom and wait until it arrives.
    * @return Command to move to the bottom
    */
-  public Command toBottomCommand() {
+  public Command toMinimumCommand() {
     return toHeightCommand(ElevatorConstants.kMinHeightMeters, this::isAtMinHeight)
-      .withName("Elevator_MoveToBottom");
+      .withName("Elevator_MoveToMinimum");
   }
 
   /**
