@@ -185,21 +185,21 @@ public class ShooterSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Gets the current flywheel velocity in RPM
-   * @return Current velocity in RPM
-   */
-  private double getRPM() {
-    // TalonFX velocity is in RPS, convert to RPM
-    return flywheelLeader.getVelocity().getValueAsDouble() * 60.0;
-  }
-
-  /**
    * Sets the flywheel to a target velocity in RPM
    * @param rpm Target velocity in RPM
    */
   private void setRPM(double rpm) {
     targetRPM = rpm;
     flywheelLeader.setControl(flywheelVelocityRequest.withVelocity(rpm / 60.0));
+  }
+
+  /**
+   * Gets the current flywheel velocity in RPM
+   * @return Current velocity in RPM
+   */
+  private double getRPM() {
+    // TalonFX velocity is in RPS, convert to RPM
+    return flywheelLeader.getVelocity().getValueAsDouble() * 60.0;
   }
 
   /**
@@ -236,7 +236,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public final Trigger isFlywheelAtTargetTrigger = new Trigger(this::isAtTargetRPM)
     .debounce(0.1, Debouncer.DebounceType.kRising);
-    
+
   public final Trigger isFlywheelSpinningTrigger = new Trigger(this::isSpinning)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
