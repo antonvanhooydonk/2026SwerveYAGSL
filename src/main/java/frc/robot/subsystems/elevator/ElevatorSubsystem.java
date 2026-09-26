@@ -401,9 +401,17 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the elevator to a target height in meters and wait until it arrives.
-   * @param heightMeters Target height in meters
-   * @return Command to move to the target height
+   * Command to move the elevator to the bottom height in meters and wait until it arrives.
+   * @return Command to move to the lowest height
+   */
+  public Command toBottomCommand() {
+    return toHeightCommand(ElevatorConstants.kMinHeightMeters, this::isAtMinHeight)
+      .withName("Elevator_MoveToBottom");
+  }
+
+  /**
+   * Command to move the elevator to the level one height in meters and wait until it arrives.
+   * @return Command to move to the level one height
    */
   public Command toLevelOneCommand() {
     return toHeightCommand(ElevatorConstants.kHeightL1Meters, this::isAtLevelOneHeight)
@@ -411,9 +419,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the elevator to a target height in meters and wait until it arrives.
-   * @param heightMeters Target height in meters
-   * @return Command to move to the target height
+   * Command to move the elevator to the level two height in meters and wait until it arrives.
+   * @return Command to move to the level two height
    */
   public Command toLevelTwoCommand() {
     return toHeightCommand(ElevatorConstants.kHeightL2Meters, this::isAtLevelTwoHeight)
@@ -421,9 +428,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the elevator to a target height in meters and wait until it arrives.
-   * @param heightMeters Target height in meters
-   * @return Command to move to the target height
+   * Command to move the elevator to the level three height in meters and wait until it arrives.
+   * @return Command to move to the level three height
    */
   public Command toLevelThreeCommand() {
     return toHeightCommand(ElevatorConstants.kHeightL3Meters, this::isAtLevelThreeHeight)
@@ -431,9 +437,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the elevator to a target height in meters and wait until it arrives.
-   * @param heightMeters Target height in meters
-   * @return Command to move to the target height
+   * Command to move the elevator to the level four height in meters and wait until it arrives.
+   * @return Command to move to the level four height
    */
   public Command toLevelFourCommand() {
     return toHeightCommand(ElevatorConstants.kHeightL4Meters, this::isAtLevelFourHeight)
