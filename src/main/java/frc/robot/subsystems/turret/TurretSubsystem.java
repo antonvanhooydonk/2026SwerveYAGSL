@@ -492,8 +492,8 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the elevator up (open-loop control)
-   * @return Command that moves the elevator up
+   * Command to move the turret clockwise (open-loop control)
+   * @return Command that moves the turret clockwise
    */
   public Command clockwiseCommand() {
     return run(() -> setVoltage(TurretConstants.kManualClockwiseVoltage))
