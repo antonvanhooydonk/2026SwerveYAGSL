@@ -121,7 +121,9 @@ public class DriveSubsystem extends SubsystemBase {
     swerveDrive.stopOdometryThread();
 
     // Get the gyro from the swerve drive
-    gyro = (AHRS)swerveDrive.getGyro().getIMU();
+    gyro = swerveDrive.getGyro().getIMU() instanceof AHRS 
+      ? (AHRS)swerveDrive.getGyro().getIMU() 
+      : null;
 
     // Initialize the swerve setpoint generator
     setpointGenerator = new SwerveSetpointGenerator(
@@ -266,11 +268,19 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets whether the gyro is connected and functional
+   * @return True if the gyro is connected and functional, false otherwise
+   */
+  private boolean isGyroConnected() {
+    return gyro != null && gyro.isConnected();
+  }
+
+  /**
    * Gets whether field-relative driving is enabled
    * @return Field-relative status
    */
   private boolean isFieldRelative() {
-    return fieldRelative && gyro.isConnected();
+    return fieldRelative && isGyroConnected();
   }
 
   /**
@@ -649,7 +659,7 @@ public class DriveSubsystem extends SubsystemBase {
       // Drive the robot with robot-relative speeds
       driveRobotRelative(chassisSpeeds);
     })
-    .withName("Drive_Drive");
+    .withName("Drive_DriveManual");
   }
 
   /**
