@@ -264,8 +264,11 @@ public class RobotContainer {
     wasInTeleop = false;
 
     // Initialze subsystems
+    climberSubsystem.autonomousInit();
     driveSubsystem.autonomousInit();
+    elevatorSubsystem.autonomousInit();
     flywheelSubsystem.autonomousInit();
+    intakeSubsystem.autonomousInit();
     turretSubsystem.autonomousInit();
   }
 
@@ -276,16 +279,26 @@ public class RobotContainer {
     // Track state change
     wasInTeleop = true;
 
-    // When testing we sometimes enable the robot in teleop and skip autoonomous.
+    // When testing, we sometimes enable the robot in teleop and skip autonomous.
     // If that is the case, init autonomous before initialization of teleop.
     // This doesn't call the select auto command, it just initializes the 
     // subsystems for autonomous mode.
     if (!wasInAuto) {
+      climberSubsystem.autonomousInit();
       driveSubsystem.autonomousInit();
-    } 
+      elevatorSubsystem.autonomousInit();
+      flywheelSubsystem.autonomousInit();
+      intakeSubsystem.autonomousInit();
+      turretSubsystem.autonomousInit();
+    }
 
     // Initialize subsystems
+    climberSubsystem.teleopInit();
     driveSubsystem.teleopInit();
+    elevatorSubsystem.teleopInit();
+    flywheelSubsystem.teleopInit();
+    intakeSubsystem.teleopInit();
+    turretSubsystem.teleopInit();
   }
 
   /**
@@ -294,11 +307,19 @@ public class RobotContainer {
    * when moving between match phases, so we only want to run this once after teleop.
    */
   public void postMatch() {
-    // Clean up post match
+    // Post match comes after teleop
     if (wasInTeleop) {
+      // Reset state change tracking
       wasInAuto = false;
       wasInTeleop = false;
+
+      // Clean up subsystems
+      climberSubsystem.postMatch();
       driveSubsystem.postMatch();
+      elevatorSubsystem.postMatch();
+      flywheelSubsystem.postMatch();
+      intakeSubsystem.postMatch();
+      turretSubsystem.postMatch();
     }
   }
 }
