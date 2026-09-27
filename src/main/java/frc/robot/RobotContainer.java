@@ -32,6 +32,7 @@ import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.rumble.RumbleSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.Utils;
 
 public class RobotContainer {
   // Driver controllers
@@ -116,7 +117,8 @@ public class RobotContainer {
     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
     // ".auto" extension for the second argument.
     autoChooser.setDefaultOption("No auto", Commands.none());
-    autoChooser.addOption("Two Piece Auto", AutoBuilder.buildAuto("TwoPieceAuto"));
+    addAutoToChooser("One Piece Auto", "OnePieceAuto");
+    addAutoToChooser("Two Piece Auto", "TwoPieceAuto");
     
     // Add auto chooser to dashboard
     SmartDashboard.putData("Auto Command", autoChooser);
@@ -135,6 +137,20 @@ public class RobotContainer {
     
     // Add delay chooser to dashboard
     SmartDashboard.putData("Auto Delay", delayChooser);
+  }
+
+  /**
+   * Add an auto to the auto chooser. This method will attempt to build  
+   * the auto and add it to the chooser.
+   * @param displayName The name to display in the chooser
+   * @param autoName The name of the auto to build (without the .auto extension)
+   */
+  private void addAutoToChooser(String displayName, String autoName) {
+    try {
+      autoChooser.addOption(displayName, AutoBuilder.buildAuto(autoName));
+    } catch (Exception ex) {
+      Utils.logError("Failed to load auto " + displayName + ": " + ex.getMessage());
+    }
   }
 
   /**
