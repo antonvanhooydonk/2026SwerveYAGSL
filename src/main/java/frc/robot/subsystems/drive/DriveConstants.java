@@ -37,6 +37,8 @@ public final class DriveConstants {
   // ------------------------------------------------------------
   // Driver joystick settings
   // ------------------------------------------------------------
+  public static final double kTranslationSlewRateLimit = 3.0; // m/s^2, limit for translational acceleration
+  public static final double kRotationSlewRateLimit = 4.0; // rad/s^2, limit for rotational acceleration
   public static final double kJoystickInputExponent = 2.0; // 2 to square, 3 to cube
   public static final double kJoystickDeadband  = 0.1; // typically 0.05 to 0.15
 

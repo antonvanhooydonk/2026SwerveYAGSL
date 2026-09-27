@@ -25,6 +25,7 @@ import com.studica.frc.AHRS;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -67,6 +68,11 @@ public class DriveSubsystem extends SubsystemBase {
   // Setpoint generator
   private final SwerveSetpointGenerator setpointGenerator;
   private SwerveSetpoint driveSetpoint;
+
+  // Slew rate limiters for joystick inputs to prevent sudden changes in speed
+  private final SlewRateLimiter xLimiter = new SlewRateLimiter(DriveConstants.kTranslationSlewRateLimit);
+  private final SlewRateLimiter yLimiter = new SlewRateLimiter(DriveConstants.kTranslationSlewRateLimit);
+  private final SlewRateLimiter rLimiter = new SlewRateLimiter(DriveConstants.kRotationSlewRateLimit);
 
   // Current robot state
   private boolean fieldRelative = true;
@@ -303,6 +309,11 @@ public class DriveSubsystem extends SubsystemBase {
       getModuleStates(), 
       DriveFeedforwards.zeros(4)
     );
+
+    // Reset slew rate limiters
+    xLimiter.reset(0.0);
+    yLimiter.reset(0.0);
+    rLimiter.reset(0.0);
     
     // Reset state variables
     fieldRelative = true;
@@ -329,6 +340,11 @@ public class DriveSubsystem extends SubsystemBase {
       getModuleStates(), 
       DriveFeedforwards.zeros(4)
     );
+
+    // Reset slew rate limiters
+    xLimiter.reset(0.0);
+    yLimiter.reset(0.0);
+    rLimiter.reset(0.0);
     
     // Reset state variables
     fieldRelative = true;
@@ -355,6 +371,11 @@ public class DriveSubsystem extends SubsystemBase {
       getModuleStates(), 
       DriveFeedforwards.zeros(4)
     );
+
+    // Reset slew rate limiters
+    xLimiter.reset(0.0);
+    yLimiter.reset(0.0);
+    rLimiter.reset(0.0);
     
     // Reset state variables
     fieldRelative = true;
@@ -588,6 +609,11 @@ public class DriveSubsystem extends SubsystemBase {
       // Apply 1D deadband and squaring for rotation
       double rSpeed = MathUtil.applyDeadband(rawR, DriveConstants.kJoystickDeadband);
       rSpeed = Math.copySign(Math.pow(Math.abs(rSpeed), DriveConstants.kJoystickInputExponent), rSpeed);
+
+      // Apply slew rate limiting to smooth out sudden changes in speed
+      xSpeed = xLimiter.calculate(xSpeed);
+      ySpeed = yLimiter.calculate(ySpeed);
+      rSpeed = rLimiter.calculate(rSpeed);
 
       // If slow mode is enabled, scale down speeds for finer control
       if (isSlowMode()) {
