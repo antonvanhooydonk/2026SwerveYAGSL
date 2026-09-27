@@ -4,8 +4,6 @@
 
 package frc.robot.subsystems.drive;
 
-import static edu.wpi.first.units.Units.Meter;
-
 import java.io.File;
 import java.util.Optional;
 import java.util.Set;
@@ -82,14 +80,14 @@ public class DriveSubsystem extends SubsystemBase {
   private Pose2d cachedStartingPose = null;
 
   /**
-   * Creates a new SwerveSubsystem
-   * @param visionSubsystem The vision subsystem for pose estimation
+   * Creates a new swerve DriveSubsystem using the YAGSL library.
+   * @param directory The directory containing the swerve drive JSON configuration
    */
   public DriveSubsystem(File directory) {
     // Determine starting pose based on alliance color.
     Pose2d startingPose = Utils.isRedAlliance() 
-      ? new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)), Rotation2d.fromDegrees(180)) 
-      : new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0));
+      ? new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180)) 
+      : new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
 
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
     SwerveDriveTelemetry.verbosity = DriveConstants.kTelemetryVerbosity;
