@@ -204,16 +204,6 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Determine the default starting pose based on alliance color.
-   * @return The default starting Pose2d
-   */
-  private Pose2d getDefaultPose() {
-    return Utils.isRedAlliance() 
-      ? new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180)) 
-      : new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
-  }
-
-  /**
    * Set each swerve module to brake/coast mode
    * @param brake True to enable motor brake, false for coast
    */
@@ -246,6 +236,17 @@ public class DriveSubsystem extends SubsystemBase {
    */
   private Rotation2d getHeading() {
     return getPose().getRotation();
+  }
+
+  /**
+   * Gets the default starting pose based on alliance color.
+   * This is used to seed the pose estimator at the start of a match if no vision is available.
+   * @return The default starting Pose2d
+   */
+  private Pose2d getDefaultPose() {
+    return Utils.isRedAlliance() 
+      ? new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180)) 
+      : new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
   }
 
   /**
