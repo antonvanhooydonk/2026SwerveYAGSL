@@ -16,8 +16,8 @@ public final class FlywheelConstants {
   // ------------------------------------------------------------
   // Physical constants
   // ------------------------------------------------------------
-  public static final boolean kFlywheelFollowerOpposesLeader = true; // True if motors are mechanically mirrored
 
+  
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------

@@ -16,7 +16,6 @@ public final class ElevatorConstants {
   public static final double kGearRatio = 10.0; // Motor rotations per output shaft rotation
   public static final double kSpoolDiameterMeters = Units.inchesToMeters(1.5); // Diameter of the spool/sprocket
   public static final double kSpoolCircumferenceMeters = kSpoolDiameterMeters * Math.PI;
-  public static final boolean kFollowerOpposesLeader = true; // True if follower is mechanically mirrored
 
   // ------------------------------------------------------------
   // Height limits - adjust for your robot

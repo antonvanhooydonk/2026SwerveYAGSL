@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
+import frc.robot.Constants.CANConstants;
 import frc.robot.util.Utils;
 
 /**
@@ -58,12 +59,12 @@ public class IntakeSubsystem extends SubsystemBase {
    */
   public IntakeSubsystem() {
     // Initialize roller hardware
-    rollerMotor = new TalonFX(1);
+    rollerMotor = new TalonFX(CANConstants.kIntakeRollerMotorID);
     rollerConfig = new TalonFXConfiguration();
     
     // Initialize deploy/retract solenoid
     deploySolenoid = new DoubleSolenoid(
-      0,
+      CANConstants.kIntakeSolenoidMotorID,
       PneumaticsModuleType.REVPH,
       1,
       2
