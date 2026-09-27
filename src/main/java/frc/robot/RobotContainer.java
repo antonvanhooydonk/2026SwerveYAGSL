@@ -34,10 +34,10 @@ import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
 
 public class RobotContainer {
-  // Initialize our controllers
+  // Driver controllers
   private final CommandXboxController driverXbox = new CommandXboxController(0);
    
-  // The robot's subsystems are defined here...
+  // Subsystems
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   private final DriveSubsystem driveSubsystem = new DriveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   private final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
@@ -48,7 +48,7 @@ public class RobotContainer {
   private final TurretSubsystem turretSubsystem = new TurretSubsystem();
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem::addVisionMeasurement);
  
-  // Initalize coordination command factories
+  // Coordination command factories
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
   private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, flywheelSubsystem);
 
@@ -60,6 +60,9 @@ public class RobotContainer {
   private boolean wasInAuto = false;
   private boolean wasInTeleop = false;
 
+  /**
+   * The container for the robot. Contains subsystems, OI devices, and commands.
+   */
   public RobotContainer() {
     // set our default driving method
     driveSubsystem.setDefaultCommand(driveSubsystem.driveCommand(
@@ -221,6 +224,11 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
     return delayChooser.getSelected().andThen(autoChooser.getSelected());
   }
+
+  // -------------------------------------------------------------------------------- 
+  // Match state change methods. 
+  // These are called from the main Robot class when the match state changes.
+  // --------------------------------------------------------------------------------
 
   /**
    * This method is called periodically while the robot is disabled.
