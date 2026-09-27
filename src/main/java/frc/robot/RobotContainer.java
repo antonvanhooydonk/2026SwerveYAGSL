@@ -24,7 +24,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Feedback;
 import frc.robot.commands.Scoring;
 import frc.robot.subsystems.climber.ClimberSubsystem;
-import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.drive.DriveSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.rumble.RumbleSubsystem;
@@ -41,7 +41,7 @@ public class RobotContainer {
   private final RumbleSubsystem rumbleSubsystem = new RumbleSubsystem(driverXbox);
   private final FlywheelSubsystem shooterSubsystem = new FlywheelSubsystem();
   private final TurretSubsystem turretSubsystem = new TurretSubsystem();
-  private final SwerveSubsystem driveSubsystem = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
+  private final DriveSubsystem driveSubsystem = new DriveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   @SuppressWarnings("unused")
   private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem::addVisionMeasurement);
  
