@@ -96,8 +96,8 @@ public class DriveSubsystem extends SubsystemBase {
     // Initialize YAGSL SwerveDrive
     try {
       swerveDrive = new SwerveParser(directory).createSwerveDrive(DriveConstants.kMaxSpeedMetersPerSecond, getDefaultPose());
-    } catch (Exception e) {
-      throw new RuntimeException("FAILED TO INITIALIZE SWERVE DRIVE!!!", e);
+    } catch (Exception ex) {
+      throw new RuntimeException("FAILED TO INITIALIZE SWERVE DRIVE!!!", ex);
     }
 
     // Heading correction should only be used while controlling the robot via angle.
