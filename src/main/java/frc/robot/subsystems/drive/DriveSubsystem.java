@@ -52,14 +52,14 @@ import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 
 /**
- * Swerve drive subsystem using four SwerveModules.
+ * Swerve drive subsystem using YAGSL.
  * 
  * Integrated functionality:
  * 1. PathPlanner 
  * 2. PhotonVision integration via VisionSubsystem
  * 3. Slew rate limiting for smoother joystick control
  */
-public class SwerveSubsystem extends SubsystemBase {
+public class DriveSubsystem extends SubsystemBase {
   // YAGSL swerve drive
   private final SwerveDrive swerveDrive;
 
@@ -85,18 +85,18 @@ public class SwerveSubsystem extends SubsystemBase {
    * Creates a new SwerveSubsystem
    * @param visionSubsystem The vision subsystem for pose estimation
    */
-  public SwerveSubsystem(File directory) {
+  public DriveSubsystem(File directory) {
     // Determine starting pose based on alliance color.
     Pose2d startingPose = Utils.isRedAlliance() 
       ? new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)), Rotation2d.fromDegrees(180)) 
       : new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0));
 
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
-    SwerveDriveTelemetry.verbosity = SwerveConstants.kTelemetryVerbosity;
+    SwerveDriveTelemetry.verbosity = DriveConstants.kTelemetryVerbosity;
 
     // Initialize YAGSL SwerveDrive
     try {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(SwerveConstants.kMaxSpeedMetersPerSecond, startingPose);
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(DriveConstants.kMaxSpeedMetersPerSecond, startingPose);
     } catch (Exception e) {
       throw new RuntimeException("FAILED TO INITIALIZE SWERVE DRIVE!!!", e);
     }
@@ -105,7 +105,7 @@ public class SwerveSubsystem extends SubsystemBase {
     swerveDrive.setHeadingCorrection(false);
     
     // Disable cosine compensation when using swerveDrive.drive(robotVelocity, state, feedforwards)
-    swerveDrive.setCosineCompensator(!SwerveConstants.kUseSetpointGenerator);
+    swerveDrive.setCosineCompensator(!DriveConstants.kUseSetpointGenerator);
 
     // Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
     swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
@@ -121,8 +121,8 @@ public class SwerveSubsystem extends SubsystemBase {
 
     // Initialize the swerve setpoint generator
     setpointGenerator = new SwerveSetpointGenerator(
-      SwerveConstants.kRobotConfig, 
-      SwerveConstants.kSteerMaxAngularSpeedRadsPerSecond
+      DriveConstants.kRobotConfig, 
+      DriveConstants.kSteerMaxAngularSpeedRadsPerSecond
     );
     
     // Initialize the drive setpoint
@@ -142,7 +142,7 @@ public class SwerveSubsystem extends SubsystemBase {
         new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
         new PIDConstants(5.0, 0.0, 0.0)  // Rotation PID constants
       ),
-      SwerveConstants.kRobotConfig, // Robot configuration
+      DriveConstants.kRobotConfig, // Robot configuration
       Utils::isRedAlliance, // Method to flip path based on alliance color
       this // Reference to this subsystem to set requirements
     );
@@ -181,7 +181,7 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   private void driveRobotRelative(ChassisSpeeds speeds, DriveFeedforwards feedforwards) {
     // By-pass the setpoint generator and drive directly with the desired speeds if necessary
-    if (!SwerveConstants.kUseSetpointGenerator) {
+    if (!DriveConstants.kUseSetpointGenerator) {
       if (feedforwards != null) {
         SwerveModuleState[] states = swerveDrive.kinematics.toSwerveModuleStates(speeds);
         swerveDrive.drive(speeds, states, feedforwards.linearForces());
@@ -192,7 +192,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
     // Create a new drive setpoint based on the current drive setpoint & the desired chassis speeds.
-    driveSetpoint = setpointGenerator.generateSetpoint(driveSetpoint, speeds, SwerveConstants.kPeriodicTimeSeconds);
+    driveSetpoint = setpointGenerator.generateSetpoint(driveSetpoint, speeds, DriveConstants.kPeriodicTimeSeconds);
 
     // Move the robot using the new setpoint
     swerveDrive.drive(
@@ -389,7 +389,7 @@ public class SwerveSubsystem extends SubsystemBase {
       }
 
       // Reject timestamps older than 0.3 seconds
-      if ((now - timestamp) > SwerveConstants.kVisionMeasurementMaxAge) {
+      if ((now - timestamp) > DriveConstants.kVisionMeasurementMaxAge) {
         rejectedVisionCount++;
         return;
       }
@@ -404,10 +404,10 @@ public class SwerveSubsystem extends SubsystemBase {
       //  - we haven't accepted any vision yet (odometry-only pose may already be stale), or
       //  - we've rejected several in a row (likely genuine drift, not a bad reading)
       double translationDistance = getPose().getTranslation().getDistance(visionPose.getTranslation());
-      boolean isJump = translationDistance > SwerveConstants.kVisionMaxTranslationJumpMeters;
+      boolean isJump = translationDistance > DriveConstants.kVisionMaxTranslationJumpMeters;
       boolean shouldGateJump = isJump
         && acceptedVisionCount > 0
-        && consecutiveRejectedJumps < SwerveConstants.kMaxConsecutiveVisionRejections;
+        && consecutiveRejectedJumps < DriveConstants.kMaxConsecutiveVisionRejections;
 
       if (shouldGateJump) {
         rejectedVisionCount++;
@@ -492,8 +492,8 @@ public class SwerveSubsystem extends SubsystemBase {
         leftMeters >= 0 ? "Left" : "Right", Math.abs(leftMeters),
         rotateDegrees >= 0 ? "CCW" : "CW", Math.abs(rotateDegrees)));
     SmartDashboard.putBoolean("Auto Align/In Position",
-        totalErrorMeters < SwerveConstants.kStartPoseTranslationToleranceMeters
-        && Math.abs(rotateDegrees) < SwerveConstants.kStartPoseRotationToleranceDegrees);
+        totalErrorMeters < DriveConstants.kStartPoseTranslationToleranceMeters
+        && Math.abs(rotateDegrees) < DriveConstants.kStartPoseRotationToleranceDegrees);
 
     // Optional: overlay both poses on a Field2d for a visual "you are here" /
     // "target" view on Shuffleboard/Glass, if you already keep one around
@@ -575,12 +575,12 @@ public class SwerveSubsystem extends SubsystemBase {
       double ySpeed = 0;
 
       // Apply circular deadband for translation 
-      if (magnitude > SwerveConstants.kJoystickDeadband) {
+      if (magnitude > DriveConstants.kJoystickDeadband) {
         // Rescale so speed starts at 0 at the edge of the deadband
-        double clippedMagnitude = (magnitude - SwerveConstants.kJoystickDeadband) / (1.0 - SwerveConstants.kJoystickDeadband);
+        double clippedMagnitude = (magnitude - DriveConstants.kJoystickDeadband) / (1.0 - DriveConstants.kJoystickDeadband);
         
         // Apply squaring/cubing to the clipped magnitude
-        double curvedMagnitude = Math.copySign(Math.pow(clippedMagnitude, SwerveConstants.kJoystickInputExponent), clippedMagnitude);
+        double curvedMagnitude = Math.copySign(Math.pow(clippedMagnitude, DriveConstants.kJoystickInputExponent), clippedMagnitude);
 
         // Re-apply the direction sign to the new magnitude
         xSpeed = (rawX / magnitude) * curvedMagnitude;
@@ -588,20 +588,20 @@ public class SwerveSubsystem extends SubsystemBase {
       }
 
       // Apply 1D deadband and squaring for rotation
-      double rSpeed = MathUtil.applyDeadband(rawR, SwerveConstants.kJoystickDeadband);
-      rSpeed = Math.copySign(Math.pow(Math.abs(rSpeed), SwerveConstants.kJoystickInputExponent), rSpeed);
+      double rSpeed = MathUtil.applyDeadband(rawR, DriveConstants.kJoystickDeadband);
+      rSpeed = Math.copySign(Math.pow(Math.abs(rSpeed), DriveConstants.kJoystickInputExponent), rSpeed);
 
       // If slow mode is enabled, scale down speeds for finer control
       if (isSlowMode()) {
-        xSpeed *= SwerveConstants.kSlowModeScaling;
-        ySpeed *= SwerveConstants.kSlowModeScaling;
-        rSpeed *= SwerveConstants.kSlowModeScaling;
+        xSpeed *= DriveConstants.kSlowModeScaling;
+        ySpeed *= DriveConstants.kSlowModeScaling;
+        rSpeed *= DriveConstants.kSlowModeScaling;
       }
 
       // Convert the joystick's -1..1 to m/s and rad/s
-      double xSpeedMPS = xSpeed * SwerveConstants.kMaxSpeedMetersPerSecond;
-      double ySpeedMPS = ySpeed * SwerveConstants.kMaxSpeedMetersPerSecond;
-      double rSpeedRad = rSpeed * SwerveConstants.kMaxAngularSpeedRadsPerSecond;
+      double xSpeedMPS = xSpeed * DriveConstants.kMaxSpeedMetersPerSecond;
+      double ySpeedMPS = ySpeed * DriveConstants.kMaxSpeedMetersPerSecond;
+      double rSpeedRad = rSpeed * DriveConstants.kMaxAngularSpeedRadsPerSecond;
 
       // Create robot-relative chassis speeds
       ChassisSpeeds chassisSpeeds;
@@ -646,7 +646,7 @@ public class SwerveSubsystem extends SubsystemBase {
       }
 
       // Since AutoBuilder is configured, we can use it to build pathfinding commands
-      return AutoBuilder.pathfindToPose(targetPose, SwerveConstants.kPathfindingConstraints, 0.0);
+      return AutoBuilder.pathfindToPose(targetPose, DriveConstants.kPathfindingConstraints, 0.0);
     }, Set.of(this))
     .withName("Drive_DriveToPose");
   }

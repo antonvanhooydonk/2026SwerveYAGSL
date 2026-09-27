@@ -23,7 +23,7 @@ import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
  * It is advised to statically import this class (or one of its inner classes) wherever the
  * constants are needed, to reduce verbosity.
  */
-public final class SwerveConstants {
+public final class DriveConstants {
   // ------------------------------------------------------------
   // Maximum drive & turning speeds - adjust as necessary
   // ------------------------------------------------------------

@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 
 import frc.robot.Constants.FieldConstants;
-import frc.robot.subsystems.drive.SwerveSubsystem;
+import frc.robot.subsystems.drive.DriveSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.util.Utils;
@@ -15,7 +15,7 @@ import frc.robot.util.Utils;
  * behavior for scoring at the alliance hub.
  */
 public class Scoring {
-  private final SwerveSubsystem driveSubsystem;
+  private final DriveSubsystem driveSubsystem;
   private final TurretSubsystem turretSubsystem;
   private final FlywheelSubsystem flywheelSubsystem;
 
@@ -26,7 +26,7 @@ public class Scoring {
    * @param flywheelSubsystem the flywheel subsystem to control
    */
   public Scoring(
-    SwerveSubsystem driveSubsystem,
+    DriveSubsystem driveSubsystem,
     TurretSubsystem turretSubsystem, 
     FlywheelSubsystem flywheelSubsystem
   ) {
