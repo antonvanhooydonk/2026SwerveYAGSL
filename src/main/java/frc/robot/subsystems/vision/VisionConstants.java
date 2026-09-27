@@ -20,8 +20,28 @@ import edu.wpi.first.math.util.Units;
  * constants are needed, to reduce verbosity.
  */
 public final class VisionConstants {
-  // Define AprilTag vision cameras and their transforms relative to the robot center
-  // The front of the robot is the intake side, the back is the launcher side
+  // Vision configuration constants
+  public static final boolean kEnableVision             = true;
+  public static final double kPoseAmbiguityThreshold    = 0.20;
+  public static final double kFieldBorderMargin         = 0.50; // meters
+  public static final double kZMargin                   = 0.75; // meters
+
+  // Stand 5-6 meters from a tag
+  // Check tag area in PhotonVision UI
+  // Set threshold to 80% of that value
+  // Example: If tag shows 1200 pixels² at 5m:
+  public static final double kMinTagAreaPixels          = 1000.0; // Adjust based on testing
+  
+  // Standard deviation calculation constants
+  public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
+  public static final double kSingleTagBaseThetaStdDev  = 0.04; // radians (~2.3 degrees)
+  public static final double kMultiTagBaseXYstdDev      = 0.02; // meters
+  public static final double kMultiTagBaseThetaStdDev   = 0.01; // radians (~0.6 degrees)
+  public static final double kMaxDistanceMeters         = 6.00; // anything over this is max std dev
+
+  // ----------------------------------------------------------
+  // Define the robot's cameras
+  // ----------------------------------------------------------
   // See: https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
   //      for coordinate system conventions
   public static final Map<String, Transform3d> kCameraConfigs = Map.of(
@@ -42,23 +62,4 @@ public final class VisionConstants {
       new Rotation3d(0, 0, Math.PI) 
     )
   );
-
-  // Vision configuration constants
-  public static final boolean kEnableVision             = true;
-  public static final double kPoseAmbiguityThreshold    = 0.20;
-  public static final double kFieldBorderMargin         = 0.50; // meters
-  public static final double kZMargin                   = 0.75; // meters
-
-  // Stand 5-6 meters from a tag
-  // Check tag area in PhotonVision UI
-  // Set threshold to 80% of that value
-  // Example: If tag shows 1200 pixels² at 5m:
-  public static final double kMinTagAreaPixels          = 1000.0; // Adjust based on testing
-  
-  // Standard deviation calculation constants
-  public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
-  public static final double kSingleTagBaseThetaStdDev  = 0.04; // radians (~2.3 degrees)
-  public static final double kMultiTagBaseXYstdDev      = 0.02; // meters
-  public static final double kMultiTagBaseThetaStdDev   = 0.01; // radians (~0.6 degrees)
-  public static final double kMaxDistanceMeters         = 6.00; // anything over this is max std dev
 }
