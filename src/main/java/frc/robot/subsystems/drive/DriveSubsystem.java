@@ -90,17 +90,12 @@ public class DriveSubsystem extends SubsystemBase {
    * @param directory The directory containing the swerve drive JSON configuration
    */
   public DriveSubsystem(File directory) {
-    // Determine starting pose based on alliance color.
-    Pose2d startingPose = Utils.isRedAlliance() 
-      ? new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180)) 
-      : new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
-
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
     SwerveDriveTelemetry.verbosity = DriveConstants.kTelemetryVerbosity;
 
     // Initialize YAGSL SwerveDrive
     try {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(DriveConstants.kMaxSpeedMetersPerSecond, startingPose);
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(DriveConstants.kMaxSpeedMetersPerSecond, getDefaultPose());
     } catch (Exception e) {
       throw new RuntimeException("FAILED TO INITIALIZE SWERVE DRIVE!!!", e);
     }
@@ -209,6 +204,16 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Determine the default starting pose based on alliance color.
+   * @return The default starting Pose2d
+   */
+  private Pose2d getDefaultPose() {
+    return Utils.isRedAlliance() 
+      ? new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180)) 
+      : new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
+  }
+
+  /**
    * Set each swerve module to brake/coast mode
    * @param brake True to enable motor brake, false for coast
    */
@@ -230,7 +235,7 @@ public class DriveSubsystem extends SubsystemBase {
    * NOTE: Should never need to call this if vision is working properly.
    */
   private void resetOdometry(Pose2d pose) {
-    swerveDrive.resetOdometry(pose == null ? new Pose2d() : pose);
+    swerveDrive.resetOdometry(pose == null ? getDefaultPose() : pose);
   }
 
   /**
@@ -750,7 +755,7 @@ public class DriveSubsystem extends SubsystemBase {
    * NOTE: Should never need to call this if vision is working properly.
    */
   public Command resetOdometryCommand() {
-    return resetOdometryCommand(null)
+    return resetOdometryCommand(getDefaultPose())
       .ignoringDisable(true)
       .withName("Drive_ResetOdometry");
   }
