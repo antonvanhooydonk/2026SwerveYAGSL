@@ -1,12 +1,14 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 
+import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.DriveSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
-import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.Utils;
 
 /**
  * Autos command factory that defines autonomous routines for the robot.
@@ -16,7 +18,6 @@ public class Autos {
   private final DriveSubsystem driveSubsystem;
   private final FlywheelSubsystem flywheelSubsystem;
   private final TurretSubsystem turretSubsystem;
-  private final VisionSubsystem visionSubsystem;
   private final ClimberSubsystem climberSubsystem;
 
   /**
@@ -31,14 +32,12 @@ public class Autos {
     DriveSubsystem driveSubsystem,
     FlywheelSubsystem flywheelSubsystem,
     TurretSubsystem turretSubsystem,
-    VisionSubsystem visionSubsystem,
     ClimberSubsystem climberSubsystem
   ) {
     this.feedback = feedback;
     this.driveSubsystem = driveSubsystem;
     this.flywheelSubsystem = flywheelSubsystem;
     this.turretSubsystem = turretSubsystem;
-    this.visionSubsystem = visionSubsystem;
     this.climberSubsystem = climberSubsystem;
   }
 
@@ -47,14 +46,26 @@ public class Autos {
    * @return the command representing the autonomous routine
    */
   public Command exampleAutoRoutine() {
-    return driveSubsystem.alignToTagCommand(
-      () -> 1, 
-      () -> 0.25, 
-      () -> 0.25
+    return Commands.parallel(
+      driveSubsystem.alignToTagCommand(
+        () -> 1, 
+        () -> 0.25, 
+        () -> 0.25
+      ),
+      climberSubsystem.toLowerLimitCommand()
     )
-    .withTimeout(15)
-    .andThen(turretSubsystem.aimAtPoseCommand(null, null))
-    .andThen(flywheelSubsystem.shootAtPoseCommand(null, null))
+    .withTimeout(5)
+    .andThen(Commands.parallel(
+      turretSubsystem.aimAtPoseCommand(driveSubsystem::getPose, () -> 
+        Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
+      ),
+      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
+        Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
+      )
+    ))
+    .withTimeout(10)
+    .andThen(driveSubsystem.driveToPoseCommand(null))
+    .andThen(climberSubsystem.toLevelOneCommand())
     .andThen(feedback.successCommand());
   }
 }

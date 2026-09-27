@@ -39,7 +39,7 @@ public class RobotContainer {
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
   private final RumbleSubsystem rumbleSubsystem = new RumbleSubsystem(driverXbox);
-  private final FlywheelSubsystem shooterSubsystem = new FlywheelSubsystem();
+  private final FlywheelSubsystem flywheelSubsystem = new FlywheelSubsystem();
   private final TurretSubsystem turretSubsystem = new TurretSubsystem();
   private final DriveSubsystem driveSubsystem = new DriveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   @SuppressWarnings("unused")
@@ -47,7 +47,7 @@ public class RobotContainer {
  
   // Initalize command factories
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
-  private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, shooterSubsystem);
+  private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, flywheelSubsystem);
 
   // Auto choosers
   private final SendableChooser<Command> delayChooser = new SendableChooser<>();
@@ -238,7 +238,7 @@ public class RobotContainer {
 
     // Initialze subsystems
     driveSubsystem.autonomousInit();
-    shooterSubsystem.autonomousInit();
+    flywheelSubsystem.autonomousInit();
     turretSubsystem.autonomousInit();
   }
 
