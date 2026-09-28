@@ -75,10 +75,15 @@ public final class Constants {
     public static final AprilTagFieldLayout kFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
     public static final double kFieldLengthMeters = Units.inchesToMeters(651.22); // meters
     public static final double kFieldWidthMeters = Units.inchesToMeters(317.69); // meters
-    public static final Translation2d kBlueHubCenter = new Translation2d(Units.inchesToMeters(158.84), Units.inchesToMeters(182.11));
-    public static final Translation2d kRedHubCenter = new Translation2d(Units.inchesToMeters(158.84), Units.inchesToMeters(469.11));
+    // Field frame: origin at the blue alliance corner, +X toward the red alliance wall, +Y across the 
+    // field width. The hubs sit 182.11 in from their own alliance wall on the field centerline (Y = width / 2).
+    // Red is derived by mirroring X so the two can never drift out of sync.
+    // VERIFY against the hub AprilTag poses in kFieldLayout before your first event.
+    public static final Translation2d kBlueHubCenter = new Translation2d(Units.inchesToMeters(182.11), kFieldWidthMeters / 2.0);
+    public static final Translation2d kRedHubCenter = new Translation2d(kFieldLengthMeters - kBlueHubCenter.getX(), kFieldWidthMeters / 2.0);
     public static final Pose2d kBlueHubPose = new Pose2d(kBlueHubCenter, new Rotation2d());
     public static final Pose2d kRedHubPose = new Pose2d(kRedHubCenter, new Rotation2d());
+    // TODO: placeholders - these are currently the hub centers. Replace with the real pass targets.
     public static final Pose2d kBluePassPose = new Pose2d(kBlueHubCenter, new Rotation2d());
     public static final Pose2d kRedPassPose = new Pose2d(kRedHubCenter, new Rotation2d());
   }

@@ -170,8 +170,8 @@ public class VisionSubsystem extends SubsystemBase {
         return false;
       }
 
-      // Area check (tags too small = far away = unreliable)
-      if (target.getArea() < VisionConstants.kMinTagAreaPixels) {
+      // Area check (getArea() is percent of image; tags too small = far away = unreliable)
+      if (target.getArea() < VisionConstants.kMinTagAreaPercent) {
         return false;
       }
     }

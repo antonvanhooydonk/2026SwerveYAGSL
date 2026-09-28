@@ -54,8 +54,11 @@ public class RobotContainer {
   private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, flywheelSubsystem);
 
   // Auto choosers
-  private final SendableChooser<Command> delayChooser = new SendableChooser<>();
-  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
+  // NOTE: choosers hold plain values (delay seconds / PathPlanner auto names), NOT Command
+  // instances. A Command can only be composed once, so reusing a chooser's instance in
+  // andThen() throws the second time autonomous is enabled without a code restart.
+  private final SendableChooser<Double> delayChooser = new SendableChooser<>();
+  private final SendableChooser<String> autoChooser = new SendableChooser<>();
 
   // Track match state
   private boolean wasInAuto = false;
@@ -116,7 +119,7 @@ public class RobotContainer {
     // defined in our Autos.java or they can be PathPlanner autos located in the 
     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
     // ".auto" extension for the second argument.
-    autoChooser.setDefaultOption("No auto", Commands.none());
+    autoChooser.setDefaultOption("No auto", "");
     addAutoToChooser("One Piece Auto", "OnePieceAuto");
     addAutoToChooser("Two Piece Auto", "TwoPieceAuto");
     
@@ -124,30 +127,26 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Command", autoChooser);
 
     // Configure the available auto delay options
-    delayChooser.setDefaultOption("No delay", Commands.none());
-    delayChooser.addOption("1.0 second", Commands.waitSeconds(1.0));
-    delayChooser.addOption("1.5 seconds", Commands.waitSeconds(1.5));
-    delayChooser.addOption("2.0 seconds", Commands.waitSeconds(2.0));
-    delayChooser.addOption("2.5 seconds", Commands.waitSeconds(2.5));
-    delayChooser.addOption("3.0 seconds", Commands.waitSeconds(3.0));
-    delayChooser.addOption("3.5 seconds", Commands.waitSeconds(3.5));
-    delayChooser.addOption("4.0 seconds", Commands.waitSeconds(4.0));
-    delayChooser.addOption("4.5 seconds", Commands.waitSeconds(4.5));
-    delayChooser.addOption("5.0 seconds", Commands.waitSeconds(5.0));
+    delayChooser.setDefaultOption("No delay", 0.0);
+    for (double seconds = 1.0; seconds <= 5.0; seconds += 0.5) {
+      delayChooser.addOption(seconds + " seconds", seconds);
+    }
     
     // Add delay chooser to dashboard
     SmartDashboard.putData("Auto Delay", delayChooser);
   }
 
   /**
-   * Add an auto to the auto chooser. This method will attempt to build  
-   * the auto and add it to the chooser.
+   * Add an auto to the auto chooser. The auto is built once here to validate that it 
+   * loads (and to warm up PathPlanner's file cache), but only its NAME is stored. A 
+   * fresh command is built each time autonomous starts (see getAutonomousCommand()).
    * @param displayName The name to display in the chooser
    * @param autoName The name of the auto to build (without the .auto extension)
    */
   private void addAutoToChooser(String displayName, String autoName) {
     try {
-      autoChooser.addOption(displayName, AutoBuilder.buildAuto(autoName));
+      AutoBuilder.buildAuto(autoName); // throws if the .auto or its paths are missing/invalid
+      autoChooser.addOption(displayName, autoName);
     } catch (Exception ex) {
       Utils.logError("Failed to load auto " + displayName + ": " + ex.getMessage());
     }
@@ -161,11 +160,13 @@ public class RobotContainer {
    * controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight joysticks}.
    */
   private void configureButtonBindings() {
-    // manually reset odometry & climber home position
-    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(Commands.parallel(
-      driveSubsystem.resetOdometryCommand(),
-      climberSubsystem.setHomePositionCommand()
-    ));
+    // re-zero field-relative heading only (keeps the vision/odometry position)
+    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
+
+    // pit-only: set climber home position. Disabled-only so it can't be hit mid-match. 
+    // (The climber also re-zeros in autonomousInit, so start each match with it at home.)
+    RobotModeTriggers.disabled().and(driverXbox.start()).and(driverXbox.back())
+      .onTrue(climberSubsystem.setHomePositionCommand());
 
     // toggles the drive mode: field-relative vs robot-relative
     RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeCommand());
@@ -238,7 +239,21 @@ public class RobotContainer {
    * @return the command to run in autonomous, or Commands.none() to run nothing
    */
   public Command getAutonomousCommand() {
-    return delayChooser.getSelected().andThen(autoChooser.getSelected());
+    // Read the selections (with null-safe defaults)
+    Double delaySeconds = delayChooser.getSelected();
+    String autoName = autoChooser.getSelected();
+
+    // Build a FRESH auto command every time so re-enabling auto never re-composes an old instance
+    Command auto = Commands.none();
+    if (autoName != null && !autoName.isEmpty()) {
+      try {
+        auto = AutoBuilder.buildAuto(autoName);
+      } catch (Exception ex) {
+        Utils.logError("Failed to build auto " + autoName + ": " + ex.getMessage());
+      }
+    }
+
+    return Commands.waitSeconds(delaySeconds == null ? 0.0 : delaySeconds).andThen(auto);
   }
 
   // -------------------------------------------------------------------------------- 
@@ -251,8 +266,8 @@ public class RobotContainer {
    */
   public void disabledPeriodic() {
     // Update the dashboard with the current auto starting pose
-    // TODO: ensure the getName() works 
-    driveSubsystem.publishStartingPoseAlignment(() ->autoChooser.getSelected().getName());
+    // The chooser value is the PathPlanner auto name ("" = no auto)
+    driveSubsystem.publishStartingPoseAlignment(autoChooser::getSelected);
   }
 
   /**

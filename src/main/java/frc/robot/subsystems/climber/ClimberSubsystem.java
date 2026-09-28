@@ -108,9 +108,9 @@ public class ClimberSubsystem extends SubsystemBase {
 
     climbConfig.softLimit
       .forwardSoftLimitEnabled(true)
-      .forwardSoftLimit(ClimberConstants.kUpperLimitDegrees)
+      .forwardSoftLimit(ClimberConstants.kMaxPositionDegrees)
       .reverseSoftLimitEnabled(true)
-      .reverseSoftLimit(ClimberConstants.kLowerLimitDegrees);
+      .reverseSoftLimit(ClimberConstants.kMinPositionDegrees);
       
     climbConfig.encoder
       .countsPerRevolution(ClimberConstants.kEncoderTicksPerRevolution) 
@@ -150,8 +150,8 @@ public class ClimberSubsystem extends SubsystemBase {
     // Clamp target to valid range
     targetAngleDegrees = MathUtil.clamp(
       degrees, 
-      ClimberConstants.kLowerLimitDegrees, 
-      ClimberConstants.kUpperLimitDegrees
+      ClimberConstants.kMinPositionDegrees, 
+      ClimberConstants.kMaxPositionDegrees
     );
 
     // Set the target position using max motion control
@@ -160,20 +160,25 @@ public class ClimberSubsystem extends SubsystemBase {
 
   /**
    * Set the voltage for the climber motor (open-loop control)
-   * @param volts Voltage to apply to the motor
+   * @param volts Voltage to apply to the motor (positive = toward larger encoder values)
    */
   private void setVoltage(double volts) {
     // Clamp voltage to safe range
     volts = MathUtil.clamp(volts, -12, 12);
 
+    // Work out which travel limit we are heading toward. "Up" is the negative 
+    // encoder direction, so we compare against kUpDirection instead of assuming a sign.
+    boolean movingUp = volts * ClimberConstants.kUpDirection > 0;
+    boolean movingDown = volts * ClimberConstants.kUpDirection < 0;
+
     // Check if the climber is at the upper limit and trying to move up
-    if (isAtUpperLimit() && volts > 0) {
+    if (movingUp && isAtUpperLimit()) {
       stop();
       return;
     }
 
     // Check if the climber is at the lower limit and trying to move down
-    if (isAtLowerLimit() && volts < 0) {
+    if (movingDown && isAtLowerLimit()) {
       stop();
       return;
     }
@@ -405,7 +410,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber up
    */
   public Command upCommand() {
-    return run(() -> setVoltage(ClimberConstants.kManualUpVoltage))
+    return run(() -> setVoltage(ClimberConstants.kUpDirection * Math.abs(ClimberConstants.kManualUpVoltage)))
       .withName("Climber_ManualUp");
   }
 
@@ -414,7 +419,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber up
    */
   public Command downCommand() {
-    return run(() -> setVoltage(ClimberConstants.kManualDownVoltage))
+    return run(() -> setVoltage(-ClimberConstants.kUpDirection * Math.abs(ClimberConstants.kManualDownVoltage)))
       .withName("Climber_ManualDown");
   }
   

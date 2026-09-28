@@ -22,6 +22,18 @@ public final class ClimberConstants {
   public static final double kVelocityConversionFactor  = kPositionConversionFactor / 60.0;
   public static final double kUpperLimitDegrees         = -75.0; // Maximum up was -250
   public static final double kLowerLimitDegrees         = 140.0; // Maximum down was 200
+
+  // "Up" is the NEGATIVE encoder direction on this robot, so the upper limit is numerically 
+  // smaller than the lower limit. Anything that needs numeric min/max (clamp, soft limits) 
+  // must use these, never upper/lower directly - MathUtil.clamp(x, lower, upper) would 
+  // always return the lower limit here.
+  public static final double kMinPositionDegrees        = Math.min(kUpperLimitDegrees, kLowerLimitDegrees);
+  public static final double kMaxPositionDegrees        = Math.max(kUpperLimitDegrees, kLowerLimitDegrees);
+
+  // Sign of the encoder change when moving "up": -1 here. Assumes POSITIVE motor voltage 
+  // increases the encoder. Verify on the bench with the climber unloaded; if it doesn't, 
+  // invert the motor with .inverted(true) in configureMotor() rather than changing this.
+  public static final double kUpDirection               = Math.signum(kUpperLimitDegrees - kLowerLimitDegrees);
   public static final double kHomeDegrees               =   0.0; // Home position
   public static final double kLevelOneClimbDegrees      =   5.0; // Level 1 climb position
   public static final double kLevelTwoClimbDegrees      = -50.0; // Level 2 climb position
@@ -35,8 +47,8 @@ public final class ClimberConstants {
   public static final double kMaxVelocityDegPerSec    = 100.0; // Maximum velocity for position control
   public static final double kMaxAccelDegPerSec2      = 200.0; // Maximum acceleration for position control
   public static final double kMoveTimeoutSeconds      = 3.0;   // Timeout for move commands
-  public static final double kManualUpVoltage         =  12.0; // Voltage for manual up control
-  public static final double kManualDownVoltage       = -12.0; // Voltage for manual down control
+  public static final double kManualUpVoltage         =  12.0; // Magnitude of voltage for manual up control (direction handled via kUpDirection)
+  public static final double kManualDownVoltage       =  12.0; // Magnitude of voltage for manual down control (direction handled via kUpDirection)
 
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)

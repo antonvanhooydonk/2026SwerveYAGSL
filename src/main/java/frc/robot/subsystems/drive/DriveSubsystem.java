@@ -229,6 +229,17 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Resets ONLY the heading of the pose estimate to the alliance-forward direction, 
+   * keeping the estimated translation. Use when the driver points the robot away 
+   * from their driver station and needs to re-establish field-relative "forward".
+   * The alliance is read when this runs, not when the command is built.
+   */
+  private void resetHeading() {
+    Rotation2d forward = getDefaultPose().getRotation();
+    swerveDrive.resetOdometry(new Pose2d(getPose().getTranslation(), forward));
+  }
+
+  /**
    * Gets the current heading of the robot from the pose estimator.
    * This is what should be fed into the drive (auto and teleop)
    * functions when calculating chassis speeds & module states.
@@ -756,9 +767,21 @@ public class DriveSubsystem extends SubsystemBase {
    * NOTE: Should never need to call this if vision is working properly.
    */
   public Command resetOdometryCommand() {
-    return resetOdometryCommand(getDefaultPose())
+    // Evaluate the default pose when the command RUNS - the alliance is usually not 
+    // known yet when bindings are created in the RobotContainer constructor.
+    return runOnce(() -> resetOdometry(getDefaultPose()))
       .ignoringDisable(true)
       .withName("Drive_ResetOdometry");
+  }
+
+  /**
+   * Reset only the robot heading to face away from the alliance driver station,
+   * leaving the translation estimate (vision/odometry) untouched.
+   */
+  public Command resetHeadingCommand() {
+    return runOnce(this::resetHeading)
+      .ignoringDisable(true)
+      .withName("Drive_ResetHeading");
   }
 
   /**

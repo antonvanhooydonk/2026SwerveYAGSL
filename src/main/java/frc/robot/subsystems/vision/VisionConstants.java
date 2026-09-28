@@ -26,11 +26,11 @@ public final class VisionConstants {
   public static final double kFieldBorderMargin         = 0.50; // meters
   public static final double kZMargin                   = 0.75; // meters
 
-  // Stand 5-6 meters from a tag
-  // Check tag area in PhotonVision UI
-  // Set threshold to 80% of that value
-  // Example: If tag shows 1200 pixels² at 5m:
-  public static final double kMinTagAreaPixels          = 1000.0; // Adjust based on testing
+  // PhotonVision's target area is a PERCENT of the image (0-100), not pixels.
+  // Calibrate: stand ~5 m from a tag, read its area in the PhotonVision UI, and set this
+  // to ~80% of that value. The 0.08 default is a rough estimate for a 1280x800, ~70 deg HFOV camera
+  // (a tag at 5 m is ~0.09%) and MUST be checked against your actual cameras.
+  public static final double kMinTagAreaPercent         = 0.08;
   
   // Standard deviation calculation constants
   public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
