@@ -471,8 +471,8 @@ public class DriveSubsystem extends SubsystemBase {
       // Increment the count of accepted vision measurements for monitoring purposes
       acceptedVisionCount++;
       consecutiveRejectedJumps = 0;
-    } catch (Exception e) {
-      Utils.logError("Error adding vision measurement: " + e.getMessage());
+    } catch (Exception ex) {
+      Utils.logError("Error adding vision measurement: " + ex.getMessage());
     }
   }
 
@@ -502,7 +502,7 @@ public class DriveSubsystem extends SubsystemBase {
         // Starting pose is always relative to a blue alliance origin
         cachedStartingPose = new PathPlannerAuto(autoName).getStartingPose();
         SmartDashboard.putString("Auto Align/Status", "Ready");
-      } catch (Exception e) {
+      } catch (Exception ex) {
         cachedStartingPose = null;
         SmartDashboard.putString("Auto Align/Status", "Couldn't load starting pose for \"" + autoName + "\"");
         return;
@@ -763,6 +763,16 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Reset only the robot heading to face away from the alliance driver station,
+   * leaving the translation estimate (vision/odometry) untouched.
+   */
+  public Command resetHeadingCommand() {
+    return runOnce(this::resetHeading)
+      .ignoringDisable(true)
+      .withName("Drive_ResetHeading");
+  }
+
+  /**
    * Reset the odometry to origin (0,0,0) with module encoder reset.
    * NOTE: Should never need to call this if vision is working properly.
    */
@@ -772,16 +782,6 @@ public class DriveSubsystem extends SubsystemBase {
     return runOnce(() -> resetOdometry(getDefaultPose()))
       .ignoringDisable(true)
       .withName("Drive_ResetOdometry");
-  }
-
-  /**
-   * Reset only the robot heading to face away from the alliance driver station,
-   * leaving the translation estimate (vision/odometry) untouched.
-   */
-  public Command resetHeadingCommand() {
-    return runOnce(this::resetHeading)
-      .ignoringDisable(true)
-      .withName("Drive_ResetHeading");
   }
 
   /**

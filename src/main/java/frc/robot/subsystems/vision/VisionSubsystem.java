@@ -63,8 +63,8 @@ public class VisionSubsystem extends SubsystemBase {
     for (String cameraName : configs.keySet()) {
       try {
         cameras.add(new Camera(cameraName, configs.get(cameraName)));
-      } catch (Exception e) {
-        Utils.logError("Failed to initialize camera " + cameraName + ": " + e.getMessage());
+      } catch (Exception ex) {
+        Utils.logError("Failed to initialize camera " + cameraName + ": " + ex.getMessage());
       }
     }
     
@@ -93,8 +93,8 @@ public class VisionSubsystem extends SubsystemBase {
     for (Camera camera : cameras) {
       try {
         camera.updateCache();
-      } catch (Exception e) {
-        Utils.logError("Error updating cache for " + camera.getName() + ": " + e.getMessage());
+      } catch (Exception ex) {
+        Utils.logError("Error updating cache for " + camera.getName() + ": " + ex.getMessage());
       }
     }
     
@@ -148,8 +148,8 @@ public class VisionSubsystem extends SubsystemBase {
           // Push vision measurement to drive subsystem via the vision consumer callback
           visionConsumer.accept(estimate.estimatedPose.toPose2d(), estimate.timestampSeconds, stdDevs);
         }
-      } catch (Exception e) {
-        Utils.logError("Error processing vision for " + camera.getName() + ": " + e.getMessage());
+      } catch (Exception ex) {
+        Utils.logError("Error processing vision for " + camera.getName() + ": " + ex.getMessage());
       }
     }
   }

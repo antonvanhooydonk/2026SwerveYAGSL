@@ -42,8 +42,8 @@ public final class Elastic {
   public static void sendNotification(Notification notification) {
     try {
       notificationPublisher.set(objectMapper.writeValueAsString(notification));
-    } catch (JsonProcessingException e) {
-      e.printStackTrace();
+    } catch (JsonProcessingException ex) {
+      ex.printStackTrace();
     }
   }
 
