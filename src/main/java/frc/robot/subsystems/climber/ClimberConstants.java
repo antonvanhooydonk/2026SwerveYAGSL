@@ -42,7 +42,7 @@ public final class ClimberConstants {
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------
-  public static final double kStallCurrentThreshold   = 28.0;  // Amps - indicates motor is working hard
+  public static final double kStallCurrentThreshold   = 25.5;  // Amps - 85% of smart current limit
   public static final double kStallVelocityThreshold  = 1.0;   // Degrees/sec - indicates motor not moving
   public static final double kMaxVelocityDegPerSec    = 100.0; // Maximum velocity for position control
   public static final double kMaxAccelDegPerSec2      = 200.0; // Maximum acceleration for position control
