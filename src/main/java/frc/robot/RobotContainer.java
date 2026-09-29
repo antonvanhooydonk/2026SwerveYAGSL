@@ -120,8 +120,8 @@ public class RobotContainer {
     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
     // ".auto" extension for the second argument.
     autoChooser.setDefaultOption("No auto", "");
-    autoChooser.addOption("One Piece Auto", "OnePieceAuto");
-    autoChooser.addOption("Two Piece Auto", "TwoPieceAuto");
+    addAutoToChooser("One Piece Auto", "OnePieceAuto");
+    addAutoToChooser("Two Piece Auto", "TwoPieceAuto");
     
     // Add auto chooser to dashboard
     SmartDashboard.putData("Auto Command", autoChooser);
@@ -134,6 +134,22 @@ public class RobotContainer {
     
     // Add delay chooser to dashboard
     SmartDashboard.putData("Auto Delay", delayChooser);
+  }
+
+  /**
+   * Add an auto to the auto chooser. The auto is built once here to validate that it 
+   * loads (and to warm up PathPlanner's file cache), but only its NAME is stored. A 
+   * fresh command is built each time autonomous starts (see getAutonomousCommand()).
+   * @param displayName The name to display in the chooser
+   * @param autoName The name of the auto to build (without the .auto extension)
+   */
+  private void addAutoToChooser(String displayName, String autoName) {
+    try {
+      AutoBuilder.buildAuto(autoName); // throws if the .auto or its paths are missing/invalid
+      autoChooser.addOption(displayName, autoName);
+    } catch (Exception ex) {
+      Utils.logError("Failed to load auto " + displayName + ": " + ex.getMessage());
+    }
   }
 
   /**
