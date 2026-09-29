@@ -34,26 +34,34 @@ public final class Constants {
   public static final class CANConstants {
     // Swerve module drive & steer motor IDs are defined in /deploy/swerve/YYYY/modules/*.json
     // Ensure that CAN constants defined here do not conflict with file definitions
-    // Reserve CAN IDs 0 = Navx, 1-19 for swerve modules
+
+    // Navx 3 ID
+    // SPI = 0
+
+    // Reserved for swerve modules
+    // FL: encoder = A0, steer = CAN2, drive = CAN11
+    // FR: encoder = A1, steer = CAN8, drive = CAN12
+    // BL: encoder = A3, steer = CAN4, drive = CAN14
+    // BR: encoder = A2, steer = CAN6, drive = CAN13
 
     // Arm motor ID
-    public static final int kArmMotorID = 20;
+    public static final int kArmMotorID = 15;
 
     // Climber motor ID
-    public static final int kClimberMotorID = 21;
+    public static final int kClimberMotorID = 16;
 
     // Elevator motor IDs
-    public static final int kElevatorLeaderMotorID = 21;
-    public static final int kElevatorFollowerMotorID = 22;
+    public static final int kElevatorLeaderMotorID = 17;
+    public static final int kElevatorFollowerMotorID = 18;
 
     // Intake motor & solenoid IDs
-    public static final int kIntakeRollerMotorID = 26;
-    public static final int kIntakeSolenoidMotorID = 27;
+    public static final int kIntakeRollerMotorID = 19;
+    public static final int kIntakeSolenoidMotorID = 20;
 
     // Turret & flywheel motor IDs
-    public static final int kTurretMotorID = 23;
-    public static final int kFlywheelLeaderMotorID = 24;
-    public static final int kFlywheelFollowerMotorID = 25;
+    public static final int kTurretMotorID = 21;
+    public static final int kFlywheelLeaderMotorID = 22;
+    public static final int kFlywheelFollowerMotorID = 23;
   }
   
   /**
