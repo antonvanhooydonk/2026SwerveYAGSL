@@ -121,11 +121,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
     rollerConfig.CurrentLimits
       .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(60)
-      .withSupplyCurrentLowerLimit(40)
-      .withSupplyCurrentLowerTime(0.5)
+      .withSupplyCurrentLimit(30)
+      .withSupplyCurrentLowerLimit(25)
+      .withSupplyCurrentLowerTime(1.0)
       .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(80);
+      .withStatorCurrentLimit(40);
 
     rollerConfig.Voltage
       .withPeakForwardVoltage(12)

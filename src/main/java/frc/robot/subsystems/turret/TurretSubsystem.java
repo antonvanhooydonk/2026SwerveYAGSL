@@ -123,11 +123,11 @@ public class TurretSubsystem extends SubsystemBase {
 
     turretConfig.CurrentLimits
       .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(40)
-      .withSupplyCurrentLowerLimit(30)
-      .withSupplyCurrentLowerTime(0.5)
+      .withSupplyCurrentLimit(30)
+      .withSupplyCurrentLowerLimit(20)
+      .withSupplyCurrentLowerTime(1.0)
       .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(60);
+      .withStatorCurrentLimit(40);
 
     turretConfig.Voltage
       .withPeakForwardVoltage(12)

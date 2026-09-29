@@ -142,11 +142,11 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     flywheelConfig.CurrentLimits
       .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(60)
+      .withSupplyCurrentLimit(40)
       .withSupplyCurrentLowerLimit(40)
-      .withSupplyCurrentLowerTime(0.5)
+      .withSupplyCurrentLowerTime(1.0)
       .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(80);
+      .withStatorCurrentLimit(60);
 
     flywheelConfig.Voltage
       .withPeakForwardVoltage(12)
