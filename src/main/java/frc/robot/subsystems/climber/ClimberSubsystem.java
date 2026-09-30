@@ -381,7 +381,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to upper limit then stops
    */
   public Command toUpperLimitCommand() {
-    return setAngleCommand(ClimberConstants.kMaxAngleDegrees, this::isAtUpperLimit)
+    return setAngleCommand(ClimberConstants.kMinAngleDegrees, this::isAtUpperLimit)
       .withName("Climber_UpToLimit");
   }
   
@@ -390,7 +390,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to lower limit then stops
    */
   public Command toLowerLimitCommand() {
-    return setAngleCommand(ClimberConstants.kMinAngleDegrees, this::isAtLowerLimit)
+    return setAngleCommand(ClimberConstants.kMaxAngleDegrees, this::isAtLowerLimit)
       .withName("Climber_DownToLimit");
   }
 
