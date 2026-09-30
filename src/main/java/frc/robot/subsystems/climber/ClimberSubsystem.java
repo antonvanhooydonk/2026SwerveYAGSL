@@ -275,6 +275,9 @@ public class ClimberSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
+  public final Trigger isAtHomeTrigger = new Trigger(this::isAtHomePosition)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+
   public final Trigger isAtUpperLimitTrigger = new Trigger(this::isAtUpperLimit)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
