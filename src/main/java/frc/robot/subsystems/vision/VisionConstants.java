@@ -32,11 +32,18 @@ public final class VisionConstants {
   // (a tag at 5 m is ~0.09%) and MUST be checked against your actual cameras.
   public static final double kMinTagAreaPercent         = 0.08;
   
+  // Theta trust. Single-tag heading is ambiguous, so vision heading is ignored
+  // and the NavX owns heading. Use a large finite value rather than infinity.
+  public static final double kIgnoredThetaStdDev        = 1.0e6;
+  public static final double kMultiTagBaseThetaStdDev   = 0.10;  // radians (~5.7 deg), was 0.01
+  public static final double kMinThetaStdDev            = 0.05;  // radians (~2.9 deg) floor
+
+  // Single-tag estimates beyond this are rejected outright
+  public static final double kSingleTagMaxDistanceMeters = 4.0;
+
   // Standard deviation calculation constants
   public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
-  public static final double kSingleTagBaseThetaStdDev  = 0.04; // radians (~2.3 degrees)
   public static final double kMultiTagBaseXYstdDev      = 0.02; // meters
-  public static final double kMultiTagBaseThetaStdDev   = 0.01; // radians (~0.6 degrees)
   public static final double kMaxDistanceMeters         = 6.00; // anything over this is max std dev
 
   // ----------------------------------------------------------

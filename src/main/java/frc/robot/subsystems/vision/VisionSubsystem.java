@@ -174,6 +174,12 @@ public class VisionSubsystem extends SubsystemBase {
       if (target.getArea() < VisionConstants.kMinTagAreaPercent) {
         return false;
       }
+
+      // Distance check (single-tag accuracy falls off quickly with range)
+      double distance = target.getBestCameraToTarget().getTranslation().getNorm();
+      if (distance > VisionConstants.kSingleTagMaxDistanceMeters) {
+        return false;
+      }
     }
     
     // Get the 2D pose for boundary checks
@@ -224,40 +230,36 @@ public class VisionSubsystem extends SubsystemBase {
       ? VisionConstants.kSingleTagBaseXYstdDev
       : VisionConstants.kMultiTagBaseXYstdDev;
 
-    double baseTheta = (numTargets == 1)
-      ? VisionConstants.kSingleTagBaseThetaStdDev
-      : VisionConstants.kMultiTagBaseThetaStdDev;
-
-    double xyStdDev = baseXY;
-    double thetaStdDev = baseTheta;
-
-    // Distance scaling (slightly softer)
-    xyStdDev *= (1.0 + (avgDistance * avgDistance / 20.0));
-    thetaStdDev *= (1.0 + (avgDistance * avgDistance / 40.0));
-
-    // Tag count scaling (less aggressive)
-    double tagFactor = 1.0 / Math.sqrt(numTargets);
-    xyStdDev *= tagFactor;
-    thetaStdDev *= tagFactor;
-
-    // Ambiguity scaling (earlier + smooth)
+    // XY: scale with distance, tag count, and ambiguity
+    double xyStdDev = baseXY * (1.0 + (avgDistance * avgDistance / 20.0)) / Math.sqrt(numTargets);
     if (avgAmbiguity > 0.05) {
-      double scale = 1.0 + (avgAmbiguity * 5.0);
-      xyStdDev *= scale;
-      thetaStdDev *= scale;
+      xyStdDev *= 1.0 + (avgAmbiguity * 5.0);
     }
-
-    // Single tag rotation penalty (stronger)
-    if (numTargets == 1) {
-      thetaStdDev *= 2.5;
-    }
-
-    // Clamp to safe bounds
     xyStdDev = MathUtil.clamp(xyStdDev, 0.01, 1.5);
-    thetaStdDev = MathUtil.clamp(thetaStdDev, 0.01, Math.PI);
 
-    // Return the calculated standard deviations
-    return new double[] {xyStdDev, xyStdDev, thetaStdDev};
+    // Theta: ignore single-tag heading entirely, trust multi-tag only modestly
+    double thetaStdDev;
+    if (numTargets == 1) {
+      // Single-tag heading is ignored
+      thetaStdDev = VisionConstants.kIgnoredThetaStdDev;
+    } 
+    else {
+      // Multi-tag heading is more reliable, but still scales with distance and ambiguity
+      thetaStdDev = VisionConstants.kMultiTagBaseThetaStdDev
+        * (1.0 + (avgDistance * avgDistance / 40.0))
+        / Math.sqrt(numTargets);
+
+      // Increase theta std dev if ambiguity is high
+      if (avgAmbiguity > 0.05) {
+        thetaStdDev *= 1.0 + (avgAmbiguity * 5.0);
+      }
+
+      // Ensure theta std dev does not go below the minimum threshold
+      thetaStdDev = Math.max(thetaStdDev, VisionConstants.kMinThetaStdDev);
+    }
+
+    // Return the calculated standard deviations for x, y, and theta
+    return new double[] { xyStdDev, xyStdDev, thetaStdDev };
   }
 
   // ==================== Public state accessors ====================

@@ -32,7 +32,7 @@ public final class FlywheelConstants {
   // PID / Feedforward gains (tune with SysId)
   // Tuning: start with kV only (kP = 0), add kP if error remains
   // ------------------------------------------------------------
-  public static final double kFlywheelKP = 0.0;
+  public static final double kFlywheelKP = 1.0;
   public static final double kFlywheelKI = 0.0;
   public static final double kFlywheelKD = 0.0;
   public static final double kFlywheelKS = 0.0; // Static friction - from SysId

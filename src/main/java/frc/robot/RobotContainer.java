@@ -120,8 +120,7 @@ public class RobotContainer {
     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
     // ".auto" extension for the second argument.
     autoChooser.setDefaultOption("No auto", "");
-    addAutoToChooser("One Piece Auto", "OnePieceAuto");
-    addAutoToChooser("Two Piece Auto", "TwoPieceAuto");
+    addAutoToChooser("Example Auto", "Example Auto");
     
     // Add auto chooser to dashboard
     SmartDashboard.putData("Auto Command", autoChooser);

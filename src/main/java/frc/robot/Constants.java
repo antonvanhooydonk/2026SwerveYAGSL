@@ -90,11 +90,11 @@ public final class Constants {
     // VERIFY against the hub AprilTag poses in kFieldLayout before your first event.
     public static final Translation2d kBlueHubCenter = new Translation2d(Units.inchesToMeters(182.11), kFieldWidthMeters / 2.0);
     public static final Translation2d kRedHubCenter = new Translation2d(kFieldLengthMeters - kBlueHubCenter.getX(), kFieldWidthMeters / 2.0);
-    public static final Pose2d kBlueHubPose = new Pose2d(kBlueHubCenter, new Rotation2d());
-    public static final Pose2d kRedHubPose = new Pose2d(kRedHubCenter, new Rotation2d(-180.0));
+    public static final Pose2d kBlueHubPose = new Pose2d(kBlueHubCenter, Rotation2d.fromDegrees(0.0));
+    public static final Pose2d kRedHubPose = new Pose2d(kRedHubCenter, Rotation2d.fromDegrees(180.0));
 
     // TODO: placeholders - these are currently the hub centers. Replace with the real pass targets.
-    public static final Pose2d kBluePassPose = new Pose2d(kBlueHubCenter, new Rotation2d());
-    public static final Pose2d kRedPassPose = new Pose2d(kRedHubCenter, new Rotation2d(-180.0));
+    public static final Pose2d kBluePassPose = new Pose2d(kBlueHubCenter, Rotation2d.fromDegrees(0.0));
+    public static final Pose2d kRedPassPose = new Pose2d(kRedHubCenter, Rotation2d.fromDegrees(180.0));
   }
 }
