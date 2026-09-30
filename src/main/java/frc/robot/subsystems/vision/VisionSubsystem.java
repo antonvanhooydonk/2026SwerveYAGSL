@@ -206,9 +206,13 @@ public class VisionSubsystem extends SubsystemBase {
    * @return Array of standard deviations for x, y, and theta
    */
   private double[] calculateStandardDeviations(EstimatedRobotPose estimate) {
+    // Get the list of targets used in the estimate
     List<PhotonTrackedTarget> targetsUsed = estimate.targetsUsed;
+
+    // Get the number of targets used in the estimate
     int numTargets = targetsUsed.size();
 
+    // Calculate average distance to targets, clamped to max distance
     double avgDistance = targetsUsed.stream()
       .mapToDouble(t -> {
         var transform = t.getBestCameraToTarget();
@@ -219,26 +223,40 @@ public class VisionSubsystem extends SubsystemBase {
       .average()
       .orElse(VisionConstants.kMaxDistanceMeters);
 
+    // Clamp average distance to max distance to avoid extreme std dev scaling
     avgDistance = Math.min(avgDistance, VisionConstants.kMaxDistanceMeters);
 
+    // Calculate average ambiguity of all targets used
     double avgAmbiguity = targetsUsed.stream()
       .mapToDouble(PhotonTrackedTarget::getPoseAmbiguity)
       .average()
       .orElse(0.0);
 
+    // ------------------------------------------------------------------------
+    // Calculate XY standard deviation
+    // ------------------------------------------------------------------------
+    // Determine base XY standard deviation based on number of targets
     double baseXY = (numTargets == 1)
       ? VisionConstants.kSingleTagBaseXYstdDev
       : VisionConstants.kMultiTagBaseXYstdDev;
 
     // XY: scale with distance, tag count, and ambiguity
     double xyStdDev = baseXY * (1.0 + (avgDistance * avgDistance / 20.0)) / Math.sqrt(numTargets);
+
+    // Increase XY std dev if ambiguity is high
     if (avgAmbiguity > 0.05) {
       xyStdDev *= 1.0 + (avgAmbiguity * 5.0);
     }
+
+    // Clamp XY std dev to reasonable bounds to avoid extreme values
     xyStdDev = MathUtil.clamp(xyStdDev, 0.01, 1.5);
 
-    // Theta: ignore single-tag heading entirely, trust multi-tag only modestly
+    // ------------------------------------------------------------------------
+    // Calculate Theta standard deviation
+    // ------------------------------------------------------------------------
+    // ignore single-tag heading entirely, trust multi-tag only modestly
     double thetaStdDev;
+
     if (numTargets == 1) {
       // Single-tag heading is ignored
       thetaStdDev = VisionConstants.kIgnoredThetaStdDev;

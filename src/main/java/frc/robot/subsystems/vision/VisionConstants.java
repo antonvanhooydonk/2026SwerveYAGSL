@@ -25,6 +25,7 @@ public final class VisionConstants {
   public static final double kPoseAmbiguityThreshold    = 0.20;
   public static final double kFieldBorderMargin         = 0.50; // meters
   public static final double kZMargin                   = 0.75; // meters
+  public static final double kMaxDistanceMeters         = 6.00; // anything over this is max std dev
 
   // PhotonVision's target area is a PERCENT of the image (0-100), not pixels.
   // Calibrate: stand ~5 m from a tag, read its area in the PhotonVision UI, and set this
@@ -41,10 +42,10 @@ public final class VisionConstants {
   // Single-tag estimates beyond this are rejected outright
   public static final double kSingleTagMaxDistanceMeters = 4.0;
 
-  // Standard deviation calculation constants
+  // XY trust. Single-tag XY is less reliable than multi-tag, so
+  // we use a larger base std dev for single-tag estimates.
   public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
   public static final double kMultiTagBaseXYstdDev      = 0.02; // meters
-  public static final double kMaxDistanceMeters         = 6.00; // anything over this is max std dev
 
   // ----------------------------------------------------------
   // Define the robot's cameras
