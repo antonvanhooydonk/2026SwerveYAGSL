@@ -1,0 +1,333 @@
+diff --git a/src/main/java/frc/robot/Constants.java b/src/main/java/frc/robot/Constants.java
+index 5de603b..da19dfb 100644
+--- a/src/main/java/frc/robot/Constants.java
++++ b/src/main/java/frc/robot/Constants.java
+@@ -75,10 +75,15 @@ public final class Constants {
+     public static final AprilTagFieldLayout kFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+     public static final double kFieldLengthMeters = Units.inchesToMeters(651.22); // meters
+     public static final double kFieldWidthMeters = Units.inchesToMeters(317.69); // meters
+-    public static final Translation2d kBlueHubCenter = new Translation2d(Units.inchesToMeters(158.84), Units.inchesToMeters(182.11));
+-    public static final Translation2d kRedHubCenter = new Translation2d(Units.inchesToMeters(158.84), Units.inchesToMeters(469.11));
++    // Field frame: origin at the blue alliance corner, +X toward the red alliance wall, +Y across the 
++    // field width. The hubs sit 182.11 in from their own alliance wall on the field centerline (Y = width / 2).
++    // Red is derived by mirroring X so the two can never drift out of sync.
++    // VERIFY against the hub AprilTag poses in kFieldLayout before your first event.
++    public static final Translation2d kBlueHubCenter = new Translation2d(Units.inchesToMeters(182.11), kFieldWidthMeters / 2.0);
++    public static final Translation2d kRedHubCenter = new Translation2d(kFieldLengthMeters - kBlueHubCenter.getX(), kFieldWidthMeters / 2.0);
+     public static final Pose2d kBlueHubPose = new Pose2d(kBlueHubCenter, new Rotation2d());
+     public static final Pose2d kRedHubPose = new Pose2d(kRedHubCenter, new Rotation2d());
++    // TODO: placeholders - these are currently the hub centers. Replace with the real pass targets.
+     public static final Pose2d kBluePassPose = new Pose2d(kBlueHubCenter, new Rotation2d());
+     public static final Pose2d kRedPassPose = new Pose2d(kRedHubCenter, new Rotation2d());
+   }
+diff --git a/src/main/java/frc/robot/RobotContainer.java b/src/main/java/frc/robot/RobotContainer.java
+index b18309a..6f487da 100644
+--- a/src/main/java/frc/robot/RobotContainer.java
++++ b/src/main/java/frc/robot/RobotContainer.java
+@@ -54,8 +54,11 @@ public class RobotContainer {
+   private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, flywheelSubsystem);
+ 
+   // Auto choosers
+-  private final SendableChooser<Command> delayChooser = new SendableChooser<>();
+-  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
++  // NOTE: choosers hold plain values (delay seconds / PathPlanner auto names), NOT Command
++  // instances. A Command can only be composed once, so reusing a chooser's instance in
++  // andThen() throws the second time autonomous is enabled without a code restart.
++  private final SendableChooser<Double> delayChooser = new SendableChooser<>();
++  private final SendableChooser<String> autoChooser = new SendableChooser<>();
+ 
+   // Track match state
+   private boolean wasInAuto = false;
+@@ -116,7 +119,7 @@ public class RobotContainer {
+     // defined in our Autos.java or they can be PathPlanner autos located in the 
+     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
+     // ".auto" extension for the second argument.
+-    autoChooser.setDefaultOption("No auto", Commands.none());
++    autoChooser.setDefaultOption("No auto", "");
+     addAutoToChooser("One Piece Auto", "OnePieceAuto");
+     addAutoToChooser("Two Piece Auto", "TwoPieceAuto");
+     
+@@ -124,30 +127,26 @@ public class RobotContainer {
+     SmartDashboard.putData("Auto Command", autoChooser);
+ 
+     // Configure the available auto delay options
+-    delayChooser.setDefaultOption("No delay", Commands.none());
+-    delayChooser.addOption("1.0 second", Commands.waitSeconds(1.0));
+-    delayChooser.addOption("1.5 seconds", Commands.waitSeconds(1.5));
+-    delayChooser.addOption("2.0 seconds", Commands.waitSeconds(2.0));
+-    delayChooser.addOption("2.5 seconds", Commands.waitSeconds(2.5));
+-    delayChooser.addOption("3.0 seconds", Commands.waitSeconds(3.0));
+-    delayChooser.addOption("3.5 seconds", Commands.waitSeconds(3.5));
+-    delayChooser.addOption("4.0 seconds", Commands.waitSeconds(4.0));
+-    delayChooser.addOption("4.5 seconds", Commands.waitSeconds(4.5));
+-    delayChooser.addOption("5.0 seconds", Commands.waitSeconds(5.0));
++    delayChooser.setDefaultOption("No delay", 0.0);
++    for (double seconds = 1.0; seconds <= 5.0; seconds += 0.5) {
++      delayChooser.addOption(seconds + " seconds", seconds);
++    }
+     
+     // Add delay chooser to dashboard
+     SmartDashboard.putData("Auto Delay", delayChooser);
+   }
+ 
+   /**
+-   * Add an auto to the auto chooser. This method will attempt to build  
+-   * the auto and add it to the chooser.
++   * Add an auto to the auto chooser. The auto is built once here to validate that it 
++   * loads (and to warm up PathPlanner's file cache), but only its NAME is stored. A 
++   * fresh command is built each time autonomous starts (see getAutonomousCommand()).
+    * @param displayName The name to display in the chooser
+    * @param autoName The name of the auto to build (without the .auto extension)
+    */
+   private void addAutoToChooser(String displayName, String autoName) {
+     try {
+-      autoChooser.addOption(displayName, AutoBuilder.buildAuto(autoName));
++      AutoBuilder.buildAuto(autoName); // throws if the .auto or its paths are missing/invalid
++      autoChooser.addOption(displayName, autoName);
+     } catch (Exception ex) {
+       Utils.logError("Failed to load auto " + displayName + ": " + ex.getMessage());
+     }
+@@ -161,11 +160,13 @@ public class RobotContainer {
+    * controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight joysticks}.
+    */
+   private void configureButtonBindings() {
+-    // manually reset odometry & climber home position
+-    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(Commands.parallel(
+-      driveSubsystem.resetOdometryCommand(),
+-      climberSubsystem.setHomePositionCommand()
+-    ));
++    // re-zero field-relative heading only (keeps the vision/odometry position)
++    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
++
++    // pit-only: set climber home position. Disabled-only so it can't be hit mid-match. 
++    // (The climber also re-zeros in autonomousInit, so start each match with it at home.)
++    RobotModeTriggers.disabled().and(driverXbox.start()).and(driverXbox.back())
++      .onTrue(climberSubsystem.setHomePositionCommand());
+ 
+     // toggles the drive mode: field-relative vs robot-relative
+     RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeCommand());
+@@ -238,7 +239,21 @@ public class RobotContainer {
+    * @return the command to run in autonomous, or Commands.none() to run nothing
+    */
+   public Command getAutonomousCommand() {
+-    return delayChooser.getSelected().andThen(autoChooser.getSelected());
++    // Read the selections (with null-safe defaults)
++    Double delaySeconds = delayChooser.getSelected();
++    String autoName = autoChooser.getSelected();
++
++    // Build a FRESH auto command every time so re-enabling auto never re-composes an old instance
++    Command auto = Commands.none();
++    if (autoName != null && !autoName.isEmpty()) {
++      try {
++        auto = AutoBuilder.buildAuto(autoName);
++      } catch (Exception ex) {
++        Utils.logError("Failed to build auto " + autoName + ": " + ex.getMessage());
++      }
++    }
++
++    return Commands.waitSeconds(delaySeconds == null ? 0.0 : delaySeconds).andThen(auto);
+   }
+ 
+   // -------------------------------------------------------------------------------- 
+@@ -251,8 +266,8 @@ public class RobotContainer {
+    */
+   public void disabledPeriodic() {
+     // Update the dashboard with the current auto starting pose
+-    // TODO: ensure the getName() works 
+-    driveSubsystem.publishStartingPoseAlignment(() ->autoChooser.getSelected().getName());
++    // The chooser value is the PathPlanner auto name ("" = no auto)
++    driveSubsystem.publishStartingPoseAlignment(autoChooser::getSelected);
+   }
+ 
+   /**
+diff --git a/src/main/java/frc/robot/subsystems/climber/ClimberConstants.java b/src/main/java/frc/robot/subsystems/climber/ClimberConstants.java
+index e4e9a46..ca987da 100644
+--- a/src/main/java/frc/robot/subsystems/climber/ClimberConstants.java
++++ b/src/main/java/frc/robot/subsystems/climber/ClimberConstants.java
+@@ -22,6 +22,18 @@ public final class ClimberConstants {
+   public static final double kVelocityConversionFactor  = kPositionConversionFactor / 60.0;
+   public static final double kUpperLimitDegrees         = -75.0; // Maximum up was -250
+   public static final double kLowerLimitDegrees         = 140.0; // Maximum down was 200
++
++  // "Up" is the NEGATIVE encoder direction on this robot, so the upper limit is numerically 
++  // smaller than the lower limit. Anything that needs numeric min/max (clamp, soft limits) 
++  // must use these, never upper/lower directly - MathUtil.clamp(x, lower, upper) would 
++  // always return the lower limit here.
++  public static final double kMinPositionDegrees        = Math.min(kUpperLimitDegrees, kLowerLimitDegrees);
++  public static final double kMaxPositionDegrees        = Math.max(kUpperLimitDegrees, kLowerLimitDegrees);
++
++  // Sign of the encoder change when moving "up": -1 here. Assumes POSITIVE motor voltage 
++  // increases the encoder. Verify on the bench with the climber unloaded; if it doesn't, 
++  // invert the motor with .inverted(true) in configureMotor() rather than changing this.
++  public static final double kUpDirection               = Math.signum(kUpperLimitDegrees - kLowerLimitDegrees);
+   public static final double kHomeDegrees               =   0.0; // Home position
+   public static final double kLevelOneClimbDegrees      =   5.0; // Level 1 climb position
+   public static final double kLevelTwoClimbDegrees      = -50.0; // Level 2 climb position
+@@ -35,8 +47,8 @@ public final class ClimberConstants {
+   public static final double kMaxVelocityDegPerSec    = 100.0; // Maximum velocity for position control
+   public static final double kMaxAccelDegPerSec2      = 200.0; // Maximum acceleration for position control
+   public static final double kMoveTimeoutSeconds      = 3.0;   // Timeout for move commands
+-  public static final double kManualUpVoltage         =  12.0; // Voltage for manual up control
+-  public static final double kManualDownVoltage       = -12.0; // Voltage for manual down control
++  public static final double kManualUpVoltage         =  12.0; // Magnitude of voltage for manual up control (direction handled via kUpDirection)
++  public static final double kManualDownVoltage       =  12.0; // Magnitude of voltage for manual down control (direction handled via kUpDirection)
+ 
+   // ------------------------------------------------------------
+   // PID / Feedforward gains (tune with SysId)
+diff --git a/src/main/java/frc/robot/subsystems/climber/ClimberSubsystem.java b/src/main/java/frc/robot/subsystems/climber/ClimberSubsystem.java
+index cd78da1..4989946 100644
+--- a/src/main/java/frc/robot/subsystems/climber/ClimberSubsystem.java
++++ b/src/main/java/frc/robot/subsystems/climber/ClimberSubsystem.java
+@@ -108,9 +108,9 @@ public class ClimberSubsystem extends SubsystemBase {
+ 
+     climbConfig.softLimit
+       .forwardSoftLimitEnabled(true)
+-      .forwardSoftLimit(ClimberConstants.kUpperLimitDegrees)
++      .forwardSoftLimit(ClimberConstants.kMaxPositionDegrees)
+       .reverseSoftLimitEnabled(true)
+-      .reverseSoftLimit(ClimberConstants.kLowerLimitDegrees);
++      .reverseSoftLimit(ClimberConstants.kMinPositionDegrees);
+       
+     climbConfig.encoder
+       .countsPerRevolution(ClimberConstants.kEncoderTicksPerRevolution) 
+@@ -150,8 +150,8 @@ public class ClimberSubsystem extends SubsystemBase {
+     // Clamp target to valid range
+     targetAngleDegrees = MathUtil.clamp(
+       degrees, 
+-      ClimberConstants.kLowerLimitDegrees, 
+-      ClimberConstants.kUpperLimitDegrees
++      ClimberConstants.kMinPositionDegrees, 
++      ClimberConstants.kMaxPositionDegrees
+     );
+ 
+     // Set the target position using max motion control
+@@ -160,20 +160,25 @@ public class ClimberSubsystem extends SubsystemBase {
+ 
+   /**
+    * Set the voltage for the climber motor (open-loop control)
+-   * @param volts Voltage to apply to the motor
++   * @param volts Voltage to apply to the motor (positive = toward larger encoder values)
+    */
+   private void setVoltage(double volts) {
+     // Clamp voltage to safe range
+     volts = MathUtil.clamp(volts, -12, 12);
+ 
++    // Work out which travel limit we are heading toward. "Up" is the negative 
++    // encoder direction, so we compare against kUpDirection instead of assuming a sign.
++    boolean movingUp = volts * ClimberConstants.kUpDirection > 0;
++    boolean movingDown = volts * ClimberConstants.kUpDirection < 0;
++
+     // Check if the climber is at the upper limit and trying to move up
+-    if (isAtUpperLimit() && volts > 0) {
++    if (movingUp && isAtUpperLimit()) {
+       stop();
+       return;
+     }
+ 
+     // Check if the climber is at the lower limit and trying to move down
+-    if (isAtLowerLimit() && volts < 0) {
++    if (movingDown && isAtLowerLimit()) {
+       stop();
+       return;
+     }
+@@ -405,7 +410,7 @@ public class ClimberSubsystem extends SubsystemBase {
+    * @return Command that moves the climber up
+    */
+   public Command upCommand() {
+-    return run(() -> setVoltage(ClimberConstants.kManualUpVoltage))
++    return run(() -> setVoltage(ClimberConstants.kUpDirection * Math.abs(ClimberConstants.kManualUpVoltage)))
+       .withName("Climber_ManualUp");
+   }
+ 
+@@ -414,7 +419,7 @@ public class ClimberSubsystem extends SubsystemBase {
+    * @return Command that moves the climber up
+    */
+   public Command downCommand() {
+-    return run(() -> setVoltage(ClimberConstants.kManualDownVoltage))
++    return run(() -> setVoltage(-ClimberConstants.kUpDirection * Math.abs(ClimberConstants.kManualDownVoltage)))
+       .withName("Climber_ManualDown");
+   }
+   
+diff --git a/src/main/java/frc/robot/subsystems/drive/DriveSubsystem.java b/src/main/java/frc/robot/subsystems/drive/DriveSubsystem.java
+index 38844ce..f16dd71 100644
+--- a/src/main/java/frc/robot/subsystems/drive/DriveSubsystem.java
++++ b/src/main/java/frc/robot/subsystems/drive/DriveSubsystem.java
+@@ -228,6 +228,17 @@ public class DriveSubsystem extends SubsystemBase {
+     swerveDrive.resetOdometry(pose == null ? getDefaultPose() : pose);
+   }
+ 
++  /**
++   * Resets ONLY the heading of the pose estimate to the alliance-forward direction, 
++   * keeping the estimated translation. Use when the driver points the robot away 
++   * from their driver station and needs to re-establish field-relative "forward".
++   * The alliance is read when this runs, not when the command is built.
++   */
++  private void resetHeading() {
++    Rotation2d forward = getDefaultPose().getRotation();
++    swerveDrive.resetOdometry(new Pose2d(getPose().getTranslation(), forward));
++  }
++
+   /**
+    * Gets the current heading of the robot from the pose estimator.
+    * This is what should be fed into the drive (auto and teleop)
+@@ -756,11 +767,23 @@ public class DriveSubsystem extends SubsystemBase {
+    * NOTE: Should never need to call this if vision is working properly.
+    */
+   public Command resetOdometryCommand() {
+-    return resetOdometryCommand(getDefaultPose())
++    // Evaluate the default pose when the command RUNS - the alliance is usually not 
++    // known yet when bindings are created in the RobotContainer constructor.
++    return runOnce(() -> resetOdometry(getDefaultPose()))
+       .ignoringDisable(true)
+       .withName("Drive_ResetOdometry");
+   }
+ 
++  /**
++   * Reset only the robot heading to face away from the alliance driver station,
++   * leaving the translation estimate (vision/odometry) untouched.
++   */
++  public Command resetHeadingCommand() {
++    return runOnce(this::resetHeading)
++      .ignoringDisable(true)
++      .withName("Drive_ResetHeading");
++  }
++
+   /**
+    * Reset the odometry to a known pose.
+    */
+diff --git a/src/main/java/frc/robot/subsystems/vision/VisionConstants.java b/src/main/java/frc/robot/subsystems/vision/VisionConstants.java
+index 6331fad..1cc83b4 100644
+--- a/src/main/java/frc/robot/subsystems/vision/VisionConstants.java
++++ b/src/main/java/frc/robot/subsystems/vision/VisionConstants.java
+@@ -26,11 +26,11 @@ public final class VisionConstants {
+   public static final double kFieldBorderMargin         = 0.50; // meters
+   public static final double kZMargin                   = 0.75; // meters
+ 
+-  // Stand 5-6 meters from a tag
+-  // Check tag area in PhotonVision UI
+-  // Set threshold to 80% of that value
+-  // Example: If tag shows 1200 pixels² at 5m:
+-  public static final double kMinTagAreaPixels          = 1000.0; // Adjust based on testing
++  // PhotonVision's target area is a PERCENT of the image (0-100), not pixels.
++  // Calibrate: stand ~5 m from a tag, read its area in the PhotonVision UI, and set this
++  // to ~80% of that value. The 0.08 default is a rough estimate for a 1280x800, ~70 deg HFOV camera
++  // (a tag at 5 m is ~0.09%) and MUST be checked against your actual cameras.
++  public static final double kMinTagAreaPercent         = 0.08;
+   
+   // Standard deviation calculation constants
+   public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
+diff --git a/src/main/java/frc/robot/subsystems/vision/VisionSubsystem.java b/src/main/java/frc/robot/subsystems/vision/VisionSubsystem.java
+index 74555c3..5a17448 100644
+--- a/src/main/java/frc/robot/subsystems/vision/VisionSubsystem.java
++++ b/src/main/java/frc/robot/subsystems/vision/VisionSubsystem.java
+@@ -170,8 +170,8 @@ public class VisionSubsystem extends SubsystemBase {
+         return false;
+       }
+ 
+-      // Area check (tags too small = far away = unreliable)
+-      if (target.getArea() < VisionConstants.kMinTagAreaPixels) {
++      // Area check (getArea() is percent of image; tags too small = far away = unreliable)
++      if (target.getArea() < VisionConstants.kMinTagAreaPercent) {
+         return false;
+       }
+     }

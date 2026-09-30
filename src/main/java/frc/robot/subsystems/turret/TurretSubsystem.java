@@ -303,7 +303,7 @@ public class TurretSubsystem extends SubsystemBase {
     return MathUtil.isNear(
       Utils.normalizeAngleDegrees(targetAngleDegrees),
       getAngleDegrees(),
-      TurretConstants.kTurretAngleToleranceDegrees
+      TurretConstants.kAngleToleranceDegrees
     );
   }
 
@@ -472,15 +472,6 @@ public class TurretSubsystem extends SubsystemBase {
       setTurretAngle(turretAngle);
     })
     .withName("Turret_AimAtPose");
-  }
-
-  /**
-   * Command to home the turret to 0 degrees.
-   * @return Command to home the turret
-   */
-  public Command homeCommand() {
-    return setTurretAngleCommand(TurretConstants.kHomeAngleDegrees)
-      .withName("Turret_Home");
   }
 
   /**

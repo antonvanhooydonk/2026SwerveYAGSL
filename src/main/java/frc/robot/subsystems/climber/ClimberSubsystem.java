@@ -94,7 +94,8 @@ public class ClimberSubsystem extends SubsystemBase {
     climbConfig
       .smartCurrentLimit(30) // amps
       .voltageCompensation(12) // Consistent behavior across battery voltage
-      .idleMode(IdleMode.kBrake); // CRITICAL: Brake mode prevents falling
+      .idleMode(IdleMode.kBrake) // CRITICAL: Brake mode prevents falling
+      .inverted(true);
 
     climbConfig.closedLoop
       .p(ClimberConstants.kClimberKP)
@@ -104,13 +105,13 @@ public class ClimberSubsystem extends SubsystemBase {
       .maxMotion
         .cruiseVelocity(ClimberConstants.kMaxVelocityDegPerSec)
         .maxAcceleration(ClimberConstants.kMaxAccelDegPerSec2)
-        .allowedProfileError(ClimberConstants.kPositionToleranceDegrees);
+        .allowedProfileError(ClimberConstants.kAngleToleranceDegrees);
 
     climbConfig.softLimit
       .forwardSoftLimitEnabled(true)
-      .forwardSoftLimit(ClimberConstants.kMaxPositionDegrees)
+      .forwardSoftLimit(ClimberConstants.kMaxAngleDegrees)
       .reverseSoftLimitEnabled(true)
-      .reverseSoftLimit(ClimberConstants.kMinPositionDegrees);
+      .reverseSoftLimit(ClimberConstants.kMinAngleDegrees);
       
     climbConfig.encoder
       .countsPerRevolution(ClimberConstants.kEncoderTicksPerRevolution) 
@@ -143,15 +144,15 @@ public class ClimberSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
   
   /**
-   * Set the target position for the climber with safety limits
-   * @param degrees Target position in degrees
+   * Set the target angle for the climber with safety limits
+   * @param degrees Target angle in degrees
    */
-  private void setPosition(double degrees) {
+  private void setAngle(double degrees) {
     // Clamp target to valid range
     targetAngleDegrees = MathUtil.clamp(
       degrees, 
-      ClimberConstants.kMinPositionDegrees, 
-      ClimberConstants.kMaxPositionDegrees
+      ClimberConstants.kMinAngleDegrees, 
+      ClimberConstants.kMaxAngleDegrees
     );
 
     // Set the target position using max motion control
@@ -166,19 +167,14 @@ public class ClimberSubsystem extends SubsystemBase {
     // Clamp voltage to safe range
     volts = MathUtil.clamp(volts, -12, 12);
 
-    // Work out which travel limit we are heading toward. "Up" is the negative 
-    // encoder direction, so we compare against kUpDirection instead of assuming a sign.
-    boolean movingUp = volts * ClimberConstants.kUpDirection > 0;
-    boolean movingDown = volts * ClimberConstants.kUpDirection < 0;
-
     // Check if the climber is at the upper limit and trying to move up
-    if (movingUp && isAtUpperLimit()) {
+    if (isAtUpperLimit() && volts < 0) {
       stop();
       return;
     }
 
     // Check if the climber is at the lower limit and trying to move down
-    if (movingDown && isAtLowerLimit()) {
+    if (isAtLowerLimit() && volts > 0) {
       stop();
       return;
     }
@@ -188,10 +184,10 @@ public class ClimberSubsystem extends SubsystemBase {
   }
     
   /**
-   * Get the current position of the climber
-   * @return Position in degrees
+   * Get the current angle of the climber
+   * @return Angle in degrees
    */
-  private double getPosition() {
+  private double getAngleDegrees() {
     return climberEncoder.getPosition();
   }
   
@@ -215,28 +211,30 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param targetDegrees The target position in degrees to check against
    * @return true if within tolerance of the target position  
    */
-  private boolean isAtPosition(double targetDegrees) {
+  private boolean isAtAngle(double targetDegrees) {
     return MathUtil.isNear(
       Utils.normalizeAngleDegrees(targetDegrees),
-      getPosition(),
-      ClimberConstants.kPositionToleranceDegrees
+      getAngleDegrees(),
+      ClimberConstants.kAngleToleranceDegrees
     );
   }
   
   /**
    * Check if climber is at or above upper position limit
+   * Upper limit is the minimum angle (more negative) in our coordinate system
    * @return true if at or past upper limit
    */
   private boolean isAtUpperLimit() {
-    return isAtPosition(ClimberConstants.kUpperLimitDegrees);
+    return isAtAngle(ClimberConstants.kMinAngleDegrees);
   }
   
   /**
    * Check if climber is at or below lower position limit
+   * Lower limit is the maximum angle (more positive) in our coordinate system
    * @return true if at or past lower limit
    */
   private boolean isAtLowerLimit() {
-    return isAtPosition(ClimberConstants.kLowerLimitDegrees);
+    return isAtAngle(ClimberConstants.kMaxAngleDegrees);
   }
   
   /**
@@ -244,7 +242,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of home position
    */
   private boolean isAtHomePosition() {
-    return isAtPosition(ClimberConstants.kHomeDegrees);
+    return isAtAngle(ClimberConstants.kHomeDegrees);
   }
   
   /**
@@ -252,7 +250,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of level 1 climb position
    */
   private boolean isAtLevelOneClimbPosition() {
-    return isAtPosition(ClimberConstants.kLevelOneClimbDegrees);
+    return isAtAngle(ClimberConstants.kLevelOneClimbDegrees);
   }
   
   /**
@@ -260,7 +258,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return true if within tolerance of level 2 climb position
    */
   private boolean isAtLevelTwoClimbPosition() {
-    return isAtPosition(ClimberConstants.kLevelTwoClimbDegrees);
+    return isAtAngle(ClimberConstants.kLevelTwoClimbDegrees);
   }
   
   /**
@@ -340,9 +338,9 @@ public class ClimberSubsystem extends SubsystemBase {
    * @param atTarget BooleanSupplier that returns true when the climber is at the target
    * @return Command that moves the climber to the target position
    */
-  public Command toPositionCommand(double targetDegrees, BooleanSupplier atTarget) {
+  public Command setAngleCommand(double targetDegrees, BooleanSupplier atTarget) {
     return startEnd(
-      () -> setPosition(targetDegrees),
+      () -> setAngle(targetDegrees),
       () -> {}
     )
     .until(atTarget)
@@ -356,7 +354,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the home position
    */
   public Command toHomeCommand() {
-    return toPositionCommand(ClimberConstants.kHomeDegrees, this::isAtHomePosition)
+    return setAngleCommand(ClimberConstants.kHomeDegrees, this::isAtHomePosition)
       .withName("Climber_Home");
   }
 
@@ -365,7 +363,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the level one position
    */
   public Command toLevelOneCommand() {
-    return toPositionCommand(ClimberConstants.kLevelOneClimbDegrees, this::isAtLevelOneClimbPosition)
+    return setAngleCommand(ClimberConstants.kLevelOneClimbDegrees, this::isAtLevelOneClimbPosition)
       .withName("Climber_LevelOne");
   }
 
@@ -374,7 +372,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the level two position
    */
   public Command toLevelTwoCommand() {
-    return toPositionCommand(ClimberConstants.kLevelTwoClimbDegrees, this::isAtLevelTwoClimbPosition)
+    return setAngleCommand(ClimberConstants.kLevelTwoClimbDegrees, this::isAtLevelTwoClimbPosition)
       .withName("Climber_LevelTwo");
   }
   
@@ -383,7 +381,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to upper limit then stops
    */
   public Command toUpperLimitCommand() {
-    return toPositionCommand(ClimberConstants.kUpperLimitDegrees, this::isAtUpperLimit)
+    return setAngleCommand(ClimberConstants.kMaxAngleDegrees, this::isAtUpperLimit)
       .withName("Climber_UpToLimit");
   }
   
@@ -392,7 +390,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to lower limit then stops
    */
   public Command toLowerLimitCommand() {
-    return toPositionCommand(ClimberConstants.kLowerLimitDegrees, this::isAtLowerLimit)
+    return setAngleCommand(ClimberConstants.kMinAngleDegrees, this::isAtLowerLimit)
       .withName("Climber_DownToLimit");
   }
 
@@ -410,7 +408,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber up
    */
   public Command upCommand() {
-    return run(() -> setVoltage(ClimberConstants.kUpDirection * Math.abs(ClimberConstants.kManualUpVoltage)))
+    return run(() -> setVoltage(ClimberConstants.kManualUpVoltage))
       .withName("Climber_ManualUp");
   }
 
@@ -419,7 +417,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber up
    */
   public Command downCommand() {
-    return run(() -> setVoltage(-ClimberConstants.kUpDirection * Math.abs(ClimberConstants.kManualDownVoltage)))
+    return run(() -> setVoltage(ClimberConstants.kManualDownVoltage))
       .withName("Climber_ManualDown");
   }
   
@@ -441,7 +439,7 @@ public class ClimberSubsystem extends SubsystemBase {
   @Override
   public void initSendable(SendableBuilder builder) {
     builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetAngleDegrees), null);
-    builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getPosition()), null);
+    builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getAngleDegrees()), null);
     builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(climberMotor.getOutputCurrent()), null);
     builder.addDoubleProperty("Temp (C)",            () -> Utils.showDouble(climberMotor.getMotorTemperature()), null);
   }

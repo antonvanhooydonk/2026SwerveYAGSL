@@ -18,10 +18,11 @@ public final class TurretConstants {
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------
-  public static final double kTurretAngleToleranceDegrees = 1.0;
-  public static final double kHomeAngleDegrees   =  0.0; // home position of the turret, in degrees
-  public static final double kMoveTimeoutSeconds =  3.0; // timeout for moving the turret, in seconds
-  public static final double kManualClockwiseVoltage        = 12.0;
+  public static final double kAngleToleranceDegrees         =   1.0;
+  public static final double kStallCurrentThreshold         =  25.5; // Amps - 85% of smart current limit
+  public static final double kStallVelocityThreshold        =   1.0; // Degrees/sec - indicates motor not moving
+  public static final double kMoveTimeoutSeconds            =   3.0; // timeout for moving the turret, in seconds
+  public static final double kManualClockwiseVoltage        =  12.0;
   public static final double kManualCounterClockwiseVoltage = -12.0;
 
   // ------------------------------------------------------------
