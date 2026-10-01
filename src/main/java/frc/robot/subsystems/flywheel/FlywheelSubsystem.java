@@ -64,7 +64,7 @@ public class FlywheelSubsystem extends SubsystemBase {
   private final SysIdRoutine flywheelSysIdRoutine;
 
   /**
-   * Creates a new ShooterSubsystem
+   * Creates a new FlywheelSubsystem
    */
   public FlywheelSubsystem() {
     // Initialize flywheel hardware
@@ -259,27 +259,27 @@ public class FlywheelSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Initializes the shooter at the start of the autonomous phase.
+   * Initializes the flywheel at the start of the autonomous phase.
    */
   public void autonomousInit() {
     stop();
-    Utils.logInfo("Shooter subsystem initialized for autonomous");
+    Utils.logInfo("Flywheel subsystem initialized for autonomous");
   }
 
   /**
-   * Initializes the shooter at the start of the teleop phase.
+   * Initializes the flywheel at the start of the teleop phase.
    */
   public void teleopInit() {
     stop();
-    Utils.logInfo("Shooter subsystem initialized for teleop");
+    Utils.logInfo("Flywheel subsystem initialized for teleop");
   }
 
   /**
-   * Initializes the shooter for post match (disabled) state.
+   * Initializes the flywheel for post match (disabled) state.
    */
   public void postMatch() {
     stop();
-    Utils.logInfo("Shooter subsystem initialized for post match");
+    Utils.logInfo("Flywheel subsystem initialized for post match");
   }
 
   // ----------------------------------------------------------------------------------------
@@ -306,7 +306,7 @@ public class FlywheelSubsystem extends SubsystemBase {
    */
   public Command setRPMCommand(double rpm) {
     return run(() -> setRPM(rpm))
-      .withName("Shooter_setRPM");
+      .withName("Flywheel_setRPM");
   }
 
   /**
@@ -315,7 +315,7 @@ public class FlywheelSubsystem extends SubsystemBase {
    */
   public Command stopCommand() {
     return run(this::stop)
-      .withName("Shooter_Stop");
+      .withName("Flywheel_Stop");
   }
 
   /**
@@ -347,7 +347,7 @@ public class FlywheelSubsystem extends SubsystemBase {
       // Set flywheel speed
       setRPM(requiredRPM);
     })
-    .withName("Shooter_ShootAtPose");
+    .withName("Flywheel_ShootAtPose");
   }
 
   // ----------------------------------------------------------------------------------------

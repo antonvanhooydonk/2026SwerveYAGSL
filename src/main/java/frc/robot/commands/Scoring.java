@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.drive.DriveSubsystem;
+import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.util.Utils;
@@ -16,23 +17,27 @@ import frc.robot.util.Utils;
  */
 public class Scoring {
   private final DriveSubsystem driveSubsystem;
-  private final TurretSubsystem turretSubsystem;
+  private final FeederSubsystem feederSubsystem;
   private final FlywheelSubsystem flywheelSubsystem;
+  private final TurretSubsystem turretSubsystem;
 
   /**
    * Creates a scoring command factory that can coordinate the turret and shooter subsystems.
    * @param driveSubsystem the drive subsystem to control
-   * @param turretSubsystem the turret subsystem to control
+   * @param feederSubsystem the feeder subsystem to control
    * @param flywheelSubsystem the flywheel subsystem to control
+   * @param turretSubsystem the turret subsystem to control
    */
   public Scoring(
-    DriveSubsystem driveSubsystem,
-    TurretSubsystem turretSubsystem, 
-    FlywheelSubsystem flywheelSubsystem
+    DriveSubsystem driveSubsystem, 
+    FeederSubsystem feederSubsystem, 
+    FlywheelSubsystem flywheelSubsystem,
+    TurretSubsystem turretSubsystem
   ) {
     this.driveSubsystem = driveSubsystem;
-    this.turretSubsystem = turretSubsystem;
+    this.feederSubsystem = feederSubsystem;
     this.flywheelSubsystem = flywheelSubsystem;
+    this.turretSubsystem = turretSubsystem;
   }
 
   /**
@@ -42,6 +47,7 @@ public class Scoring {
    */
   public Command scoreCommand() {
     return Commands.parallel(
+      feederSubsystem.feedCommand(),
       turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       ),
@@ -58,6 +64,7 @@ public class Scoring {
    */
   public Command passCommand() {
     return Commands.parallel(
+      feederSubsystem.feedCommand(),
       turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
       ),

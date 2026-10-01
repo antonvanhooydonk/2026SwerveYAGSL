@@ -54,6 +54,9 @@ public final class Constants {
     public static final int kElevatorLeaderMotorID = 17;
     public static final int kElevatorFollowerMotorID = 18;
 
+    // Feeder motor ID
+    public static final int kFeederMotorID = 24;
+
     // Intake motor & solenoid IDs
     public static final int kIntakeRollerMotorID = 19;
     public static final int kIntakeSolenoidMotorID = 20;

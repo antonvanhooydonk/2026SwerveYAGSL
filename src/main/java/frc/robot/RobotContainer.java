@@ -26,6 +26,7 @@ import frc.robot.commands.Scoring;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.DriveSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.intake.IntakeSubsystem;
 import frc.robot.subsystems.led.LEDSubsystem;
@@ -42,6 +43,7 @@ public class RobotContainer {
   private final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
   private final DriveSubsystem driveSubsystem = new DriveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   private final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
+  private final FeederSubsystem feederSubsystem = new FeederSubsystem();
   private final FlywheelSubsystem flywheelSubsystem = new FlywheelSubsystem();
   private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
@@ -51,7 +53,12 @@ public class RobotContainer {
  
   // Coordination command factories
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
-  private final Scoring scoring = new Scoring(driveSubsystem, turretSubsystem, flywheelSubsystem);
+  private final Scoring scoring = new Scoring(
+    driveSubsystem,
+    feederSubsystem, 
+    flywheelSubsystem
+    turretSubsystem
+  );
 
   // Auto choosers
   // NOTE: choosers hold plain values (delay seconds / PathPlanner auto names), NOT Command
