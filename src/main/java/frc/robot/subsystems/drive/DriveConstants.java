@@ -68,6 +68,11 @@ public final class DriveConstants {
    */
   public static final int kMaxConsecutiveVisionRejections = 10;
 
+  // Reject vision while the robot is moving too fast for a clean camera frame (motion blur).
+  // Rotation is the main culprit. Start here, then tune from logs.
+  public static final double kVisionMaxAngularVelocityRadPerSec = 2.0;   // ~115 deg/s
+  public static final double kVisionMaxLinearVelocityMetersPerSec = 4.0; // set very high to effectively disable
+
   // ============================================================
   // BELOW THIS LINE SHOULDN'T BE CHANGED AT COMPETITION
   // ============================================================

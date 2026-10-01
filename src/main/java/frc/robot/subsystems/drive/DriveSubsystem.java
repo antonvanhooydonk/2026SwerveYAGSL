@@ -79,6 +79,7 @@ public class DriveSubsystem extends SubsystemBase {
   private boolean slowMode = false;
   private long acceptedVisionCount = 0;
   private long rejectedVisionCount = 0;
+  private long blurRejectedVisionCount = 0;
   private long consecutiveRejectedJumps = 0;
 
   // Cache pose info during alignment in disabledPeriodic()
@@ -347,6 +348,7 @@ public class DriveSubsystem extends SubsystemBase {
     slowMode = false;
     acceptedVisionCount = 0;
     rejectedVisionCount = 0;
+    blurRejectedVisionCount = 0;
     consecutiveRejectedJumps = 0;
 
     // Log initialization
@@ -378,6 +380,7 @@ public class DriveSubsystem extends SubsystemBase {
     slowMode = false;
     acceptedVisionCount = 0;
     rejectedVisionCount = 0;
+    blurRejectedVisionCount = 0;
     consecutiveRejectedJumps = 0;
   
     // Log initialization
@@ -409,6 +412,7 @@ public class DriveSubsystem extends SubsystemBase {
     slowMode = false;
     acceptedVisionCount = 0;
     rejectedVisionCount = 0;
+    blurRejectedVisionCount = 0;
     consecutiveRejectedJumps = 0;
 
     // Log initialization
@@ -443,6 +447,19 @@ public class DriveSubsystem extends SubsystemBase {
       // Reject timestamps from the future
       if (timestamp > now) {
         rejectedVisionCount++;
+        return;
+      }
+
+      // Reject measurements taken while moving or rotating fast (motion blur degrades tag corners).
+      // Uses measured (not commanded) robot-relative speeds from the modules.
+      ChassisSpeeds speeds = getRobotRelativeSpeeds();
+      double linearSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+      double angularSpeed = Math.abs(speeds.omegaRadiansPerSecond);
+      if (
+        angularSpeed > DriveConstants.kVisionMaxAngularVelocityRadPerSec ||
+        linearSpeed > DriveConstants.kVisionMaxLinearVelocityMetersPerSec
+      ) {
+        blurRejectedVisionCount++;
         return;
       }
 
@@ -829,5 +846,6 @@ public class DriveSubsystem extends SubsystemBase {
     builder.addBooleanProperty("Slow Mode", this::isSlowMode, null);
     builder.addDoubleProperty("Accepted Vision Count", () -> Utils.showDouble(acceptedVisionCount), null);
     builder.addDoubleProperty("Rejected Vision Count", () -> Utils.showDouble(rejectedVisionCount), null);
+    builder.addDoubleProperty("Blur Rejected Vision Count", () -> Utils.showDouble(blurRejectedVisionCount), null);
   }
 }
