@@ -262,14 +262,6 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets the current pose of the robot as measured by odometry and vision fusion.
-   * @return Current pose 
-   */
-  public Pose2d getPose() {
-    return swerveDrive.getPose();
-  }
-
-  /**
    * Gets the current pose of the turret relative to the field.
    * Use this for aiming the turrent because the turret is offset from the robot center.
    * @return Current turret pose
@@ -280,6 +272,14 @@ public class DriveSubsystem extends SubsystemBase {
       robotPose.getTranslation().plus(DriveConstants.kRobotToTurret.rotateBy(robotPose.getRotation())),
       robotPose.getRotation()
     );
+  }
+
+  /**
+   * Gets the current pose of the robot as measured by odometry and vision fusion.
+   * @return Current pose 
+   */
+  public Pose2d getPose() {
+    return swerveDrive.getPose();
   }
 
   /**
