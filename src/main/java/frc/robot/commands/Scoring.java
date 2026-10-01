@@ -42,10 +42,10 @@ public class Scoring {
    */
   public Command scoreCommand() {
     return Commands.parallel(
-      turretSubsystem.aimAtPoseCommand(driveSubsystem::getPose, () -> 
+      turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       ),
-      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
+      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       )
     );
@@ -58,10 +58,10 @@ public class Scoring {
    */
   public Command passCommand() {
     return Commands.parallel(
-      turretSubsystem.aimAtPoseCommand(driveSubsystem::getPose, () -> 
+      turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
       ),
-      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
+      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
       )
     );

@@ -270,6 +270,19 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the current pose of the turret relative to the field.
+   * Use this for aiming the turrent because the turret is offset from the robot center.
+   * @return Current turret pose
+   */
+  public Pose2d getTurretPose() {
+    Pose2d robotPose = getPose();
+    return new Pose2d(
+      robotPose.getTranslation().plus(DriveConstants.kRobotToTurret.rotateBy(robotPose.getRotation())),
+      robotPose.getRotation()
+    );
+  }
+
+  /**
    * Gets the current robot-relative chassis speeds
    * @return Current ChassisSpeeds
    */
