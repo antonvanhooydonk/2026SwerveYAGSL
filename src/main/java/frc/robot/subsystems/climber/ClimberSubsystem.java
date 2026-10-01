@@ -4,9 +4,11 @@
 
 package frc.robot.subsystems.climber;
 
-import java.util.function.BooleanSupplier;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.SignalLogger;
+import java.util.function.BooleanSupplier;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -61,15 +63,13 @@ public class ClimberSubsystem extends SubsystemBase {
 
     // Initialize SysId routine (leader motor only)
     sysIdRoutine = new SysIdRoutine(
-      new SysIdRoutine.Config(
-        null,
-        null,
-        null,
-        state -> SignalLogger.writeString("climber-sysid-state", state.toString())
-      ),
+      new SysIdRoutine.Config(null, null, null, null),
       new SysIdRoutine.Mechanism(
         volts -> climberMotor.setVoltage(volts),
-        null,
+        log -> log.motor("climber")
+          .voltage(Volts.of(climberMotor.getAppliedOutput() * climberMotor.getBusVoltage()))
+          .angularPosition(Degrees.of(climberEncoder.getPosition()))
+          .angularVelocity(DegreesPerSecond.of(climberEncoder.getVelocity())),
         this
       )
     );
@@ -301,7 +301,6 @@ public class ClimberSubsystem extends SubsystemBase {
    * Initializes the climber at the start of the autonomous phase.
    */
   public void autonomousInit() {
-    resetEncoder();
     Utils.logInfo("Climber subsystem initialized for autonomous");
   }
 

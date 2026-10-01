@@ -4,11 +4,12 @@
 
 package frc.robot.subsystems.elevator;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.BooleanSupplier;
 
-import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -81,15 +82,13 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     // Initialize SysId routine (leader motor only)
     sysIdRoutine = new SysIdRoutine(
-      new SysIdRoutine.Config(
-        null,
-        null,
-        null,
-        state -> SignalLogger.writeString("elevator-sysid-state", state.toString())
-      ),
+      new SysIdRoutine.Config(null, null, null, null),
       new SysIdRoutine.Mechanism(
         volts -> leaderMotor.setControl(new VoltageOut(volts.in(Volts))),
-        null,
+        log -> log.motor("leader")
+          .voltage(Volts.of(leaderMotor.getMotorVoltage().getValueAsDouble()))
+          .angularPosition(Rotations.of(leaderMotor.getPosition().getValueAsDouble()))
+          .angularVelocity(RotationsPerSecond.of(leaderMotor.getVelocity().getValueAsDouble())),
         this
       )
     );
@@ -388,7 +387,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public void autonomousInit() {
     setMotorBrake(true);
-    setHeight(ElevatorConstants.kMinHeightMeters);
     Utils.logInfo("Elevator subsystem initialized for autonomous");
   }
 

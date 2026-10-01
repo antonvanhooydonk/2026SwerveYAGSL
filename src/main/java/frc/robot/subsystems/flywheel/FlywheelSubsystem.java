@@ -4,11 +4,12 @@
 
 package frc.robot.subsystems.flywheel;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.Supplier;
 
-import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -79,15 +80,13 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     // Initialize SysId routine (leader motor only)
     flywheelSysIdRoutine = new SysIdRoutine(
-      new SysIdRoutine.Config(
-        null,
-        null,
-        null,
-        state -> SignalLogger.writeString("flywheel-sysid-state", state.toString())
-      ),
+      new SysIdRoutine.Config(null, null, null, null),
       new SysIdRoutine.Mechanism(
         volts -> flywheelLeader.setControl(new VoltageOut(volts.in(Volts))),
-        null,
+        log -> log.motor("flywheel")
+          .voltage(Volts.of(flywheelLeader.getMotorVoltage().getValueAsDouble()))
+          .angularPosition(Rotations.of(flywheelLeader.getPosition().getValueAsDouble()))
+          .angularVelocity(RotationsPerSecond.of(flywheelLeader.getVelocity().getValueAsDouble())),
         this
       )
     );
@@ -171,6 +170,7 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     // Optimize CAN status frames on leader
     flywheelLeader.getVelocity().setUpdateFrequency(100.0);
+    flywheelLeader.getPosition().setUpdateFrequency(100.0);
     flywheelLeader.getMotorVoltage().setUpdateFrequency(50.0);
     flywheelLeader.getSupplyCurrent().setUpdateFrequency(50.0);
     flywheelLeader.getTorqueCurrent().setUpdateFrequency(50.0);
@@ -179,6 +179,7 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     // Minimize follower CAN traffic
     flywheelFollower.getVelocity().setUpdateFrequency(100.0);
+    flywheelFollower.getPosition().setUpdateFrequency(100.0);
     flywheelFollower.getMotorVoltage().setUpdateFrequency(50.0);
     flywheelFollower.getSupplyCurrent().setUpdateFrequency(50.0);
     flywheelFollower.getTorqueCurrent().setUpdateFrequency(50.0);

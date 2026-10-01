@@ -4,9 +4,10 @@
 
 package frc.robot.subsystems.intake;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -78,15 +79,13 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // Initialize SysId routine (leader motor only)
     rollerSysIdRoutine = new SysIdRoutine(
-      new SysIdRoutine.Config(
-        null,
-        null,
-        null,
-        state -> SignalLogger.writeString("roller-sysid-state", state.toString())
-      ),
+      new SysIdRoutine.Config(null, null, null, null),
       new SysIdRoutine.Mechanism(
         volts -> rollerMotor.setControl(new VoltageOut(volts.in(Volts))),
-        null,
+        log -> log.motor("roller")
+          .voltage(Volts.of(rollerMotor.getMotorVoltage().getValueAsDouble()))
+          .angularPosition(Rotations.of(rollerMotor.getPosition().getValueAsDouble()))
+          .angularVelocity(RotationsPerSecond.of(rollerMotor.getVelocity().getValueAsDouble())),
         this
       )
     );
@@ -146,6 +145,7 @@ public class IntakeSubsystem extends SubsystemBase {
     
     // Optimize CAN status frames on roller motor
     rollerMotor.getVelocity().setUpdateFrequency(100.0);
+    rollerMotor.getPosition().setUpdateFrequency(100.0);
     rollerMotor.getMotorVoltage().setUpdateFrequency(50.0);
     rollerMotor.getSupplyCurrent().setUpdateFrequency(50.0);
     rollerMotor.getTorqueCurrent().setUpdateFrequency(50.0);

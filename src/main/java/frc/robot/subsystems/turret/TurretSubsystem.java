@@ -4,12 +4,13 @@
 
 package frc.robot.subsystems.turret;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -80,15 +81,13 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Initialize SysId routine
     turretSysIdRoutine = new SysIdRoutine(
-      new SysIdRoutine.Config(
-        null,
-        null,
-        null,
-        state -> SignalLogger.writeString("turret-sysid-state", state.toString())
-      ),
+      new SysIdRoutine.Config(null, null, null, null),
       new SysIdRoutine.Mechanism(
         volts -> turretMotor.setControl(new VoltageOut(volts.in(Volts))),
-        null,
+        log -> log.motor("turret")
+          .voltage(Volts.of(turretMotor.getMotorVoltage().getValueAsDouble()))
+          .angularPosition(Rotations.of(turretMotor.getPosition().getValueAsDouble()))
+          .angularVelocity(RotationsPerSecond.of(turretMotor.getVelocity().getValueAsDouble())),
         this
       )
     );
@@ -353,7 +352,6 @@ public class TurretSubsystem extends SubsystemBase {
    */
   public void autonomousInit() {
     setMotorBrake(true);
-    setTurretAngle(0);
     Utils.logInfo("Turret subsystem initialized for autonomous");
   }
 

@@ -391,10 +391,6 @@ public class DriveSubsystem extends SubsystemBase {
     // Reset state variables
     fieldRelative = true;
     slowMode = false;
-    acceptedVisionCount = 0;
-    rejectedVisionCount = 0;
-    blurRejectedVisionCount = 0;
-    consecutiveRejectedJumps = 0;
   
     // Log initialization
     Utils.logInfo("Drive subsystem initialized for teleop");
@@ -419,14 +415,6 @@ public class DriveSubsystem extends SubsystemBase {
     xLimiter.reset(0.0);
     yLimiter.reset(0.0);
     rLimiter.reset(0.0);
-    
-    // Reset state variables
-    fieldRelative = true;
-    slowMode = false;
-    acceptedVisionCount = 0;
-    rejectedVisionCount = 0;
-    blurRejectedVisionCount = 0;
-    consecutiveRejectedJumps = 0;
 
     // Log initialization
     Utils.logInfo("Drive subsystem initialized for post match");
