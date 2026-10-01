@@ -251,6 +251,14 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the current pose of the robot as measured by odometry and vision fusion.
+   * @return Current pose 
+   */
+  public Pose2d getPose() {
+    return swerveDrive.getPose();
+  }
+
+  /**
    * Gets the default starting pose based on alliance color.
    * This is used to seed the pose estimator at the start of a match if no vision is available.
    * @return The default starting Pose2d
@@ -272,14 +280,6 @@ public class DriveSubsystem extends SubsystemBase {
       robotPose.getTranslation().plus(DriveConstants.kRobotToTurret.rotateBy(robotPose.getRotation())),
       robotPose.getRotation()
     );
-  }
-
-  /**
-   * Gets the current pose of the robot as measured by odometry and vision fusion.
-   * @return Current pose 
-   */
-  public Pose2d getPose() {
-    return swerveDrive.getPose();
   }
 
   /**
