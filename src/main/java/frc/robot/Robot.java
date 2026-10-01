@@ -16,6 +16,8 @@ public class Robot extends TimedRobot {
 
   public Robot() {
     // Start WPILib data logging (writes .wpilog to the roboRIO, or USB stick if present)
+    // Ensure a FAT32 USB stick is inserted into the roboRIO before booting to log to 
+    // USB instead of filling up the roboRIO's storage.
     DataLogManager.start();
 
     // Also log DriverStation control/joystick data and console output
