@@ -182,7 +182,7 @@ public class FeederSubsystem extends SubsystemBase {
    * @return true if within tolerance of the target RPM  
    */
   private boolean isAtTargetRPM() {
-    return MathUtil.isNear(
+    return Math.abs(targetRPM) > 0.0 && MathUtil.isNear(
       targetRPM,
       getRPM(),
       FeederConstants.kFeederToleranceRPM
