@@ -288,6 +288,7 @@ public class RobotContainer {
     climberSubsystem.autonomousInit();
     driveSubsystem.autonomousInit();
     elevatorSubsystem.autonomousInit();
+    feederSubsystem.autonomousInit();
     flywheelSubsystem.autonomousInit();
     intakeSubsystem.autonomousInit();
     turretSubsystem.autonomousInit();
@@ -308,6 +309,7 @@ public class RobotContainer {
       climberSubsystem.autonomousInit();
       driveSubsystem.autonomousInit();
       elevatorSubsystem.autonomousInit();
+      feederSubsystem.autonomousInit();
       flywheelSubsystem.autonomousInit();
       intakeSubsystem.autonomousInit();
       turretSubsystem.autonomousInit();
@@ -317,6 +319,7 @@ public class RobotContainer {
     climberSubsystem.teleopInit();
     driveSubsystem.teleopInit();
     elevatorSubsystem.teleopInit();
+    feederSubsystem.teleopInit();
     flywheelSubsystem.teleopInit();
     intakeSubsystem.teleopInit();
     turretSubsystem.teleopInit();
@@ -338,6 +341,7 @@ public class RobotContainer {
       climberSubsystem.postMatch();
       driveSubsystem.postMatch();
       elevatorSubsystem.postMatch();
+      feederSubsystem.postMatch();
       flywheelSubsystem.postMatch();
       intakeSubsystem.postMatch();
       turretSubsystem.postMatch();
