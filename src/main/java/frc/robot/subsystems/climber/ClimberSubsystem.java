@@ -104,16 +104,31 @@ public class ClimberSubsystem extends SubsystemBase {
 
     // Set motion control parameters for closed-loop control
     config.closedLoop.maxMotion
-      .cruiseVelocity(Conversions.degreesToRotations(ClimberConstants.kMaxVelocityDegPerSec, ClimberConstants.kGearRatio) * 60)
-      .maxAcceleration(Conversions.degreesToRotations(ClimberConstants.kMaxAccelDegPerSec2, ClimberConstants.kGearRatio) * 60)
-      .allowedProfileError(Conversions.degreesToRotations(ClimberConstants.kAngleToleranceDegrees, ClimberConstants.kGearRatio));
+      .cruiseVelocity(Conversions.degreesToRotations(
+        ClimberConstants.kMaxVelocityDegPerSec, 
+        ClimberConstants.kGearRatio
+      ) * 60)
+      .maxAcceleration(Conversions.degreesToRotations(
+        ClimberConstants.kMaxAccelDegPerSec2, 
+        ClimberConstants.kGearRatio
+      ) * 60)
+      .allowedProfileError(Conversions.degreesToRotations(
+        ClimberConstants.kAngleToleranceDegrees, 
+        ClimberConstants.kGearRatio
+      ));
 
     // Set soft limits to prevent over-rotation
     config.softLimit
       .forwardSoftLimitEnabled(true)
-      .forwardSoftLimit(ClimberConstants.kMaxAngleDegrees / ClimberConstants.kGearRatio)
+      .forwardSoftLimit(Conversions.degreesToRotations(
+        ClimberConstants.kMaxAngleDegrees, 
+        ClimberConstants.kGearRatio
+      ))
       .reverseSoftLimitEnabled(true)
-      .reverseSoftLimit(ClimberConstants.kMinAngleDegrees / ClimberConstants.kGearRatio);
+      .reverseSoftLimit(Conversions.degreesToRotations(
+        ClimberConstants.kMinAngleDegrees, 
+        ClimberConstants.kGearRatio
+      ));
 
     // Return the configured SparkMaxConfig
     return config;
