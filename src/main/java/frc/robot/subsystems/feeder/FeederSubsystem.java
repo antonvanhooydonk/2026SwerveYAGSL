@@ -40,7 +40,6 @@ import frc.robot.util.Utils;
 public class FeederSubsystem extends SubsystemBase {
   // Feeder hardware
   private final TalonFX feederMotor;
-  private final TalonFXConfiguration feederConfig;
 
   // Feeder control request
   private final VelocityVoltage feederVelocityRequest;
@@ -55,17 +54,8 @@ public class FeederSubsystem extends SubsystemBase {
    * Creates a new FeederSubsystem
    */
   public FeederSubsystem() {
-    // Initialize feeder configuration
-    feederConfig = TalonFXFactory.createConfig(
-      NeutralModeValue.Brake, 
-      InvertedValue.CounterClockwise_Positive, 
-      40.0, 
-      40.0, 
-      60.0, 
-      FeederConstants.kFeederKP, FeederConstants.kFeederKI, FeederConstants.kFeederKD,
-      FeederConstants.kFeederKS, FeederConstants.kFeederKV, FeederConstants.kFeederKA
-    );
-    feederMotor = TalonFXFactory.createMotor(CANConstants.kFeederMotorID, feederConfig);
+    // Create the feeder motor
+    feederMotor = TalonFXFactory.createMotor(CANConstants.kFeederMotorID, getMotorConfig());
 
     // Initialize control request
     feederVelocityRequest = new VelocityVoltage(0).withSlot(0);
@@ -96,6 +86,46 @@ public class FeederSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
+  }
+  
+  /**
+   * Configure the subsystem motors with the appropriate settings
+   */
+  private TalonFXConfiguration getMotorConfig() {
+    TalonFXConfiguration config = new TalonFXConfiguration();
+
+    // Set basic motor configuration parameters
+    config.MotorOutput
+      .withNeutralMode(NeutralModeValue.Brake)
+      .withInverted(InvertedValue.CounterClockwise_Positive)
+      .withDutyCycleNeutralDeadband(0.001);
+
+    // Set current limits
+    config.CurrentLimits
+      .withSupplyCurrentLimitEnable(true)
+      .withSupplyCurrentLimit(40)
+      .withSupplyCurrentLowerLimit(30)
+      .withSupplyCurrentLowerTime(1.0)
+      .withStatorCurrentLimitEnable(true)
+      .withStatorCurrentLimit(60);
+
+    // Set voltage limits
+    config.Voltage
+      .withPeakForwardVoltage(12)
+      .withPeakReverseVoltage(-12)
+      .withSupplyVoltageTimeConstant(0.02);
+
+    // Set PID and feedforward gains
+    config.Slot0
+      .withKP(FeederConstants.kP)
+      .withKI(FeederConstants.kI)
+      .withKD(FeederConstants.kD)
+      .withKS(FeederConstants.kS)
+      .withKV(FeederConstants.kV)
+      .withKA(FeederConstants.kA);
+
+    // Return the motor configuration
+    return config;
   }
 
   // ----------------------------------------------------------------------------------------

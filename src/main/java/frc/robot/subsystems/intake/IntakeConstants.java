@@ -18,11 +18,11 @@ public final class IntakeConstants {
   public static final double kRollerMinRPM = -5500;  // Minimum RPM for the roller
   
   // It is crucial to set these limits correctly to prevent mechanical damage. 
-  public static final double kRollerKP = 1.0;   // Proportional term
-  public static final double kRollerKI = 0.0;   // Integral term
-  public static final double kRollerKD = 0.0;   // Derivative term
-  public static final double kRollerKS = 0.0;   // Static feedforward
-  public static final double kRollerKV = 0.0;   // Velocity feedforward
-  public static final double kRollerKA = 0.0;   // Acceleration feedforward 
+  public static final double kP = 1.0;   // Proportional term
+  public static final double kI = 0.0;   // Integral term
+  public static final double kD = 0.0;   // Derivative term
+  public static final double kS = 0.0;   // Static feedforward
+  public static final double kV = 0.0;   // Velocity feedforward
+  public static final double kA = 0.0;   // Acceleration feedforward 
  
 }

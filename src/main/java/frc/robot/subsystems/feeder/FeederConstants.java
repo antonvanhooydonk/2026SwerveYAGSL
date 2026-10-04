@@ -21,21 +21,21 @@ public final class FeederConstants {
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------
-  public static final double kFeederMinRPM = 0.0;    // Minimum RPM for feeder
-  public static final double kFeederMaxRPM = 6000.0; // Maximum RPM for feeder
-  public static final double kFeederToleranceRPM    = 50.0;  // RPM window to consider feeder at target
-  public static final double kFeederMinSpinningRPM  = 100.0; // RPM threshold to consider feeder spinning
-  public static final double kFeedRPM = 3000.0; // RPM for feeding fuel
-  public static final double kReverseRPM = -3000.0; // RPM for reversing feeder
+  public static final double kFeederMinRPM          = -6000.0; // Minimum RPM for feeder
+  public static final double kFeederMaxRPM          =  6000.0; // Maximum RPM for feeder
+  public static final double kFeederToleranceRPM    =    50.0; // RPM window to consider feeder at target
+  public static final double kFeederMinSpinningRPM  =   100.0; // RPM threshold to consider feeder spinning
+  public static final double kFeedRPM               =  3000.0; // RPM for feeding fuel
+  public static final double kReverseRPM            = -3000.0; // RPM for reversing feeder
 
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
   // Tuning: start with kV only (kP = 0), add kP if error remains
   // ------------------------------------------------------------
-  public static final double kFeederKP = 1.0;
-  public static final double kFeederKI = 0.0;
-  public static final double kFeederKD = 0.0;
-  public static final double kFeederKS = 0.0; // Static friction - from SysId
-  public static final double kFeederKV = 0.0; // Velocity feedforward - from SysId
-  public static final double kFeederKA = 0.0; // Acceleration feedforward - from SysId
+  public static final double kP = 1.0;
+  public static final double kI = 0.0;
+  public static final double kD = 0.0;
+  public static final double kS = 0.0; // Static friction - from SysId
+  public static final double kV = 0.0; // Velocity feedforward - from SysId
+  public static final double kA = 0.0; // Acceleration feedforward - from SysId
 }

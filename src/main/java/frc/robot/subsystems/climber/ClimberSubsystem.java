@@ -13,6 +13,7 @@ import java.util.function.BooleanSupplier;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
@@ -34,7 +35,6 @@ import frc.robot.util.Utils;
 public class ClimberSubsystem extends SubsystemBase {
   // Hardware
   private final SparkMax climberMotor;
-  private final SparkMaxConfig climberConfig;
   private final RelativeEncoder climberEncoder;
   private final SparkClosedLoopController climberController;
 
@@ -45,32 +45,9 @@ public class ClimberSubsystem extends SubsystemBase {
   private final SysIdRoutine sysIdRoutine;
  
   /** Creates a new ClimberSubsystem. */
-  public ClimberSubsystem() {
-    // Initialize configuration for the climber motor
-    climberConfig = SparkMaxFactory.createConfig(
-      30,
-      IdleMode.kBrake,
-      true,
-      ClimberConstants.kClimberKP, ClimberConstants.kClimberKI, ClimberConstants.kClimberKD
-    );
-
-    // Set soft limits for the climber motor to prevent over-rotation
-    SparkMaxFactory.setSoftwareLimits(
-      climberConfig, 
-      Conversions.degreesToRotations(ClimberConstants.kMinAngleDegrees, ClimberConstants.kGearRatio), 
-      Conversions.degreesToRotations(ClimberConstants.kMaxAngleDegrees, ClimberConstants.kGearRatio)
-    );
-
-    // Set motion control parameters for the climber motor
-    SparkMaxFactory.setMotionControl(
-      climberConfig,
-      ClimberConstants.kMaxVelocityDegPerSec,
-      ClimberConstants.kMaxAccelDegPerSec2,
-      ClimberConstants.kAngleToleranceDegrees
-    );
-
+  public ClimberSubsystem() {    
     // Initialize the climber motor (we're using a brushed CIM for the climber)
-    climberMotor = SparkMaxFactory.createMotor(CANConstants.kClimberMotorID, climberConfig);
+    climberMotor = SparkMaxFactory.createMotor(CANConstants.kClimberMotorID, MotorType.kBrushed, getMotorConfig());
 
     // Initialize closed-loop controller
     climberController = climberMotor.getClosedLoopController();
@@ -106,7 +83,43 @@ public class ClimberSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {}
+  
+  /**
+   * Configure the subsystem motors with the appropriate settings
+   */
+  private SparkMaxConfig getMotorConfig() {
+    SparkMaxConfig config = new SparkMaxConfig();
     
+    // Set basic motor parameters
+    config
+      .smartCurrentLimit(30) 
+      .voltageCompensation(12) 
+      .idleMode(IdleMode.kBrake)
+      .inverted(true);
+
+    // Set PID gains for closed-loop control
+    config.closedLoop
+      .p(ClimberConstants.kClimberKP)
+      .i(ClimberConstants.kClimberKI)
+      .d(ClimberConstants.kClimberKD);
+
+    // Set motion control parameters for closed-loop control
+    config.closedLoop.maxMotion
+      .cruiseVelocity(Conversions.degreesToRotations(ClimberConstants.kMaxVelocityDegPerSec, ClimberConstants.kGearRatio) * 60)
+      .maxAcceleration(Conversions.degreesToRotations(ClimberConstants.kMaxAccelDegPerSec2, ClimberConstants.kGearRatio) * 60)
+      .allowedProfileError(Conversions.degreesToRotations(ClimberConstants.kAngleToleranceDegrees, ClimberConstants.kGearRatio));
+
+    // Set soft limits to prevent over-rotation
+    config.softLimit
+      .forwardSoftLimitEnabled(true)
+      .forwardSoftLimit(ClimberConstants.kMaxAngleDegrees / ClimberConstants.kGearRatio)
+      .reverseSoftLimitEnabled(true)
+      .reverseSoftLimit(ClimberConstants.kMinAngleDegrees / ClimberConstants.kGearRatio);
+
+    // Return the configured SparkMaxConfig
+    return config;
+  }
+
   // ----------------------------------------------------------------------------------------
   // Private state methods
   // ----------------------------------------------------------------------------------------

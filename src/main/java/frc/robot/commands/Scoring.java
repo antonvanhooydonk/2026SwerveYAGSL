@@ -47,7 +47,10 @@ public class Scoring {
    */
   public Command scoreCommand() {
     return Commands.parallel(
-      feederSubsystem.feedCommand(),
+      Commands.waitUntil(
+        flywheelSubsystem.isFlywheelAtTargetTrigger
+        .and(turretSubsystem.isAtAngleTrigger)
+      ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       ),
@@ -64,7 +67,10 @@ public class Scoring {
    */
   public Command passCommand() {
     return Commands.parallel(
-      feederSubsystem.feedCommand(),
+      Commands.waitUntil(
+        flywheelSubsystem.isFlywheelAtTargetTrigger
+        .and(turretSubsystem.isAtAngleTrigger)
+      ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
       ),

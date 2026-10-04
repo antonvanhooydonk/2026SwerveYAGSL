@@ -52,7 +52,6 @@ import frc.robot.util.Utils;
 public class TurretSubsystem extends SubsystemBase {
   // Turret hardware
   private final TalonFX turretMotor;
-  private final TalonFXConfiguration turretConfig;
 
   // Turret control request
   private final MotionMagicVoltage motionMagicRequest;
@@ -67,34 +66,8 @@ public class TurretSubsystem extends SubsystemBase {
    * Creates a new TurretSubsystem
    */
   public TurretSubsystem() {
-    // Initialize turret configuration
-    turretConfig = TalonFXFactory.createConfig(
-      NeutralModeValue.Brake,
-      InvertedValue.CounterClockwise_Positive,
-      30, 
-      20, 
-      40, 
-      TurretConstants.kTurretKP, TurretConstants.kTurretKI, TurretConstants.kTurretKD,
-      TurretConstants.kTurretKS, TurretConstants.kTurretKV, TurretConstants.kTurretKA
-    );
-
-    turretConfig.SoftwareLimitSwitch
-      .withForwardSoftLimitEnable(true)
-      .withForwardSoftLimitThreshold(Conversions.degreesToRotations(
-        TurretConstants.kMaxAngleDegrees,
-        TurretConstants.kTurretGearRatio))
-      .withReverseSoftLimitEnable(true)
-      .withReverseSoftLimitThreshold(Conversions.degreesToRotations(
-        TurretConstants.kMinAngleDegrees,
-        TurretConstants.kTurretGearRatio));
-
-    turretConfig.MotionMagic
-      .withMotionMagicCruiseVelocity(TurretConstants.kCruiseVelocity)
-      .withMotionMagicAcceleration(TurretConstants.kAcceleration)
-      .withMotionMagicJerk(TurretConstants.kJerk);
-
     // Create the turret motor with the given configuration
-    turretMotor = TalonFXFactory.createMotor(CANConstants.kTurretMotorID, turretConfig);
+    turretMotor = TalonFXFactory.createMotor(CANConstants.kTurretMotorID, getMotorConfig());
 
     // Initialize control request
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
@@ -128,6 +101,65 @@ public class TurretSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
+  }
+  
+  /**
+   * Configure the subsystem motors with the appropriate settings
+   */
+  private TalonFXConfiguration getMotorConfig() {
+    TalonFXConfiguration config = new TalonFXConfiguration();
+
+    // Set basic motor configuration parameters
+    config.MotorOutput
+      .withNeutralMode(NeutralModeValue.Brake)
+      .withInverted(InvertedValue.CounterClockwise_Positive)
+      .withDutyCycleNeutralDeadband(0.001);
+
+    // Set current limits
+    config.CurrentLimits
+      .withSupplyCurrentLimitEnable(true)
+      .withSupplyCurrentLimit(30)
+      .withSupplyCurrentLowerLimit(20)
+      .withSupplyCurrentLowerTime(1.0)
+      .withStatorCurrentLimitEnable(true)
+      .withStatorCurrentLimit(40);
+
+    // Set voltage limits
+    config.Voltage
+      .withPeakForwardVoltage(12)
+      .withPeakReverseVoltage(-12)
+      .withSupplyVoltageTimeConstant(0.02);
+
+    // Set PID and feedforward gains
+    config.Slot0
+      .withKP(TurretConstants.kP)
+      .withKI(TurretConstants.kI)
+      .withKD(TurretConstants.kD)
+      .withKS(TurretConstants.kS)
+      .withKV(TurretConstants.kV)
+      .withKA(TurretConstants.kA);
+
+    // Set motion control parameters
+    config.MotionMagic
+      .withMotionMagicCruiseVelocity(TurretConstants.kCruiseVelocity)
+      .withMotionMagicAcceleration(TurretConstants.kAcceleration)
+      .withMotionMagicJerk(TurretConstants.kJerk);
+
+    // Set soft limits for the elevator
+    config.SoftwareLimitSwitch
+      .withForwardSoftLimitEnable(true)
+      .withForwardSoftLimitThreshold(Conversions.degreesToRotations(
+        TurretConstants.kMaxAngleDegrees,
+        TurretConstants.kTurretGearRatio
+      ))
+      .withReverseSoftLimitEnable(true)
+      .withReverseSoftLimitThreshold(Conversions.degreesToRotations(
+        TurretConstants.kMinAngleDegrees,
+        TurretConstants.kTurretGearRatio
+      ));
+
+    // Return the motor configuration
+    return config;
   }
 
   // ----------------------------------------------------------------------------------------

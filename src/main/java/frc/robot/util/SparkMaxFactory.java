@@ -7,7 +7,6 @@ package frc.robot.util;
 import com.revrobotics.PersistMode;
 import com.revrobotics.REVLibError;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -22,85 +21,6 @@ public final class SparkMaxFactory {
 
   // Define the motor team container
   public record MotorPair(SparkMax leader, SparkMax follower) {}
-
-  /**
-   * Creates and returns a default TalonFX configuration
-   * @param smartCurrentLimit The smart current limit for the motor
-   * @param idleMode The idle mode for the motor
-   * @param isInverted Whether the motor is inverted
-   * @param kP The proportional gain for the PID controller
-   * @param kI The integral gain for the PID controller
-   * @param kD The derivative gain for the PID controller
-   * @return A default TalonFX configuration
-   */
-  public static SparkMaxConfig createConfig(
-    int smartCurrentLimit, 
-    IdleMode idleMode, 
-    boolean isInverted,
-    double kP,
-    double kI,
-    double kD
-  ) {
-    SparkMaxConfig config = new SparkMaxConfig();
-    
-    config
-      .smartCurrentLimit(smartCurrentLimit) 
-      .voltageCompensation(12) 
-      .idleMode(idleMode)
-      .inverted(isInverted);
-
-    config.closedLoop
-      .p(kP)
-      .i(kI)
-      .d(kD);
-
-    return config;
-  }
-
-  /**
-   * Applies motion control parameters to a SparkMax configuration.
-   * The config is modified in place (pass by reference) and returned for convenience.
-   * @param config The configuration to apply the motion control parameters to
-   * @param forwardLimitRotations The maximum forward limit in motor rotations
-   * @param reverseLimitRotations The maximum reverse limit in motor rotations
-   * @return The updated SparkMax configuration with the motion control parameters applied
-   */
-  public static SparkMaxConfig setSoftwareLimits(
-    SparkMaxConfig config,
-    double forwardLimitRotations,
-    double reverseLimitRotations
-  ) {
-    config.softLimit
-      .forwardSoftLimitEnabled(true)
-      .forwardSoftLimit(forwardLimitRotations)
-      .reverseSoftLimitEnabled(true)
-      .reverseSoftLimit(reverseLimitRotations);
-
-    return config;
-  }
-
-  /**
-   * Applies motion control parameters to a SparkMax configuration.
-   * The config is modified in place (pass by reference) and returned for convenience.
-   * @param config The configuration to apply the motion control parameters to
-   * @param cruiseVelocityRPM The maximum velocity for the motion control
-   * @param accelerationRPM2 The maximum acceleration for the motion control
-   * @param toleranceRots The maximum tolerance for the motion control
-   * @return The updated SparkMax configuration with the motion control parameters applied
-   */
-  public static SparkMaxConfig setMotionControl(
-    SparkMaxConfig config,
-    double cruiseVelocityRPM,
-    double accelerationRPM2,
-    double toleranceRotations
-  ) {
-    config.closedLoop.maxMotion
-      .cruiseVelocity(cruiseVelocityRPM)
-      .maxAcceleration(accelerationRPM2)
-      .allowedProfileError(toleranceRotations);
-
-    return config;
-  }
 
   /**
    * Applies a TalonFX configuration to a motor with retry logic.
@@ -126,57 +46,6 @@ public final class SparkMaxFactory {
     }
 
     return err == REVLibError.kOk;
-  }
-
-  /**
-   * Optimizes the CAN status frames for a SparkMax motor to reduce bus utilization
-   * using a set of sensible default values.
-   * @param motor The SparkMax motor
-   */
-  public static void optimize(SparkMax motor) {
-    optimize(
-      motor,
-      20,
-      20,
-      500,
-      500,
-      500,
-      200,
-      500
-    );
-  }
-
-  /**
-   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
-   * using the provided update frequencies for each status frame.
-   * @param motor The TalonFX motor
-   */
-  public static void optimize(
-    SparkMax motor,
-    int primaryEncoderPositionPeriodMs,
-    int primaryEncoderVelocityPeriodMs,
-    int externalOrAltEncoderPositionMs,
-    int externalOrAltEncoderVelocityMs,
-    int appliedOutputPeriodMs,
-    int faultsPeriodMs,
-    int analogVoltagePeriodMs
-  ) {
-    SparkMaxConfig signals = new SparkMaxConfig();
-    
-    signals.signals
-      .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
-      .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
-      .externalOrAltEncoderPosition(externalOrAltEncoderPositionMs)
-      .externalOrAltEncoderVelocity(externalOrAltEncoderVelocityMs)
-      .appliedOutputPeriodMs(appliedOutputPeriodMs)
-      .faultsPeriodMs(faultsPeriodMs)
-      .analogVoltagePeriodMs(analogVoltagePeriodMs); 
-
-    motor.configure(
-      signals, 
-      ResetMode.kNoResetSafeParameters, 
-      PersistMode.kPersistParameters
-    );
   }
 
   /**
@@ -240,5 +109,56 @@ public final class SparkMaxFactory {
     
     // Return the motors
     return new MotorPair(leaderMotor, followerMotor);
+  }
+
+  /**
+   * Optimizes the CAN status frames for a SparkMax motor to reduce bus utilization
+   * using a set of sensible default values.
+   * @param motor The SparkMax motor
+   */
+  public static void optimize(SparkMax motor) {
+    optimize(
+      motor,
+      20,
+      20,
+      500,
+      500,
+      500,
+      200,
+      500
+    );
+  }
+
+  /**
+   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
+   * using the provided update frequencies for each status frame.
+   * @param motor The TalonFX motor
+   */
+  public static void optimize(
+    SparkMax motor,
+    int primaryEncoderPositionPeriodMs,
+    int primaryEncoderVelocityPeriodMs,
+    int externalOrAltEncoderPositionMs,
+    int externalOrAltEncoderVelocityMs,
+    int appliedOutputPeriodMs,
+    int faultsPeriodMs,
+    int analogVoltagePeriodMs
+  ) {
+    SparkMaxConfig signals = new SparkMaxConfig();
+    
+    signals.signals
+      .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
+      .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
+      .externalOrAltEncoderPosition(externalOrAltEncoderPositionMs)
+      .externalOrAltEncoderVelocity(externalOrAltEncoderVelocityMs)
+      .appliedOutputPeriodMs(appliedOutputPeriodMs)
+      .faultsPeriodMs(faultsPeriodMs)
+      .analogVoltagePeriodMs(analogVoltagePeriodMs); 
+
+    motor.configure(
+      signals, 
+      ResetMode.kNoResetSafeParameters, 
+      PersistMode.kPersistParameters
+    );
   }
 }

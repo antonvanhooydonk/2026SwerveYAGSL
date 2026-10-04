@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.subsystems.feeder.FeederConstants;
 import frc.robot.util.TalonFXFactory;
 import frc.robot.util.TalonFXFactory.MotorPair;
 import frc.robot.util.Utils;
@@ -49,7 +50,6 @@ public class FlywheelSubsystem extends SubsystemBase {
   // Flywheel hardware - leader and follower
   private final TalonFX flywheelLeader;
   private final TalonFX flywheelFollower;
-  private final TalonFXConfiguration flywheelConfig;
 
   // Flywheel control request
   private final VelocityVoltage flywheelVelocityRequest;
@@ -67,22 +67,11 @@ public class FlywheelSubsystem extends SubsystemBase {
    * Creates a new FlywheelSubsystem
    */
   public FlywheelSubsystem() {
-    // Initialize flywheel configuration
-    flywheelConfig = TalonFXFactory.createConfig(
-      NeutralModeValue.Coast,
-      InvertedValue.CounterClockwise_Positive,
-      40,
-      40,
-      60,
-      FlywheelConstants.kFlywheelKP, FlywheelConstants.kFlywheelKI, FlywheelConstants.kFlywheelKD,
-      FlywheelConstants.kFlywheelKS, FlywheelConstants.kFlywheelKV, FlywheelConstants.kFlywheelKA
-    );
-
     // Create leader and follower motors
     MotorPair flywheelMotors = TalonFXFactory.createMotorPair(
       CANConstants.kFlywheelLeaderMotorID, 
       CANConstants.kFlywheelFollowerMotorID, 
-      flywheelConfig, 
+      getMotorConfig(), 
       true
     );
     flywheelLeader = flywheelMotors.leader();
@@ -137,6 +126,46 @@ public class FlywheelSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
+  }
+  
+  /**
+   * Configure the subsystem motors with the appropriate settings
+   */
+  private TalonFXConfiguration getMotorConfig() {
+    TalonFXConfiguration config = new TalonFXConfiguration();
+
+    // Set basic motor configuration parameters
+    config.MotorOutput
+      .withNeutralMode(NeutralModeValue.Coast)
+      .withInverted(InvertedValue.CounterClockwise_Positive)
+      .withDutyCycleNeutralDeadband(0.001);
+
+    // Set current limits
+    config.CurrentLimits
+      .withSupplyCurrentLimitEnable(true)
+      .withSupplyCurrentLimit(40)
+      .withSupplyCurrentLowerLimit(40)
+      .withSupplyCurrentLowerTime(1.0)
+      .withStatorCurrentLimitEnable(true)
+      .withStatorCurrentLimit(60);
+
+    // Set voltage limits
+    config.Voltage
+      .withPeakForwardVoltage(12)
+      .withPeakReverseVoltage(-12)
+      .withSupplyVoltageTimeConstant(0.02);
+
+    // Set PID and feedforward gains
+    config.Slot0
+      .withKP(FeederConstants.kP)
+      .withKI(FeederConstants.kI)
+      .withKD(FeederConstants.kD)
+      .withKS(FeederConstants.kS)
+      .withKV(FeederConstants.kV)
+      .withKA(FeederConstants.kA);
+
+    // Return the motor configuration
+    return config;
   }
 
   // ----------------------------------------------------------------------------------------

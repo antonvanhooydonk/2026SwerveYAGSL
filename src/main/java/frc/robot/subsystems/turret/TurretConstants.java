@@ -36,10 +36,10 @@ public final class TurretConstants {
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
   // ------------------------------------------------------------
-  public static final double kTurretKP = 0.1;
-  public static final double kTurretKI = 0.0;
-  public static final double kTurretKD = 0.0;
-  public static final double kTurretKS = 0.0;
-  public static final double kTurretKV = 0.0;
-  public static final double kTurretKA = 0.0;
+  public static final double kP = 0.1;
+  public static final double kI = 0.0;
+  public static final double kD = 0.0;
+  public static final double kS = 0.0;
+  public static final double kV = 0.0;
+  public static final double kA = 0.0;
 }

@@ -65,50 +65,11 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Creates a new ElevatorSubsystem
    */
   public ElevatorSubsystem() {
-    // Initialize hardware configuration
-    TalonFXConfiguration motorConfig = TalonFXFactory.createConfig(
-      NeutralModeValue.Brake, 
-      InvertedValue.CounterClockwise_Positive, 
-      40.0, 
-      30.0, 
-      60.0, 
-      ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, 
-      ElevatorConstants.kS, ElevatorConstants.kV, ElevatorConstants.kA
-    );
-
-    // Add gravity compensation to the position PID (slot 0)
-    motorConfig.Slot0
-      .withKG(ElevatorConstants.kG)
-      .withGravityType(GravityTypeValue.Elevator_Static);
-
-    // Soft limits to protect the elevator
-    TalonFXFactory.setSoftwareLimits(
-      motorConfig, 
-      Conversions.metersToRotations(
-        ElevatorConstants.kMaxHeightMeters, 
-        ElevatorConstants.kGearRatio, 
-        ElevatorConstants.kSpoolCircumferenceMeters
-      ), 
-      Conversions.metersToRotations(
-        ElevatorConstants.kMinHeightMeters, 
-        ElevatorConstants.kGearRatio, 
-        ElevatorConstants.kSpoolCircumferenceMeters
-      )
-    );
-
-    // MotionMagic configuration
-    TalonFXFactory.setMotionControl(
-      motorConfig, 
-      ElevatorConstants.kCruiseVelocity, 
-      ElevatorConstants.kAcceleration, 
-      ElevatorConstants.kJerk
-    );
-
     // Create leader and follower motors
     MotorPair motors = TalonFXFactory.createMotorPair(
       CANConstants.kElevatorLeaderMotorID,
       CANConstants.kElevatorFollowerMotorID,
-      motorConfig,
+      getMotorConfig(),
       false
     );
     leaderMotor = motors.leader();
@@ -146,6 +107,69 @@ public class ElevatorSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles control loop onboard
+  }
+  
+  /**
+   * Configure the subsystem motors with the appropriate settings
+   */
+  private TalonFXConfiguration getMotorConfig() {
+    TalonFXConfiguration config = new TalonFXConfiguration();
+
+    // Set basic motor configuration parameters
+    config.MotorOutput
+      .withNeutralMode(NeutralModeValue.Brake)
+      .withInverted(InvertedValue.CounterClockwise_Positive)
+      .withDutyCycleNeutralDeadband(0.001);
+
+    // Set current limits
+    config.CurrentLimits
+      .withSupplyCurrentLimitEnable(true)
+      .withSupplyCurrentLimit(40)
+      .withSupplyCurrentLowerLimit(30)
+      .withSupplyCurrentLowerTime(1.0)
+      .withStatorCurrentLimitEnable(true)
+      .withStatorCurrentLimit(60);
+
+    // Set voltage limits
+    config.Voltage
+      .withPeakForwardVoltage(12)
+      .withPeakReverseVoltage(-12)
+      .withSupplyVoltageTimeConstant(0.02);
+
+    // Set PID and feedforward gains
+    config.Slot0
+      .withKP(ElevatorConstants.kP)
+      .withKI(ElevatorConstants.kI)
+      .withKD(ElevatorConstants.kD)
+      .withKS(ElevatorConstants.kS)
+      .withKV(ElevatorConstants.kV)
+      .withKA(ElevatorConstants.kA)
+      .withKG(ElevatorConstants.kG)
+      .withGravityType(GravityTypeValue.Elevator_Static);
+
+    // Set motion control parameters
+    config.MotionMagic
+      .withMotionMagicCruiseVelocity(ElevatorConstants.kCruiseVelocity)
+      .withMotionMagicAcceleration(ElevatorConstants.kAcceleration)
+      .withMotionMagicJerk(ElevatorConstants.kJerk);
+
+    // Set soft limits for the elevator
+    config.SoftwareLimitSwitch
+      .withForwardSoftLimitEnable(true)
+      .withForwardSoftLimitThreshold(Conversions.metersToRotations(
+        ElevatorConstants.kMaxHeightMeters, 
+        ElevatorConstants.kGearRatio, 
+        ElevatorConstants.kSpoolCircumferenceMeters
+      ))
+      .withReverseSoftLimitEnable(true)
+      .withReverseSoftLimitThreshold(Conversions.metersToRotations(
+        ElevatorConstants.kMinHeightMeters, 
+        ElevatorConstants.kGearRatio, 
+        ElevatorConstants.kSpoolCircumferenceMeters
+      ));
+
+    // Return the motor configuration
+    return config;
   }
 
   // ----------------------------------------------------------------------------------------

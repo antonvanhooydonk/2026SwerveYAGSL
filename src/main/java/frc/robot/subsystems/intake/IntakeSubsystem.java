@@ -43,7 +43,6 @@ import frc.robot.util.Utils;
 public class IntakeSubsystem extends SubsystemBase {
   // Intake hardware
   private final TalonFX rollerMotor;
-  private final TalonFXConfiguration rollerConfig;
   private final DoubleSolenoid deploySolenoid;
 
   // Roller control request
@@ -60,17 +59,8 @@ public class IntakeSubsystem extends SubsystemBase {
    * Creates a new IntakeSubsystem
    */
   public IntakeSubsystem() {
-    // Initialize roller configuration
-    rollerConfig = TalonFXFactory.createConfig(
-      NeutralModeValue.Coast, 
-      InvertedValue.CounterClockwise_Positive, 
-      30, 
-      25, 
-      40, 
-      IntakeConstants.kRollerKP, IntakeConstants.kRollerKI, IntakeConstants.kRollerKD,
-      IntakeConstants.kRollerKS, IntakeConstants.kRollerKV, IntakeConstants.kRollerKA
-    );
-    rollerMotor = TalonFXFactory.createMotor(CANConstants.kIntakeRollerMotorID, rollerConfig);
+    // Create roller motor
+    rollerMotor = TalonFXFactory.createMotor(CANConstants.kIntakeRollerMotorID, getMotorConfig());
     
     // Initialize deploy/retract solenoid
     deploySolenoid = new DoubleSolenoid(
@@ -109,6 +99,46 @@ public class IntakeSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
+  }
+  
+  /**
+   * Configure the subsystem motors with the appropriate settings
+   */
+  private TalonFXConfiguration getMotorConfig() {
+    TalonFXConfiguration config = new TalonFXConfiguration();
+
+    // Set basic motor configuration parameters
+    config.MotorOutput
+      .withNeutralMode(NeutralModeValue.Coast)
+      .withInverted(InvertedValue.CounterClockwise_Positive)
+      .withDutyCycleNeutralDeadband(0.001);
+
+    // Set current limits
+    config.CurrentLimits
+      .withSupplyCurrentLimitEnable(true)
+      .withSupplyCurrentLimit(30)
+      .withSupplyCurrentLowerLimit(25)
+      .withSupplyCurrentLowerTime(1.0)
+      .withStatorCurrentLimitEnable(true)
+      .withStatorCurrentLimit(40);
+
+    // Set voltage limits
+    config.Voltage
+      .withPeakForwardVoltage(12)
+      .withPeakReverseVoltage(-12)
+      .withSupplyVoltageTimeConstant(0.02);
+
+    // Set PID and feedforward gains
+    config.Slot0
+      .withKP(IntakeConstants.kP)
+      .withKI(IntakeConstants.kI)
+      .withKD(IntakeConstants.kD)
+      .withKS(IntakeConstants.kS)
+      .withKV(IntakeConstants.kV)
+      .withKA(IntakeConstants.kA);
+
+    // Return the motor configuration
+    return config;
   }
 
   // ----------------------------------------------------------------------------------------
