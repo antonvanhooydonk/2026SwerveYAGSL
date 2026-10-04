@@ -47,7 +47,7 @@ public class ClimberSubsystem extends SubsystemBase {
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {    
     // Initialize the climber motor (we're using a brushed CIM for the climber)
-    climberMotor = SparkMaxFactory.createMotor(CANConstants.kClimberMotorID, MotorType.kBrushed, getMotorConfig());
+    climberMotor = SparkMaxFactory.createBrushedMotor(CANConstants.kClimberMotorID, getMotorConfig());
 
     // Initialize closed-loop controller
     climberController = climberMotor.getClosedLoopController();

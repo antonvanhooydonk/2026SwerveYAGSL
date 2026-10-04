@@ -55,16 +55,33 @@ public final class SparkMaxFactory {
    * @return The SparkMax motor with the given device ID and configuration
    */
   public static SparkMax createMotor(int deviceID, SparkMaxConfig config) {
-    return createMotor(deviceID, MotorType.kBrushless, config);
+    return createMotor(deviceID, MotorType.kBrushless, config, false);
+  }
+
+  /**
+   * Creates a SparkMax brushed motor with the given device ID and configuration.
+   * @param deviceID The CAN ID of the motor
+   * @param config The SparkMax configuration to apply to the motor
+   * @return The SparkMax motor with the given device ID and configuration
+   */
+  public static SparkMax createBrushedMotor(int deviceID, SparkMaxConfig config) {
+    return createMotor(deviceID, MotorType.kBrushed, config, false);
   }
 
   /**
    * Creates a TalonFX motor with the given device ID and configuration.
    * @param deviceID The CAN ID that the motor is connected to
+   * @param motorType The type of motor (brushless or brushed)
    * @param config The TalonFX configuration to apply to the motor
+   * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
    * @return A TalonFX motor with the given device ID and configuration
    */
-  public static SparkMax createMotor(int deviceID, MotorType motorType, SparkMaxConfig config) {
+  public static SparkMax createMotor(
+    int deviceID, 
+    MotorType motorType, 
+    SparkMaxConfig config, 
+    boolean isFollower
+  ) {
     // Create the motor
     SparkMax motor = new SparkMax(deviceID, motorType);
 
@@ -74,12 +91,14 @@ public final class SparkMaxFactory {
     }
 
     // Optimize the motor's CAN status frames to reduce bus utilization
-    optimize(motor);
+    // Velocity and position updates are set to 50 Hz for leader motors, 
+    // and 10 Hz for follower motors
+    optimize(motor, isFollower);
 
     // Return the motor
     return motor;
   }
-
+  
   /**
    * Creates a TalonFX motor with the given device ID and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
@@ -94,8 +113,26 @@ public final class SparkMaxFactory {
     SparkMaxConfig config,
     boolean followerIsInverted
   ) {
+    return createMotorPair(leaderDeviceID, followerDeviceID, MotorType.kBrushless, config, followerIsInverted);
+  }
+
+  /**
+   * Creates a TalonFX motor with the given device ID and configuration.
+   * @param leaderDeviceID The CAN ID that the leader motor is connected to
+   * @param followerDeviceID The CAN ID that the follower motor is connected to
+   * @param config The TalonFX configuration to apply to the motor
+   * @param followerIsInverted Whether the follower motor is inverted relative to the leader motor
+   * @return A TalonFX motor with the given device ID and configuration
+   */
+  public static MotorPair createMotorPair(
+    int leaderDeviceID, 
+    int followerDeviceID,
+    MotorType motorType, 
+    SparkMaxConfig config,
+    boolean followerIsInverted
+  ) {
     // Create the motors
-    SparkMax leaderMotor = createMotor(leaderDeviceID, config);
+    SparkMax leaderMotor = createMotor(leaderDeviceID, motorType, config, false);
 
     // Create the follower motor configuration based on the leader motor configuration
     SparkMaxConfig followerConfig = new SparkMaxConfig();
@@ -105,7 +142,7 @@ public final class SparkMaxFactory {
       .inverted(followerIsInverted);
     
     // Create the follower motor
-    SparkMax followerMotor = createMotor(followerDeviceID, followerConfig);
+    SparkMax followerMotor = createMotor(followerDeviceID, motorType, followerConfig, true);
     
     // Return the motors
     return new MotorPair(leaderMotor, followerMotor);
@@ -117,44 +154,56 @@ public final class SparkMaxFactory {
    * @param motor The SparkMax motor
    */
   public static void optimize(SparkMax motor) {
-    optimize(
-      motor,
-      20,
-      20,
-      500,
-      500,
-      500,
-      200,
-      500
-    );
+    optimize(motor, false);
+  }
+
+  /**
+   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
+   * using a set of sensible default values.
+   * @param motor The TalonFX motor
+   * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
+   */
+  public static void optimize(SparkMax motor, boolean isFollower) {
+    optimize(motor, 20, 20, isFollower);
   }
 
   /**
    * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
    * using the provided update frequencies for each status frame.
    * @param motor The TalonFX motor
+   * @param primaryEncoderPositionPeriodMs The update period for the primary encoder position in milliseconds
+   * @param primaryEncoderVelocityPeriodMs The update period for the primary encoder velocity in milliseconds
+   * @param isFollower Whether the motor is a follower (affects CAN status frame optimization
    */
   public static void optimize(
     SparkMax motor,
     int primaryEncoderPositionPeriodMs,
     int primaryEncoderVelocityPeriodMs,
-    int externalOrAltEncoderPositionMs,
-    int externalOrAltEncoderVelocityMs,
-    int appliedOutputPeriodMs,
-    int faultsPeriodMs,
-    int analogVoltagePeriodMs
+    boolean isFollower
   ) {
     SparkMaxConfig signals = new SparkMaxConfig();
     
-    signals.signals
-      .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
-      .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
-      .externalOrAltEncoderPosition(externalOrAltEncoderPositionMs)
-      .externalOrAltEncoderVelocity(externalOrAltEncoderVelocityMs)
-      .appliedOutputPeriodMs(appliedOutputPeriodMs)
-      .faultsPeriodMs(faultsPeriodMs)
-      .analogVoltagePeriodMs(analogVoltagePeriodMs); 
+    if (isFollower) {
+      signals.signals
+        .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
+        .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
+        .externalOrAltEncoderPosition(500)
+        .externalOrAltEncoderVelocity(500)
+        .appliedOutputPeriodMs(500)
+        .faultsPeriodMs(200)
+        .analogVoltagePeriodMs(500); 
+    } else {
+      signals.signals
+        .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
+        .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
+        .externalOrAltEncoderPosition(500)
+        .externalOrAltEncoderVelocity(500)
+        .appliedOutputPeriodMs(500)
+        .faultsPeriodMs(200)
+        .analogVoltagePeriodMs(500); 
+    }
 
+    // Apply the configuration to the motor
     motor.configure(
       signals, 
       ResetMode.kNoResetSafeParameters, 

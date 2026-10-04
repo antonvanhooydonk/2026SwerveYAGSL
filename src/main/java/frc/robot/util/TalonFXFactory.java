@@ -45,6 +45,17 @@ public final class TalonFXFactory {
    * @return A TalonFX motor with the given device ID and configuration
    */
   public static TalonFX createMotor(int deviceID, TalonFXConfiguration config) {
+    return createMotor(deviceID, config, false);
+  }
+
+  /**
+   * Creates a TalonFX motor with the given device ID and configuration.
+   * @param deviceID The CAN ID that the motor is connected to
+   * @param config The TalonFX configuration to apply to the motor
+   * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
+   * @return A TalonFX motor with the given device ID and configuration
+   */
+  public static TalonFX createMotor(int deviceID, TalonFXConfiguration config, boolean isFollower) {
     // Create the motor
     TalonFX motor = new TalonFX(deviceID);
 
@@ -54,7 +65,9 @@ public final class TalonFXFactory {
     }
 
     // Optimize the motor's CAN status frames to reduce bus utilization
-    optimize(motor);
+    // Velocity and position updates are set to 50 Hz for leader motors, 
+    // and 10 Hz for follower motors
+    optimize(motor, isFollower);
 
     // Return the motor
     return motor;
@@ -75,8 +88,8 @@ public final class TalonFXFactory {
     boolean followerIsInverted
   ) {
     // Create the motors
-    TalonFX leaderMotor = createMotor(leaderDeviceID, config);
-    TalonFX followerMotor = createMotor(followerDeviceID, config);
+    TalonFX leaderMotor = createMotor(leaderDeviceID, config, false);
+    TalonFX followerMotor = createMotor(followerDeviceID, config, true);
 
     // Set the follower motor to follow the leader motor
     followerMotor.setControl(new Follower(
@@ -94,15 +107,17 @@ public final class TalonFXFactory {
    * @param motor The TalonFX motor
    */
   public static void optimize(TalonFX motor) {
-    optimize(
-      motor,
-      100.0,
-      100.0,
-      50.0,
-      50.0,
-      50.0,
-      4.0 
-    );
+    optimize(motor, false);
+  }
+
+  /**
+   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
+   * using a set of sensible default values.
+   * @param motor The TalonFX motor
+   * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
+   */
+  public static void optimize(TalonFX motor, boolean isFollower) {
+    optimize(motor, 50.0, 50.0, isFollower);
   }
 
   /**
@@ -111,20 +126,29 @@ public final class TalonFXFactory {
    * @param motor The TalonFX motor
    */
   public static void optimize(
-    TalonFX motor,
-    double velocityUpdateFrequency,
-    double positionUpdateFrequency,
-    double motorVoltageUpdateFrequency,
-    double supplyCurrentUpdateFrequency,
-    double torqueCurrentUpdateFrequency,
-    double deviceTempUpdateFrequency
+    TalonFX motor, 
+    double velocityUpdateHz, 
+    double positionUpdateHz, 
+    boolean isFollower
   ) {
-    motor.getVelocity().setUpdateFrequency(velocityUpdateFrequency);
-    motor.getPosition().setUpdateFrequency(positionUpdateFrequency);
-    motor.getMotorVoltage().setUpdateFrequency(motorVoltageUpdateFrequency);
-    motor.getSupplyCurrent().setUpdateFrequency(supplyCurrentUpdateFrequency);
-    motor.getTorqueCurrent().setUpdateFrequency(torqueCurrentUpdateFrequency);
-    motor.getDeviceTemp().setUpdateFrequency(deviceTempUpdateFrequency);
+    // Check if the motor is a follower and apply the appropriate update frequencies
+    if (isFollower) {
+      motor.getVelocity().setUpdateFrequency(10.0);
+      motor.getPosition().setUpdateFrequency(10.0);
+      motor.getMotorVoltage().setUpdateFrequency(10.0);
+      motor.getSupplyCurrent().setUpdateFrequency(10.0);
+      motor.getTorqueCurrent().setUpdateFrequency(10.0);
+      motor.getDeviceTemp().setUpdateFrequency(4.0);
+    } else {
+      motor.getVelocity().setUpdateFrequency(velocityUpdateHz);
+      motor.getPosition().setUpdateFrequency(positionUpdateHz);
+      motor.getMotorVoltage().setUpdateFrequency(50.0);
+      motor.getSupplyCurrent().setUpdateFrequency(50.0);
+      motor.getTorqueCurrent().setUpdateFrequency(20.0);
+      motor.getDeviceTemp().setUpdateFrequency(4.0);
+    }
+
+    // Optimize the motor's CAN status frames to reduce bus utilization
     motor.optimizeBusUtilization();
   }
 }
