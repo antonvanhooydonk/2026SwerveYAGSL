@@ -251,16 +251,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Sets motors to brake or coast mode
-   * @param brake True for brake, false for coast
-   */
-  private void setMotorBrake(boolean brake) {
-    NeutralModeValue mode = brake ? NeutralModeValue.Brake : NeutralModeValue.Coast;
-    leaderMotor.setNeutralMode(mode);
-    followerMotor.setNeutralMode(mode);
-  }
-
-  /**
    * Gets whether the elevator is at its target height within tolerance
    * @param targetHeightMeters Target height in meters
    * @return True if at target
@@ -362,7 +352,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Initializes the elevator at the start of the autonomous phase.
    */
   public void autonomousInit() {
-    setMotorBrake(true);
     Utils.logInfo("Elevator subsystem initialized for autonomous");
   }
 
@@ -370,7 +359,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Initializes the elevator at the start of the teleop phase.
    */
   public void teleopInit() {
-    setMotorBrake(true);
     Utils.logInfo("Elevator subsystem initialized for teleop");
   }
 
@@ -378,7 +366,6 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Initializes the elevator for post match (disabled) state.
    */
   public void postMatch() {
-    setMotorBrake(false);
     Utils.logInfo("Elevator subsystem initialized for post match");
   }
 

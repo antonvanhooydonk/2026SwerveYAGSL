@@ -276,14 +276,6 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Sets the turret motor to brake or coast mode
-   * @param brake True for brake, false for coast
-   */
-  private void setMotorBrake(boolean brake) {
-    turretMotor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
-  }
-
-  /**
    * Gets whether the turret is at its target angle within tolerance
    * @return True if at target
    */
@@ -340,7 +332,6 @@ public class TurretSubsystem extends SubsystemBase {
    * Initializes the turret at the start of the autonomous phase.
    */
   public void autonomousInit() {
-    setMotorBrake(true);
     Utils.logInfo("Turret subsystem initialized for autonomous");
   }
 
@@ -348,7 +339,6 @@ public class TurretSubsystem extends SubsystemBase {
    * Initializes the turret at the start of the teleop phase.
    */
   public void teleopInit() {
-    setMotorBrake(true);
     Utils.logInfo("Turret subsystem initialized for teleop");
   }
 
@@ -356,7 +346,6 @@ public class TurretSubsystem extends SubsystemBase {
    * Initializes the turret for post match (disabled) state.
    */
   public void postMatch() {
-    setMotorBrake(false);
     Utils.logInfo("Turret subsystem initialized for post match");
   }
 
