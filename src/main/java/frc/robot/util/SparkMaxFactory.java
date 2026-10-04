@@ -185,8 +185,8 @@ public final class SparkMaxFactory {
     
     if (isFollower) {
       signals.signals
-        .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
-        .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
+        .primaryEncoderPositionPeriodMs(200)
+        .primaryEncoderVelocityPeriodMs(200)
         .externalOrAltEncoderPosition(500)
         .externalOrAltEncoderVelocity(500)
         .appliedOutputPeriodMs(500)
