@@ -23,33 +23,29 @@ public final class SparkMaxFactory {
   public record MotorPair(SparkMax leader, SparkMax follower) {}
 
   /**
-   * Applies a TalonFX configuration to a motor with retry logic.
+   * Applies a SparkMax configuration to a motor with retry logic.
    * This method will replace any existing configuration applied to the motor.
-   * @param motor The TalonFX motor
-   * @param config The TalonFX configuration
+   * @param motor The SparkMax motor
+   * @param config The SparkMax configuration
    * @return True if the configuration was applied successfully, false otherwise
    */
   public static boolean applyConfig(SparkMax motor, SparkMaxConfig config) {
-    REVLibError err = motor.configure(
-      config, 
-      ResetMode.kResetSafeParameters, 
-      PersistMode.kPersistParameters
-    );
+    // Apply the configuration to the motor
+    REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
+    // Retry up to 3 times if the configuration fails
     for (int i = 0; i < 3 && err != REVLibError.kOk; i++) {
       Utils.logError("Failed to apply SparkMax config, retrying... (" + (i + 1) + "/3)");
-      err = motor.configure(
-        config, 
-        ResetMode.kResetSafeParameters, 
-        PersistMode.kPersistParameters
-      );
+      err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     }
 
+    // Return true if the configuration was applied successfully, false otherwise
     return err == REVLibError.kOk;
   }
 
   /**
-   * Creates a SparkMax brushless motor with the given device ID and configuration.
+   * Creates an independent non-follower SparkMax brushless 
+   * motor with the given device ID and configuration.
    * @param deviceID The CAN ID of the motor
    * @param config The SparkMax configuration to apply to the motor
    * @return The SparkMax motor with the given device ID and configuration
@@ -59,7 +55,8 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates a SparkMax brushed motor with the given device ID and configuration.
+   * Creates an independent non-follower SparkMax brushed 
+   * motor with the given device ID and configuration.
    * @param deviceID The CAN ID of the motor
    * @param config The SparkMax configuration to apply to the motor
    * @return The SparkMax motor with the given device ID and configuration
@@ -69,12 +66,12 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates a TalonFX motor with the given device ID and configuration.
+   * Creates a SparkMax motor with the given device ID and configuration.
    * @param deviceID The CAN ID that the motor is connected to
    * @param motorType The type of motor (brushless or brushed)
-   * @param config The TalonFX configuration to apply to the motor
+   * @param config The SparkMax configuration to apply to the motor
    * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
-   * @return A TalonFX motor with the given device ID and configuration
+   * @return A SparkMax motor with the given device ID and configuration
    */
   public static SparkMax createMotor(
     int deviceID, 
@@ -100,12 +97,12 @@ public final class SparkMaxFactory {
   }
   
   /**
-   * Creates a TalonFX motor with the given device ID and configuration.
+   * Creates a pair of SparkMax brushless motors with the given device ID and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
    * @param followerDeviceID The CAN ID that the follower motor is connected to
-   * @param config The TalonFX configuration to apply to the motor
+   * @param config The SparkMax configuration to apply to the motor
    * @param followerIsInverted Whether the follower motor is inverted relative to the leader motor
-   * @return A TalonFX motor with the given device ID and configuration
+   * @return A pair of SparkMax brushless motors with the given device IDs and configuration
    */
   public static MotorPair createMotorPair(
     int leaderDeviceID, 
@@ -117,12 +114,12 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates a TalonFX motor with the given device ID and configuration.
+   * Creates a pair of SparkMax motors with the given device IDs and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
    * @param followerDeviceID The CAN ID that the follower motor is connected to
-   * @param config The TalonFX configuration to apply to the motor
+   * @param config The SparkMax configuration to apply to the motor
    * @param followerIsInverted Whether the follower motor is inverted relative to the leader motor
-   * @return A TalonFX motor with the given device ID and configuration
+   * @return A pair of SparkMax motors with the given device IDs and configuration
    */
   public static MotorPair createMotorPair(
     int leaderDeviceID, 
@@ -131,15 +128,15 @@ public final class SparkMaxFactory {
     SparkMaxConfig config,
     boolean followerIsInverted
   ) {
-    // Create the motors
+    // Create the leader motor
     SparkMax leaderMotor = createMotor(leaderDeviceID, motorType, config, false);
 
     // Create the follower motor configuration based on the leader motor configuration
     SparkMaxConfig followerConfig = new SparkMaxConfig();
     followerConfig
-      .apply(config)
-      .follow(leaderMotor)
-      .inverted(followerIsInverted);
+      .apply(config) // copies the leader config
+      .follow(leaderMotor) // sets the follower to follow the leader motor
+      .inverted(followerIsInverted); // sets the follower inversion relative to the leader motor
     
     // Create the follower motor
     SparkMax followerMotor = createMotor(followerDeviceID, motorType, followerConfig, true);
@@ -158,9 +155,9 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
+   * Optimizes the CAN status frames for a SparkMax motor to reduce bus utilization
    * using a set of sensible default values.
-   * @param motor The TalonFX motor
+   * @param motor The SparkMax motor
    * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
    */
   public static void optimize(SparkMax motor, boolean isFollower) {
@@ -168,9 +165,9 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
+   * Optimizes the CAN status frames for a SparkMax motor to reduce bus utilization
    * using the provided update frequencies for each status frame.
-   * @param motor The TalonFX motor
+   * @param motor The SparkMax motor
    * @param primaryEncoderPositionPeriodMs The update period for the primary encoder position in milliseconds
    * @param primaryEncoderVelocityPeriodMs The update period for the primary encoder velocity in milliseconds
    * @param isFollower Whether the motor is a follower (affects CAN status frame optimization
@@ -206,8 +203,8 @@ public final class SparkMaxFactory {
     // Apply the configuration to the motor
     motor.configure(
       signals, 
-      ResetMode.kNoResetSafeParameters, 
-      PersistMode.kPersistParameters
+      ResetMode.kNoResetSafeParameters, // merges this partial config into the existing config
+      PersistMode.kPersistParameters // persists the configuration to the motor's flash memory
     );
   }
 }

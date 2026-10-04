@@ -28,18 +28,21 @@ public final class TalonFXFactory {
    * @return True if the configuration was applied successfully, false otherwise
    */
   public static boolean applyConfig(TalonFX motor, TalonFXConfiguration config) {
+    // Apply the configuration to the motor
     StatusCode status = motor.getConfigurator().apply(config);
 
+    // Retry up to 3 times if the configuration fails
     for (int i = 0; i < 3 && status != StatusCode.OK; i++) {
       Utils.logError("Failed to apply TalonFX config, retrying... (" + (i + 1) + "/3)");
       status = motor.getConfigurator().apply(config);
     }
 
+    // Return true if the configuration was applied successfully, false otherwise
     return status == StatusCode.OK;
   }
 
   /**
-   * Creates a TalonFX motor with the given device ID and configuration.
+   * Creates an independent non-follower TalonFX motor with the given device ID and configuration.
    * @param deviceID The CAN ID that the motor is connected to
    * @param config The TalonFX configuration to apply to the motor
    * @return A TalonFX motor with the given device ID and configuration
@@ -65,8 +68,6 @@ public final class TalonFXFactory {
     }
 
     // Optimize the motor's CAN status frames to reduce bus utilization
-    // Velocity and position updates are set to 50 Hz for leader motors, 
-    // and 10 Hz for follower motors
     optimize(motor, isFollower);
 
     // Return the motor
@@ -74,12 +75,12 @@ public final class TalonFXFactory {
   }
 
   /**
-   * Creates a TalonFX motor with the given device ID and configuration.
+   * Creates a pair of TalonFX motors with the given device IDs and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
    * @param followerDeviceID The CAN ID that the follower motor is connected to
    * @param config The TalonFX configuration to apply to the motor
    * @param followerIsInverted Whether the follower motor is inverted relative to the leader motor
-   * @return A TalonFX motor with the given device ID and configuration
+   * @return A pair of TalonFX motors with the given device IDs and configuration
    */
   public static MotorPair createMotorPair(
     int leaderDeviceID, 
@@ -102,8 +103,8 @@ public final class TalonFXFactory {
   }
 
   /**
-   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
-   * using a set of sensible default values.
+   * Optimizes the CAN status frames for a TalonFX motor to reduce
+   * bus utilization using a set of sensible default values.
    * @param motor The TalonFX motor
    */
   public static void optimize(TalonFX motor) {
@@ -111,8 +112,8 @@ public final class TalonFXFactory {
   }
 
   /**
-   * Optimizes the CAN status frames for a TalonFX motor to reduce bus utilization
-   * using a set of sensible default values.
+   * Optimizes the CAN status frames for a TalonFX motor to reduce 
+   * bus utilization using a set of sensible default values.
    * @param motor The TalonFX motor
    * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
    */
