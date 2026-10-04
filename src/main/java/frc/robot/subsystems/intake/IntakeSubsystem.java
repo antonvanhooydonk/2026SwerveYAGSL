@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.TalonFXFactory;
 import frc.robot.util.Utils;
 
 /**
@@ -59,9 +60,17 @@ public class IntakeSubsystem extends SubsystemBase {
    * Creates a new IntakeSubsystem
    */
   public IntakeSubsystem() {
-    // Initialize roller hardware
-    rollerMotor = new TalonFX(CANConstants.kIntakeRollerMotorID);
-    rollerConfig = new TalonFXConfiguration();
+    // Initialize roller configuration
+    rollerConfig = TalonFXFactory.createConfig(
+      NeutralModeValue.Coast, 
+      InvertedValue.CounterClockwise_Positive, 
+      30, 
+      25, 
+      40, 
+      IntakeConstants.kRollerKP, IntakeConstants.kRollerKI, IntakeConstants.kRollerKD,
+      IntakeConstants.kRollerKS, IntakeConstants.kRollerKV, IntakeConstants.kRollerKA
+    );
+    rollerMotor = TalonFXFactory.createMotor(CANConstants.kIntakeRollerMotorID, rollerConfig);
     
     // Initialize deploy/retract solenoid
     deploySolenoid = new DoubleSolenoid(
@@ -73,9 +82,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
     // Initialize control request
     rollerVelocityRequest = new VelocityVoltage(0).withSlot(0);
-
-    // Configure motors
-    configureMotor();
 
     // Initialize SysId routine (leader motor only)
     rollerSysIdRoutine = new SysIdRoutine(
@@ -103,54 +109,6 @@ public class IntakeSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
-  }
-
-  // ----------------------------------------------------------------------------------------
-  // Private configuration methods
-  // ----------------------------------------------------------------------------------------
-
-  /**
-   * Configures the roller leader motor
-   */
-  private void configureMotor() {
-    rollerConfig.MotorOutput
-      .withNeutralMode(NeutralModeValue.Coast) // Coast so roller spins down naturally
-      .withInverted(InvertedValue.CounterClockwise_Positive)
-      .withDutyCycleNeutralDeadband(0.001);
-
-    rollerConfig.CurrentLimits
-      .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(30)
-      .withSupplyCurrentLowerLimit(25)
-      .withSupplyCurrentLowerTime(1.0)
-      .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(40);
-
-    rollerConfig.Voltage
-      .withPeakForwardVoltage(12)
-      .withPeakReverseVoltage(-12)
-      .withSupplyVoltageTimeConstant(0.02);
-
-    // Velocity PID (slot 0) - velocity in RPS
-    rollerConfig.Slot0
-      .withKP(IntakeConstants.kRollerKP)
-      .withKI(IntakeConstants.kRollerKI)
-      .withKD(IntakeConstants.kRollerKD)
-      .withKS(IntakeConstants.kRollerKS)
-      .withKV(IntakeConstants.kRollerKV)
-      .withKA(IntakeConstants.kRollerKA);
-
-    // Apply configuration to roller motor
-    rollerMotor.getConfigurator().apply(rollerConfig);
-    
-    // Optimize CAN status frames on roller motor
-    rollerMotor.getVelocity().setUpdateFrequency(100.0);
-    rollerMotor.getPosition().setUpdateFrequency(100.0);
-    rollerMotor.getMotorVoltage().setUpdateFrequency(50.0);
-    rollerMotor.getSupplyCurrent().setUpdateFrequency(50.0);
-    rollerMotor.getTorqueCurrent().setUpdateFrequency(50.0);
-    rollerMotor.getDeviceTemp().setUpdateFrequency(4.0);
-    rollerMotor.optimizeBusUtilization();
   }
 
   // ----------------------------------------------------------------------------------------

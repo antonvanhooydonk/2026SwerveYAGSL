@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
 import frc.robot.util.Conversions;
+import frc.robot.util.TalonFXFactory;
 import frc.robot.util.Utils;
 
 /**
@@ -66,15 +67,37 @@ public class TurretSubsystem extends SubsystemBase {
    * Creates a new TurretSubsystem
    */
   public TurretSubsystem() {
-    // Initialize turret hardware
-    turretMotor = new TalonFX(CANConstants.kTurretMotorID);
-    turretConfig = new TalonFXConfiguration();
+    // Initialize turret configuration
+    turretConfig = TalonFXFactory.createConfig(
+      NeutralModeValue.Brake,
+      InvertedValue.CounterClockwise_Positive,
+      30, 
+      20, 
+      40, 
+      TurretConstants.kTurretKP, TurretConstants.kTurretKI, TurretConstants.kTurretKD,
+      TurretConstants.kTurretKS, TurretConstants.kTurretKV, TurretConstants.kTurretKA
+    );
+
+    turretConfig.SoftwareLimitSwitch
+      .withForwardSoftLimitEnable(true)
+      .withForwardSoftLimitThreshold(Conversions.degreesToRotations(
+        TurretConstants.kMaxAngleDegrees,
+        TurretConstants.kTurretGearRatio))
+      .withReverseSoftLimitEnable(true)
+      .withReverseSoftLimitThreshold(Conversions.degreesToRotations(
+        TurretConstants.kMinAngleDegrees,
+        TurretConstants.kTurretGearRatio));
+
+    turretConfig.MotionMagic
+      .withMotionMagicCruiseVelocity(TurretConstants.kCruiseVelocity)
+      .withMotionMagicAcceleration(TurretConstants.kAcceleration)
+      .withMotionMagicJerk(TurretConstants.kJerk);
+
+    // Create the turret motor with the given configuration
+    turretMotor = TalonFXFactory.createMotor(CANConstants.kTurretMotorID, turretConfig);
 
     // Initialize control request
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
-
-    // Configure motor
-    configureMotor();
 
     // Zero turret encoder at startup - turret must be at home position
     resetEncoder();
@@ -105,72 +128,6 @@ public class TurretSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
-  }
-
-  // ----------------------------------------------------------------------------------------
-  // Private configuration methods
-  // ----------------------------------------------------------------------------------------
-
-  /**
-   * Configures the turret rotation motor
-   */
-  private void configureMotor() {
-    turretConfig.MotorOutput
-      .withNeutralMode(NeutralModeValue.Brake)
-      .withInverted(InvertedValue.CounterClockwise_Positive)
-      .withDutyCycleNeutralDeadband(0.001);
-
-    turretConfig.CurrentLimits
-      .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(30)
-      .withSupplyCurrentLowerLimit(20)
-      .withSupplyCurrentLowerTime(1.0)
-      .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(40);
-
-    turretConfig.Voltage
-      .withPeakForwardVoltage(12)
-      .withPeakReverseVoltage(-12)
-      .withSupplyVoltageTimeConstant(0.02);
-
-    // Do NOT use withSensorToMechanismRatio, instead use Conversions methods
-    // in appropriate places within this subsystem code.
-
-    // Software limits are the ONLY protection this turret has (no slip
-    // rings, no physical limit switches). These are in raw (unwrapped)
-    // mechanism degrees, which can exceed +/-180 as the turret accumulates
-    // position across multiple tracking commands.
-    turretConfig.SoftwareLimitSwitch
-      .withForwardSoftLimitEnable(true)
-      .withForwardSoftLimitThreshold(Conversions.degreesToRotations(
-        TurretConstants.kMaxAngleDegrees,
-        TurretConstants.kTurretGearRatio))
-      .withReverseSoftLimitEnable(true)
-      .withReverseSoftLimitThreshold(Conversions.degreesToRotations(
-        TurretConstants.kMinAngleDegrees,
-        TurretConstants.kTurretGearRatio));
-
-    turretConfig.Slot0
-      .withKP(TurretConstants.kTurretKP)
-      .withKI(TurretConstants.kTurretKI)
-      .withKD(TurretConstants.kTurretKD)
-      .withKS(TurretConstants.kTurretKS)
-      .withKV(TurretConstants.kTurretKV)
-      .withKA(TurretConstants.kTurretKA);
-
-    turretConfig.MotionMagic
-      .withMotionMagicCruiseVelocity(TurretConstants.kCruiseVelocity)
-      .withMotionMagicAcceleration(TurretConstants.kAcceleration)
-      .withMotionMagicJerk(TurretConstants.kJerk);
-
-    turretMotor.getConfigurator().apply(turretConfig);
-
-    turretMotor.getPosition().setUpdateFrequency(100.0);
-    turretMotor.getVelocity().setUpdateFrequency(100.0);
-    turretMotor.getMotorVoltage().setUpdateFrequency(50.0);
-    turretMotor.getSupplyCurrent().setUpdateFrequency(50.0);
-    turretMotor.getDeviceTemp().setUpdateFrequency(4.0);
-    turretMotor.optimizeBusUtilization();
   }
 
   // ----------------------------------------------------------------------------------------

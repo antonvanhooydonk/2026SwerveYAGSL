@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.TalonFXFactory;
 import frc.robot.util.Utils;
 
 /**
@@ -54,15 +55,20 @@ public class FeederSubsystem extends SubsystemBase {
    * Creates a new FeederSubsystem
    */
   public FeederSubsystem() {
-    // Initialize feeder hardware
-    feederMotor = new TalonFX(CANConstants.kFeederMotorID);
-    feederConfig = new TalonFXConfiguration();
+    // Initialize feeder configuration
+    feederConfig = TalonFXFactory.createConfig(
+      NeutralModeValue.Brake, 
+      InvertedValue.CounterClockwise_Positive, 
+      40.0, 
+      40.0, 
+      60.0, 
+      FeederConstants.kFeederKP, FeederConstants.kFeederKI, FeederConstants.kFeederKD,
+      FeederConstants.kFeederKS, FeederConstants.kFeederKV, FeederConstants.kFeederKA
+    );
+    feederMotor = TalonFXFactory.createMotor(CANConstants.kFeederMotorID, feederConfig);
 
     // Initialize control request
     feederVelocityRequest = new VelocityVoltage(0).withSlot(0);
-
-    // Configure motors
-    configureMotors();
 
     // Initialize SysId routine (leader motor only)
     feederSysIdRoutine = new SysIdRoutine(
@@ -90,54 +96,6 @@ public class FeederSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
-  }
-
-  // ----------------------------------------------------------------------------------------
-  // Private configuration methods
-  // ----------------------------------------------------------------------------------------
-
-  /**
-   * Configures the feeder motor
-   */
-  private void configureMotors() {
-    feederConfig.MotorOutput
-      .withNeutralMode(NeutralModeValue.Brake) // Brake so feeder stops quickly
-      .withInverted(InvertedValue.CounterClockwise_Positive)
-      .withDutyCycleNeutralDeadband(0.001);
-
-    feederConfig.CurrentLimits
-      .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(40)
-      .withSupplyCurrentLowerLimit(40)
-      .withSupplyCurrentLowerTime(1.0)
-      .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(60);
-
-    feederConfig.Voltage
-      .withPeakForwardVoltage(12)
-      .withPeakReverseVoltage(-12)
-      .withSupplyVoltageTimeConstant(0.02);
-
-    // Velocity PID (slot 0) - velocity in RPS
-    feederConfig.Slot0
-      .withKP(FeederConstants.kFeederKP)
-      .withKI(FeederConstants.kFeederKI)
-      .withKD(FeederConstants.kFeederKD)
-      .withKS(FeederConstants.kFeederKS)
-      .withKV(FeederConstants.kFeederKV)
-      .withKA(FeederConstants.kFeederKA);
-
-    // Apply configuration to feeder motor
-    feederMotor.getConfigurator().apply(feederConfig);
-
-    // Optimize CAN status frames on feeder motor
-    feederMotor.getVelocity().setUpdateFrequency(100.0);
-    feederMotor.getPosition().setUpdateFrequency(100.0);
-    feederMotor.getMotorVoltage().setUpdateFrequency(50.0);
-    feederMotor.getSupplyCurrent().setUpdateFrequency(50.0);
-    feederMotor.getTorqueCurrent().setUpdateFrequency(50.0);
-    feederMotor.getDeviceTemp().setUpdateFrequency(4.0);
-    feederMotor.optimizeBusUtilization();
   }
 
   // ----------------------------------------------------------------------------------------

@@ -18,8 +18,6 @@ public final class ClimberConstants {
   // tensioner may contact the climber gears and cause damage.
   public static final int kEncoderTicksPerRevolution    = 8192;
   public static final double kGearRatio                 = 28.0 / 10.0;
-  public static final double kPositionConversionFactor  = 360.0 / kGearRatio;
-  public static final double kVelocityConversionFactor  = kPositionConversionFactor / 60.0;
   public static final double kMinAngleDegrees           = -75.0;
   public static final double kMaxAngleDegrees           = 140.0;
 

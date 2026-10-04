@@ -11,13 +11,11 @@ import static edu.wpi.first.units.Units.Volts;
 import java.util.function.BooleanSupplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
@@ -31,6 +29,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
 import frc.robot.util.Conversions;
+import frc.robot.util.TalonFXFactory.MotorPair;
+import frc.robot.util.TalonFXFactory;
 import frc.robot.util.Utils;
 
 /**
@@ -51,7 +51,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   // Hardware - leader and follower motors
   private final TalonFX leaderMotor;
   private final TalonFX followerMotor;
-  private final TalonFXConfiguration motorConfig;
 
   // Control requests
   private final MotionMagicVoltage motionMagicRequest;
@@ -66,16 +65,57 @@ public class ElevatorSubsystem extends SubsystemBase {
    * Creates a new ElevatorSubsystem
    */
   public ElevatorSubsystem() {
-    // Initialize hardware
-    leaderMotor = new TalonFX(CANConstants.kElevatorLeaderMotorID);
-    followerMotor = new TalonFX(CANConstants.kElevatorFollowerMotorID);
-    motorConfig = new TalonFXConfiguration();
+    // Initialize hardware configuration
+    TalonFXConfiguration motorConfig = TalonFXFactory.createConfig(
+      NeutralModeValue.Brake, 
+      InvertedValue.CounterClockwise_Positive, 
+      40.0, 
+      30.0, 
+      60.0, 
+      ElevatorConstants.kP, ElevatorConstants.kI, ElevatorConstants.kD, 
+      ElevatorConstants.kS, ElevatorConstants.kV, ElevatorConstants.kA
+    );
+
+    // Add gravity compensation to the position PID (slot 0)
+    motorConfig.Slot0
+      .withKG(ElevatorConstants.kG)
+      .withGravityType(GravityTypeValue.Elevator_Static);
+
+    // Soft limits to protect the elevator
+    TalonFXFactory.setSoftwareLimits(
+      motorConfig, 
+      Conversions.metersToRotations(
+        ElevatorConstants.kMaxHeightMeters, 
+        ElevatorConstants.kGearRatio, 
+        ElevatorConstants.kSpoolCircumferenceMeters
+      ), 
+      Conversions.metersToRotations(
+        ElevatorConstants.kMinHeightMeters, 
+        ElevatorConstants.kGearRatio, 
+        ElevatorConstants.kSpoolCircumferenceMeters
+      )
+    );
+
+    // MotionMagic configuration
+    TalonFXFactory.setMotionControl(
+      motorConfig, 
+      ElevatorConstants.kCruiseVelocity, 
+      ElevatorConstants.kAcceleration, 
+      ElevatorConstants.kJerk
+    );
+
+    // Create leader and follower motors
+    MotorPair motors = TalonFXFactory.createMotorPair(
+      CANConstants.kElevatorLeaderMotorID,
+      CANConstants.kElevatorFollowerMotorID,
+      motorConfig,
+      false
+    );
+    leaderMotor = motors.leader();
+    followerMotor = motors.follower();
 
     // Initialize control requests
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
-
-    // Configure motors
-    configureMotors();
 
     // Zero encoder at startup - elevator must be at home position
     resetEncoder();
@@ -106,94 +146,6 @@ public class ElevatorSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles control loop onboard
-  }
-
-  // ----------------------------------------------------------------------------------------
-  // Private configuration methods
-  // ----------------------------------------------------------------------------------------
-
-  /**
-   * Configures both motors. The follower mirrors the leader in the opposite direction.
-   */
-  private void configureMotors() {
-    // Motor output
-    motorConfig.MotorOutput
-      .withNeutralMode(NeutralModeValue.Brake)
-      .withInverted(InvertedValue.CounterClockwise_Positive)
-      .withDutyCycleNeutralDeadband(0.001);
-
-    // Current limits
-    motorConfig.CurrentLimits
-      .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(40)
-      .withSupplyCurrentLowerLimit(30)
-      .withSupplyCurrentLowerTime(1.0)
-      .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(60);
-
-    // Voltage compensation
-    motorConfig.Voltage
-      .withPeakForwardVoltage(12)
-      .withPeakReverseVoltage(-12)
-      .withSupplyVoltageTimeConstant(0.02);
-
-    // Do NOT use withSensorToMechanismRatio, instead use Conversions methods
-    // in appropriate places within this subsystem code.
-
-    // Soft limits to protect the elevator without limit switches
-    motorConfig.SoftwareLimitSwitch
-      .withForwardSoftLimitEnable(true)
-      .withForwardSoftLimitThreshold(Conversions.metersToRotations(
-        ElevatorConstants.kMaxHeightMeters, 
-        ElevatorConstants.kGearRatio, 
-        ElevatorConstants.kSpoolCircumferenceMeters))
-      .withReverseSoftLimitEnable(true)
-      .withReverseSoftLimitThreshold(Conversions.metersToRotations(
-        ElevatorConstants.kMinHeightMeters, 
-        ElevatorConstants.kGearRatio, 
-        ElevatorConstants.kSpoolCircumferenceMeters));
-
-    // Position PID with gravity compensation (slot 0)
-    motorConfig.Slot0
-      .withKP(ElevatorConstants.kP)
-      .withKI(ElevatorConstants.kI)
-      .withKD(ElevatorConstants.kD)
-      .withKS(ElevatorConstants.kS)
-      .withKV(ElevatorConstants.kV)
-      .withKA(ElevatorConstants.kA)
-      .withKG(ElevatorConstants.kG)
-      .withGravityType(GravityTypeValue.Elevator_Static); // Constant gravity compensation
-
-    // MotionMagic configuration
-    motorConfig.MotionMagic
-      .withMotionMagicCruiseVelocity(ElevatorConstants.kCruiseVelocity)
-      .withMotionMagicAcceleration(ElevatorConstants.kAcceleration)
-      .withMotionMagicJerk(ElevatorConstants.kJerk);
-
-    // Apply configuration to leader
-    leaderMotor.getConfigurator().apply(motorConfig);
-    followerMotor.getConfigurator().apply(motorConfig);
-
-    // Configure follower to be aligned with the leader
-    followerMotor.setControl(new Follower(CANConstants.kElevatorLeaderMotorID, MotorAlignmentValue.Aligned));
-
-    // Optimize CAN status frames on leader
-    leaderMotor.getPosition().setUpdateFrequency(100.0);
-    leaderMotor.getVelocity().setUpdateFrequency(100.0);
-    leaderMotor.getMotorVoltage().setUpdateFrequency(50.0);
-    leaderMotor.getSupplyCurrent().setUpdateFrequency(50.0);
-    leaderMotor.getTorqueCurrent().setUpdateFrequency(50.0);
-    leaderMotor.getDeviceTemp().setUpdateFrequency(4.0);
-    leaderMotor.optimizeBusUtilization();
-
-    // Minimize follower CAN traffic since it mirrors the leader
-    followerMotor.getPosition().setUpdateFrequency(100.0);
-    followerMotor.getVelocity().setUpdateFrequency(100.0);
-    followerMotor.getMotorVoltage().setUpdateFrequency(50.0);
-    followerMotor.getSupplyCurrent().setUpdateFrequency(50.0);
-    followerMotor.getTorqueCurrent().setUpdateFrequency(50.0);
-    followerMotor.getDeviceTemp().setUpdateFrequency(4.0);
-    followerMotor.optimizeBusUtilization();
   }
 
   // ----------------------------------------------------------------------------------------

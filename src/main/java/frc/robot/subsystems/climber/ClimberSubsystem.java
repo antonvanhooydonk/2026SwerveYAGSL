@@ -10,12 +10,9 @@ import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.BooleanSupplier;
 
-import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
@@ -30,11 +27,14 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.Conversions;
+import frc.robot.util.SparkMaxFactory;
 import frc.robot.util.Utils;
 
 public class ClimberSubsystem extends SubsystemBase {
   // Hardware
   private final SparkMax climberMotor;
+  private final SparkMaxConfig climberConfig;
   private final RelativeEncoder climberEncoder;
   private final SparkClosedLoopController climberController;
 
@@ -46,11 +46,31 @@ public class ClimberSubsystem extends SubsystemBase {
  
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {
-    // Initialize hardware (we're using a brushed CIM for the climber)
-    climberMotor = new SparkMax(CANConstants.kClimberMotorID, MotorType.kBrushed);
-    
-    // Configure motor
-    configureMotor();
+    // Initialize configuration for the climber motor
+    climberConfig = SparkMaxFactory.createConfig(
+      30,
+      IdleMode.kBrake,
+      true,
+      ClimberConstants.kClimberKP, ClimberConstants.kClimberKI, ClimberConstants.kClimberKD
+    );
+
+    // Set soft limits for the climber motor to prevent over-rotation
+    SparkMaxFactory.setSoftwareLimits(
+      climberConfig, 
+      Conversions.degreesToRotations(ClimberConstants.kMinAngleDegrees, ClimberConstants.kGearRatio), 
+      Conversions.degreesToRotations(ClimberConstants.kMaxAngleDegrees, ClimberConstants.kGearRatio)
+    );
+
+    // Set motion control parameters for the climber motor
+    SparkMaxFactory.setMotionControl(
+      climberConfig,
+      ClimberConstants.kMaxVelocityDegPerSec,
+      ClimberConstants.kMaxAccelDegPerSec2,
+      ClimberConstants.kAngleToleranceDegrees
+    );
+
+    // Initialize the climber motor (we're using a brushed CIM for the climber)
+    climberMotor = SparkMaxFactory.createMotor(CANConstants.kClimberMotorID, climberConfig);
 
     // Initialize closed-loop controller
     climberController = climberMotor.getClosedLoopController();
@@ -83,58 +103,6 @@ public class ClimberSubsystem extends SubsystemBase {
     // Output initialization progress
     Utils.logInfo("Climber subsystem initialized");
   }
-  
-  /**
-   * Configure the climber motor with all settings
-   */
-  private void configureMotor() {
-    SparkMaxConfig climbConfig = new SparkMaxConfig();
-
-    // configure the climber motor
-    climbConfig
-      .smartCurrentLimit(30) // amps
-      .voltageCompensation(12) // Consistent behavior across battery voltage
-      .idleMode(IdleMode.kBrake) // CRITICAL: Brake mode prevents falling
-      .inverted(true);
-
-    climbConfig.closedLoop
-      .p(ClimberConstants.kClimberKP)
-      .i(ClimberConstants.kClimberKI)
-      .d(ClimberConstants.kClimberKD)
-      .outputRange(-1, 1)
-      .maxMotion
-        .cruiseVelocity(ClimberConstants.kMaxVelocityDegPerSec)
-        .maxAcceleration(ClimberConstants.kMaxAccelDegPerSec2)
-        .allowedProfileError(ClimberConstants.kAngleToleranceDegrees);
-
-    climbConfig.softLimit
-      .forwardSoftLimitEnabled(true)
-      .forwardSoftLimit(ClimberConstants.kMaxAngleDegrees)
-      .reverseSoftLimitEnabled(true)
-      .reverseSoftLimit(ClimberConstants.kMinAngleDegrees);
-      
-    climbConfig.encoder
-      .countsPerRevolution(ClimberConstants.kEncoderTicksPerRevolution) 
-      .positionConversionFactor(ClimberConstants.kPositionConversionFactor)
-      .velocityConversionFactor(ClimberConstants.kVelocityConversionFactor);
-
-    // Optimize CAN status frames for reduced lag
-    climbConfig.signals
-      .primaryEncoderPositionPeriodMs(20)    // Fast position data
-      .primaryEncoderVelocityPeriodMs(20)    // Fast velocity data
-      .externalOrAltEncoderPosition(500)     // Not used
-      .externalOrAltEncoderVelocity(500)     // Not used
-      .appliedOutputPeriodMs(500)            // Not needed for open-loop control
-      .faultsPeriodMs(200)                   // Keep at 200ms for fault detection
-      .analogVoltagePeriodMs(500);           // Not used
-
-    // apply configuration
-    climberMotor.configure(
-      climbConfig, 
-      ResetMode.kResetSafeParameters, 
-      PersistMode.kPersistParameters
-    );
-  }
 
   @Override
   public void periodic() {}
@@ -155,8 +123,14 @@ public class ClimberSubsystem extends SubsystemBase {
       ClimberConstants.kMaxAngleDegrees
     );
 
+    // Convert target height to motor rotations
+    double targetMotorRotations = Conversions.degreesToRotations(
+      targetAngleDegrees, 
+      ClimberConstants.kGearRatio
+    );
+
     // Set the target position using max motion control
-    climberController.setSetpoint(targetAngleDegrees, ControlType.kMAXMotionPositionControl);
+    climberController.setSetpoint(targetMotorRotations, ControlType.kMAXMotionPositionControl);
   }
 
   /**
@@ -188,7 +162,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Angle in degrees
    */
   private double getAngleDegrees() {
-    return climberEncoder.getPosition();
+    return Conversions.rotationsToDegrees(climberEncoder.getPosition(), ClimberConstants.kGearRatio);
   }
   
   /**

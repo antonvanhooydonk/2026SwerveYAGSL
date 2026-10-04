@@ -11,12 +11,10 @@ import static edu.wpi.first.units.Units.Volts;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.math.MathUtil;
@@ -31,10 +29,12 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.TalonFXFactory;
+import frc.robot.util.TalonFXFactory.MotorPair;
 import frc.robot.util.Utils;
 
 /**
- * Shooter flywheel subsystem using dual Kraken X60 (TalonFX) motors in a
+ * Flywheel subsystem using dual Kraken X60 (TalonFX) motors in a
  * follower configuration. Physically mounted on the turret, but kept as a
  * separate subsystem from TurretSubsystem so aiming and spin-up can be
  * commanded and scheduled independently of each other.
@@ -57,7 +57,7 @@ public class FlywheelSubsystem extends SubsystemBase {
   // Cached target (for telemetry)
   private double targetRPM = 0.0;
 
-  // A TreeMap where Key = Distance (meters) and Value = Shooter RPM
+  // A TreeMap where Key = Distance (meters) and Value = flywheel RPM
   private final InterpolatingDoubleTreeMap rpmTable = new InterpolatingDoubleTreeMap();
 
   // SysId routine
@@ -67,16 +67,29 @@ public class FlywheelSubsystem extends SubsystemBase {
    * Creates a new FlywheelSubsystem
    */
   public FlywheelSubsystem() {
-    // Initialize flywheel hardware
-    flywheelLeader = new TalonFX(CANConstants.kFlywheelLeaderMotorID);
-    flywheelFollower = new TalonFX(CANConstants.kFlywheelFollowerMotorID);
-    flywheelConfig = new TalonFXConfiguration();
+    // Initialize flywheel configuration
+    flywheelConfig = TalonFXFactory.createConfig(
+      NeutralModeValue.Coast,
+      InvertedValue.CounterClockwise_Positive,
+      40,
+      40,
+      60,
+      FlywheelConstants.kFlywheelKP, FlywheelConstants.kFlywheelKI, FlywheelConstants.kFlywheelKD,
+      FlywheelConstants.kFlywheelKS, FlywheelConstants.kFlywheelKV, FlywheelConstants.kFlywheelKA
+    );
+
+    // Create leader and follower motors
+    MotorPair flywheelMotors = TalonFXFactory.createMotorPair(
+      CANConstants.kFlywheelLeaderMotorID, 
+      CANConstants.kFlywheelFollowerMotorID, 
+      flywheelConfig, 
+      true
+    );
+    flywheelLeader = flywheelMotors.leader();
+    flywheelFollower = flywheelMotors.follower();
 
     // Initialize control request
     flywheelVelocityRequest = new VelocityVoltage(0).withSlot(0);
-
-    // Configure motors
-    configureMotors();
 
     // Initialize SysId routine (leader motor only)
     flywheelSysIdRoutine = new SysIdRoutine(
@@ -98,10 +111,10 @@ public class FlywheelSubsystem extends SubsystemBase {
     setDefaultCommand(stopCommand());
 
     // Add data to dashboard
-    SmartDashboard.putData("Shooter", this);
+    SmartDashboard.putData("Flywheel", this);
 
     // Output initialization progress
-    Utils.logInfo("Shooter subsystem initialized");
+    Utils.logInfo("Flywheel subsystem initialized");
   }
 
   /**
@@ -124,67 +137,6 @@ public class FlywheelSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // Nothing needed - TalonFX handles the control loop onboard
-  }
-
-  // ----------------------------------------------------------------------------------------
-  // Private configuration methods
-  // ----------------------------------------------------------------------------------------
-
-  /**
-   * Configures the flywheel leader and follower motors
-   */
-  private void configureMotors() {
-    flywheelConfig.MotorOutput
-      .withNeutralMode(NeutralModeValue.Coast) // Coast so flywheel spins down naturally
-      .withInverted(InvertedValue.CounterClockwise_Positive)
-      .withDutyCycleNeutralDeadband(0.001);
-
-    flywheelConfig.CurrentLimits
-      .withSupplyCurrentLimitEnable(true)
-      .withSupplyCurrentLimit(40)
-      .withSupplyCurrentLowerLimit(40)
-      .withSupplyCurrentLowerTime(1.0)
-      .withStatorCurrentLimitEnable(true)
-      .withStatorCurrentLimit(60);
-
-    flywheelConfig.Voltage
-      .withPeakForwardVoltage(12)
-      .withPeakReverseVoltage(-12)
-      .withSupplyVoltageTimeConstant(0.02);
-
-    // Velocity PID (slot 0) - velocity in RPS
-    flywheelConfig.Slot0
-      .withKP(FlywheelConstants.kFlywheelKP)
-      .withKI(FlywheelConstants.kFlywheelKI)
-      .withKD(FlywheelConstants.kFlywheelKD)
-      .withKS(FlywheelConstants.kFlywheelKS)
-      .withKV(FlywheelConstants.kFlywheelKV)
-      .withKA(FlywheelConstants.kFlywheelKA);
-
-    // Apply configuration to both leader and follower
-    flywheelLeader.getConfigurator().apply(flywheelConfig);
-    flywheelFollower.getConfigurator().apply(flywheelConfig);
-
-    // Configure follower to mirror leader
-    flywheelFollower.setControl(new Follower(CANConstants.kFlywheelLeaderMotorID, MotorAlignmentValue.Opposed));
-
-    // Optimize CAN status frames on leader
-    flywheelLeader.getVelocity().setUpdateFrequency(100.0);
-    flywheelLeader.getPosition().setUpdateFrequency(100.0);
-    flywheelLeader.getMotorVoltage().setUpdateFrequency(50.0);
-    flywheelLeader.getSupplyCurrent().setUpdateFrequency(50.0);
-    flywheelLeader.getTorqueCurrent().setUpdateFrequency(50.0);
-    flywheelLeader.getDeviceTemp().setUpdateFrequency(4.0);
-    flywheelLeader.optimizeBusUtilization();
-
-    // Minimize follower CAN traffic
-    flywheelFollower.getVelocity().setUpdateFrequency(100.0);
-    flywheelFollower.getPosition().setUpdateFrequency(100.0);
-    flywheelFollower.getMotorVoltage().setUpdateFrequency(50.0);
-    flywheelFollower.getSupplyCurrent().setUpdateFrequency(50.0);
-    flywheelFollower.getTorqueCurrent().setUpdateFrequency(50.0);
-    flywheelFollower.getDeviceTemp().setUpdateFrequency(4.0);
-    flywheelFollower.optimizeBusUtilization();
   }
 
   // ----------------------------------------------------------------------------------------
