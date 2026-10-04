@@ -68,14 +68,14 @@ public class FlywheelSubsystem extends SubsystemBase {
    */
   public FlywheelSubsystem() {
     // Create leader and follower motors
-    MotorPair flywheelMotors = TalonFXFactory.createMotorPair(
+    MotorPair motors = TalonFXFactory.createMotorPair(
       CANConstants.kFlywheelLeaderMotorID, 
       CANConstants.kFlywheelFollowerMotorID, 
       getMotorConfig(), 
       true
     );
-    flywheelLeader = flywheelMotors.leader();
-    flywheelFollower = flywheelMotors.follower();
+    flywheelLeader = motors.leader();
+    flywheelFollower = motors.follower();
 
     // Initialize control request
     flywheelVelocityRequest = new VelocityVoltage(0).withSlot(0);
