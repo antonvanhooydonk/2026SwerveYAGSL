@@ -88,8 +88,6 @@ public final class SparkMaxFactory {
     }
 
     // Optimize the motor's CAN status frames to reduce bus utilization
-    // Velocity and position updates are set to 50 Hz for leader motors, 
-    // and 10 Hz for follower motors
     optimize(motor, isFollower);
 
     // Return the motor
