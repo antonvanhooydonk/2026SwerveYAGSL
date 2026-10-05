@@ -41,7 +41,8 @@ public final class TalonFXFactory {
   }
 
   /**
-   * Creates an independent non-follower TalonFX motor with the given device ID and configuration.
+   * Creates, configures & optimizes an independent non-follower 
+   * TalonFX motor with the given device ID and configuration.
    * @param deviceID The CAN ID that the motor is connected to
    * @param config The TalonFX configuration to apply to the motor
    * @return A TalonFX motor with the given device ID and configuration
@@ -51,7 +52,7 @@ public final class TalonFXFactory {
   }
 
   /**
-   * Creates a TalonFX motor with the given device ID and configuration.
+   * Creates, configures & optimizes a TalonFX motor with the given device ID and configuration.
    * @param deviceID The CAN ID that the motor is connected to
    * @param config The TalonFX configuration to apply to the motor
    * @param isFollower Whether the motor is a follower (affects CAN status frame optimization)
@@ -74,7 +75,7 @@ public final class TalonFXFactory {
   }
 
   /**
-   * Creates a pair of TalonFX motors with the given device IDs and configuration.
+   * Creates, configures & optimizes a pair of TalonFX motors with the given device IDs and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
    * @param followerDeviceID The CAN ID that the follower motor is connected to
    * @param config The TalonFX configuration to apply to the motor

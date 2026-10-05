@@ -43,7 +43,7 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates an independent non-follower SparkMax brushless 
+   * Creates, configures & optimizes an independent non-follower SparkMax brushless 
    * motor with the given device ID and configuration.
    * @param deviceID The CAN ID of the motor
    * @param config The SparkMax configuration to apply to the motor
@@ -54,7 +54,7 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates an independent non-follower SparkMax brushed 
+   * Creates, configures & optimizes an independent non-follower SparkMax brushed 
    * motor with the given device ID and configuration.
    * @param deviceID The CAN ID of the motor
    * @param config The SparkMax configuration to apply to the motor
@@ -65,7 +65,7 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates a SparkMax motor with the given device ID and configuration.
+   * Creates, configures & optimizes a SparkMax motor with the given device ID and configuration.
    * @param deviceID The CAN ID that the motor is connected to
    * @param motorType The type of motor (brushless or brushed)
    * @param config The SparkMax configuration to apply to the motor
@@ -94,7 +94,7 @@ public final class SparkMaxFactory {
   }
   
   /**
-   * Creates a pair of SparkMax brushless motors with the given device ID and configuration.
+   * Creates, configures & optimizes a pair of SparkMax brushless motors with the given device ID and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
    * @param followerDeviceID The CAN ID that the follower motor is connected to
    * @param config The SparkMax configuration to apply to the motor
@@ -111,7 +111,7 @@ public final class SparkMaxFactory {
   }
 
   /**
-   * Creates a pair of SparkMax motors with the given device IDs and configuration.
+   * Creates, configures & optimizes a pair of SparkMax motors with the given device IDs and configuration.
    * @param leaderDeviceID The CAN ID that the leader motor is connected to
    * @param followerDeviceID The CAN ID that the follower motor is connected to
    * @param config The SparkMax configuration to apply to the motor
