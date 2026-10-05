@@ -94,7 +94,7 @@ public class ClimberSubsystem extends SubsystemBase {
       .smartCurrentLimit(30) 
       .voltageCompensation(12) 
       .idleMode(IdleMode.kBrake)
-      .inverted(true);
+      .inverted(false);
 
     // Set PID gains for closed-loop control
     config.closedLoop
