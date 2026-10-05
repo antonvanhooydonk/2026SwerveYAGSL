@@ -145,7 +145,7 @@ public class ClimberSubsystem extends SubsystemBase {
   private void setAngle(double degrees) {
     // Clamp target to valid range
     targetAngleDegrees = MathUtil.clamp(
-      degrees, 
+      Utils.normalizeAngleDegrees(degrees), 
       ClimberConstants.kMinAngleDegrees, 
       ClimberConstants.kMaxAngleDegrees
     );
@@ -189,7 +189,10 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Angle in degrees
    */
   private double getAngleDegrees() {
-    return Conversions.rotationsToDegrees(climberEncoder.getPosition(), ClimberConstants.kGearRatio);
+    return Utils.normalizeAngleDegrees(Conversions.rotationsToDegrees(
+      climberEncoder.getPosition(), 
+      ClimberConstants.kGearRatio
+    ));
   }
   
   /**
