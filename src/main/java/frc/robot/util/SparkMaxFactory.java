@@ -12,8 +12,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
 /**
- * Utility class for creating consistent SparkMax based configurations
- * and motor controllers for NEOs & CIMs. 
+ * Utility class for creating SparkMax based motor controllers for NEOs & CIMs. 
  */
 public final class SparkMaxFactory {
   // Prevent instantiation

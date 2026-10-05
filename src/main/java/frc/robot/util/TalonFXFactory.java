@@ -11,8 +11,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 /**
- * Utility class for creating consistent TalonFX based configurations
- * and motor controllers for Krakens, Talons, and Falcons. 
+ * Utility class for creating TalonFX based motor controllers for Krakens, Talons, and Falcons. 
  */
 public final class TalonFXFactory {
   // Prevent instantiation
