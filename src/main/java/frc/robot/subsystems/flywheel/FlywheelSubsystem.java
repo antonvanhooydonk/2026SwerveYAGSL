@@ -29,7 +29,6 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
-import frc.robot.subsystems.feeder.FeederConstants;
 import frc.robot.util.TalonFXFactory;
 import frc.robot.util.TalonFXFactory.MotorPair;
 import frc.robot.util.Utils;
@@ -157,12 +156,12 @@ public class FlywheelSubsystem extends SubsystemBase {
 
     // Set PID and feedforward gains
     config.Slot0
-      .withKP(FeederConstants.kP)
-      .withKI(FeederConstants.kI)
-      .withKD(FeederConstants.kD)
-      .withKS(FeederConstants.kS)
-      .withKV(FeederConstants.kV)
-      .withKA(FeederConstants.kA);
+      .withKP(FlywheelConstants.kP)
+      .withKI(FlywheelConstants.kI)
+      .withKD(FlywheelConstants.kD)
+      .withKS(FlywheelConstants.kS)
+      .withKV(FlywheelConstants.kV)
+      .withKA(FlywheelConstants.kA);
 
     // Return the motor configuration
     return config;

@@ -96,12 +96,16 @@ public class ClimberSubsystem extends SubsystemBase {
       .idleMode(IdleMode.kBrake)
       .inverted(false);
 
+    // Set encoder parameters
+    config.encoder
+      .countsPerRevolution(ClimberConstants.kEncoderTicksPerRevolution);
+
     // Set PID gains for closed-loop control
     config.closedLoop
-      .p(ClimberConstants.kClimberKP)
-      .i(ClimberConstants.kClimberKI)
-      .d(ClimberConstants.kClimberKD);
-
+      .p(ClimberConstants.kP)
+      .i(ClimberConstants.kI)
+      .d(ClimberConstants.kD);
+    
     // Set motion control parameters for closed-loop control
     config.closedLoop.maxMotion
       .cruiseVelocity(Conversions.degreesToRotations(

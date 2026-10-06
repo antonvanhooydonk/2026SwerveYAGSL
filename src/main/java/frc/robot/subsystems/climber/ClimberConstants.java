@@ -48,7 +48,7 @@ public final class ClimberConstants {
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
   // ------------------------------------------------------------
-  public static final double kClimberKP = 0.05; // Proportional gain for position control
-  public static final double kClimberKI = 0.0; // Integral gain for position control
-  public static final double kClimberKD = 0.0; // Derivative gain for position control
+  public static final double kP = 0.05; // Proportional gain for position control
+  public static final double kI = 0.0; // Integral gain for position control
+  public static final double kD = 0.0; // Derivative gain for position control
 }
