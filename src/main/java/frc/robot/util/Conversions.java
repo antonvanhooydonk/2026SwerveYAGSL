@@ -25,7 +25,7 @@ public final class Conversions {
 
   /**
    * Converts motor rotations to distance (meters)
-   * @param motorRotations Motor position in rotations
+   * @param rotations Motor position in rotations
    * @param gearRatio Motor rotations per wheel rotation
    * @param circumferenceMeters Circumference in meters
    * @return Wheel distance in meters
@@ -35,7 +35,7 @@ public final class Conversions {
   }
 
   /**
-   * Converts distance (meters) to rotations
+   * Converts distance (meters) to motor rotations
    * @param meters Distance in meters
    * @param gearRatio Motor rotations per wheel rotation
    * @param circumferenceMeters Circumference in meters
@@ -50,7 +50,7 @@ public final class Conversions {
   // ============================================================
 
   /**
-   * Converts rotations to radians, accounting for gear ratio
+   * Converts motor rotations to radians, accounting for gear ratio
    * @param rotations Motor position in rotations
    * @param gearRatio Motor rotations per output rotation
    * @return Angle in radians
@@ -60,7 +60,7 @@ public final class Conversions {
   }
 
   /**
-   * Converts radians to rotations, accounting for gear ratio
+   * Converts radians to motor rotations, accounting for gear ratio
    * @param radians Angle in radians
    * @param gearRatio Motor rotations per output rotation
    * @return Motor position in rotations
@@ -70,7 +70,7 @@ public final class Conversions {
   }
 
   /**
-   * Converts rotations to degrees, accounting for gear ratio
+   * Converts motor rotations to degrees, accounting for gear ratio
    * @param rotations Motor position in rotations
    * @param gearRatio Motor rotations per wheel rotation
    * @return Angle in degrees
@@ -80,7 +80,7 @@ public final class Conversions {
   }
 
   /**
-   * Converts degrees to rotations, accounting for gear ratio
+   * Converts degrees to motor rotations, accounting for gear ratio
    * @param degrees Angle in degrees
    * @param gearRatio Motor rotations per wheel rotation
    * @return Motor position in rotations
