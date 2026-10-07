@@ -21,6 +21,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -414,6 +415,58 @@ public class TurretSubsystem extends SubsystemBase {
       setTurretAngle(turretAngle);
     })
     .withName("Turret_AimAtPose");
+  }
+
+  /**
+   * Command to continuously rotate the turret to face a target pose on the field 
+   * and compensate for the robot's movement while doing so.
+   * @param robotPoseSupplier Supplier for the robot's current field pose
+   * @param targetPoseSupplier Supplier for the field-relative target pose to face
+   * @param fieldSpeedsSupplier Supplier for the robot's current field-relative chassis speeds
+   * @return Command to continuously aim at the target pose
+   */
+  public Command aimAtPoseCommand(
+    Supplier<Pose2d> robotPoseSupplier,
+    Supplier<Pose2d> targetPoseSupplier,
+    Supplier<ChassisSpeeds> fieldSpeedsSupplier // Inject field-relative chassis speeds here
+  ) {
+    // Average velocity of your note/ball when leaving the shooter (meters per second)
+    final double GAME_PIECE_VELOCITY = 12.0; 
+
+    return run(() -> {
+      Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
+      Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
+      ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
+
+      // If either pose is null, we can't calculate the angle, so just return early
+      if (robotPose == null || targetPose == null || fieldSpeeds == null) {
+        stop();
+        return;
+      }
+
+      // Calculate raw distance to the physical target
+      double rawDx = targetPose.getX() - robotPose.getX();
+      double rawDy = targetPose.getY() - robotPose.getY();
+      double distanceToTarget = Math.hypot(rawDx, rawDy);
+
+      // Estimate how many seconds the game piece will be in the air
+      double timeOfFlight = distanceToTarget / GAME_PIECE_VELOCITY;
+
+      // Calculate a Virtual target pose by subtracting the robot's future travel distance
+      // (If the robot moves +X, we offset the target by -X to look "ahead")
+      double virtualTargetX = targetPose.getX() - (fieldSpeeds.vxMetersPerSecond * timeOfFlight);
+      double virtualTargetY = targetPose.getY() - (fieldSpeeds.vyMetersPerSecond * timeOfFlight);
+
+      // Calculate the angle to the VIRTUAL target pose in field coordinates
+      double dx = virtualTargetX - robotPose.getX();
+      double dy = virtualTargetY - robotPose.getY();      
+      double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
+      double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
+      
+      // Command the turret using your safe, self-normalizing function
+      setTurretAngle(turretAngle);
+    })
+    .withName("Turret_AimAtPose_OnTheMove");
   }
 
   /**
