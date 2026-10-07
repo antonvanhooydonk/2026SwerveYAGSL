@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drive.DriveSubsystem;
+import frc.robot.subsystems.feeder.FeederSubsystem;
 import frc.robot.subsystems.flywheel.FlywheelSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.util.Utils;
@@ -16,6 +17,7 @@ import frc.robot.util.Utils;
 public class Autos {
   private final Feedback feedback;
   private final DriveSubsystem driveSubsystem;
+  private final FeederSubsystem feederSubsystem;
   private final FlywheelSubsystem flywheelSubsystem;
   private final TurretSubsystem turretSubsystem;
   private final ClimberSubsystem climberSubsystem;
@@ -30,12 +32,14 @@ public class Autos {
   public Autos(
     Feedback feedback,
     DriveSubsystem driveSubsystem,
+    FeederSubsystem feederSubsystem,
     FlywheelSubsystem flywheelSubsystem,
     TurretSubsystem turretSubsystem,
     ClimberSubsystem climberSubsystem
   ) {
     this.feedback = feedback;
     this.driveSubsystem = driveSubsystem;
+    this.feederSubsystem = feederSubsystem;
     this.flywheelSubsystem = flywheelSubsystem;
     this.turretSubsystem = turretSubsystem;
     this.climberSubsystem = climberSubsystem;
@@ -56,10 +60,16 @@ public class Autos {
     )
     .withTimeout(5)
     .andThen(Commands.parallel(
-      turretSubsystem.aimAtPoseCommand(driveSubsystem::getPose, () -> 
-        Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
+      Commands.waitUntil(
+        flywheelSubsystem.isFlywheelAtTargetTrigger
+        .and(turretSubsystem.isAtAngleTrigger)
+      ).andThen(feederSubsystem.feedCommand()),
+      turretSubsystem.aimAtPoseCommand(
+        driveSubsystem::getTurretPose, 
+        () -> Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose,
+        () -> driveSubsystem.getFieldRelativeSpeeds()
       ),
-      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getPose, () -> 
+      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       )
     ))
