@@ -63,7 +63,7 @@ public class ClimberSubsystem extends SubsystemBase {
         log -> log.motor("climber")
           .voltage(Volts.of(climberMotor.getAppliedOutput() * climberMotor.getBusVoltage()))
           .angularPosition(Rotations.of(climberEncoder.getPosition()))
-          .angularVelocity(RotationsPerSecond.of(climberEncoder.getVelocity())),
+          .angularVelocity(RotationsPerSecond.of(climberEncoder.getVelocity() / 60.0)),
         this
       )
     );
