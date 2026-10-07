@@ -386,7 +386,7 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to continuously rotate the turret to face a target pose on the field.
+   * Command to continuously aim the turret at a target pose on the field.
    * @param robotPoseSupplier Supplier for the robot's current field pose
    * @param targetPoseSupplier Supplier for the field-relative target pose to face
    * @return Command to continuously aim at the target pose
@@ -418,7 +418,7 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to continuously rotate the turret to face a target pose on the field 
+   * Command to continuously aim the turret at a target pose on the field 
    * and compensate for the robot's movement while doing so.
    * @param robotPoseSupplier Supplier for the robot's current field pose
    * @param targetPoseSupplier Supplier for the field-relative target pose to face
