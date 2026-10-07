@@ -408,7 +408,7 @@ public class TurretSubsystem extends SubsystemBase {
       double dx = targetPose.getX() - robotPose.getX();
       double dy = targetPose.getY() - robotPose.getY();
       double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
-      double turretAngle = Utils.normalizeAngleDegrees(fieldAngleDegrees - robotPose.getRotation().getDegrees());
+      double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
       
       // Command the turret to the calculated angle
       setTurretAngle(turretAngle);
