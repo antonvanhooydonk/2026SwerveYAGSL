@@ -42,7 +42,7 @@ import frc.robot.util.Utils;
  *
  * NOTE: This subsystem assumes the turret has a LIMITED mechanical range of
  * motion (no slip rings) bounded by TurretConstants.kMinAngleDegrees and
- * kMaxAngleDegrees. setTurretAngle() will refuse to wind past that range even
+ * kMaxAngleDegrees. setAngle() will refuse to wind past that range even
  * if the shortest path to a target would require it.
  *
  * Turret tuning process:
@@ -175,7 +175,7 @@ public class TurretSubsystem extends SubsystemBase {
    * angle is within the safe range defined by TurretConstants.
    * @param angleDegrees Target angle in degrees
    */
-  private void setTurretAngle(double angleDegrees) {
+  private void setAngle(double angleDegrees) {
     // Clamp target to valid range
     targetAngleDegrees = MathUtil.clamp(
       Utils.normalizeAngleDegrees(angleDegrees), 
@@ -337,15 +337,15 @@ public class TurretSubsystem extends SubsystemBase {
    * @param angleDegrees The desired robot-relative angle in degrees
    * @return Command to rotate to the given angle
    */
-  public Command setTurretAngleCommand(double angleDegrees) {
+  public Command setAngleCommand(double angleDegrees) {
     return startEnd(
-      () -> setTurretAngle(angleDegrees),
+      () -> setAngle(angleDegrees),
       () -> {}
     )
     .until(this::isAtAngle)
     .withTimeout(TurretConstants.kMoveTimeoutSeconds)
     .finallyDo(this::stop)
-    .withName("Turret_SetTurretAngle");
+    .withName("Turret_setAngle");
   }
 
   /**
@@ -363,7 +363,7 @@ public class TurretSubsystem extends SubsystemBase {
       double turretAngle = Utils.normalizeAngleDegrees(
         fieldAngleDegreesSupplier.getAsDouble() - robotHeadingDegreesSupplier.getAsDouble()
       );
-      setTurretAngle(turretAngle);
+      setAngle(turretAngle);
     })
     .withName("Turret_AimAtFieldAngle");
   }
@@ -412,7 +412,7 @@ public class TurretSubsystem extends SubsystemBase {
       double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
       
       // Command the turret to the calculated angle
-      setTurretAngle(turretAngle);
+      setAngle(turretAngle);
     })
     .withName("Turret_AimAtPose");
   }
@@ -464,7 +464,7 @@ public class TurretSubsystem extends SubsystemBase {
       double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
       
       // Command the turret using your safe, self-normalizing function
-      setTurretAngle(turretAngle);
+      setAngle(turretAngle);
     })
     .withName("Turret_AimAtPose_OnTheMove");
   }

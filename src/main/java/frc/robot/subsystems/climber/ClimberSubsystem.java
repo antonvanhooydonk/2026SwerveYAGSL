@@ -144,12 +144,12 @@ public class ClimberSubsystem extends SubsystemBase {
   
   /**
    * Set the target angle for the climber with safety limits
-   * @param degrees Target angle in degrees
+   * @param angleDegrees Target angle in degrees
    */
-  private void setAngle(double degrees) {
+  private void setAngle(double angleDegrees) {
     // Clamp target to valid range
     targetAngleDegrees = MathUtil.clamp(
-      Utils.normalizeAngleDegrees(degrees), 
+      Utils.normalizeAngleDegrees(angleDegrees), 
       ClimberConstants.kMinAngleDegrees, 
       ClimberConstants.kMaxAngleDegrees
     );
