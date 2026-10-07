@@ -177,17 +177,17 @@ public class TurretSubsystem extends SubsystemBase {
    * @param angleDegrees Target angle in degrees
    */
   private void setTurretAngle(double angleDegrees) {
-    // 1. Clamp the raw requested angle strictly within the physical hard walls
+    // Clamp target to valid range
     targetAngleDegrees = MathUtil.clamp(
       Utils.normalizeAngleDegrees(angleDegrees), 
       TurretConstants.kMinAngleDegrees, 
       TurretConstants.kMaxAngleDegrees
     );
 
-    // 3. Convert straight to native motor rotations (No wrapping checks needed)
-    double targetMotorRotations = Conversions.degreesToRotations(targetAngleDegrees, TurretConstants.kTurretGearRatio);
-    
-    // 4. Command the motor
+    // Convert target angle to motor rotations
+    double targetMotorRotations = Conversions.degreesToRotations(targetAngleDegrees, TurretConstants.kTurretGearRatio);  
+
+    // Set the target position using MotionMagic
     turretMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
   }
 
