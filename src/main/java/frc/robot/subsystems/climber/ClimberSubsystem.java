@@ -8,8 +8,6 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
-import java.util.function.BooleanSupplier;
-
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
@@ -173,13 +171,13 @@ public class ClimberSubsystem extends SubsystemBase {
     volts = MathUtil.clamp(volts, -12, 12);
 
     // Check if the climber is at the upper limit and trying to move up
-    if (isAtUpperLimit() && volts < 0) {
+    if (isAtAngle(ClimberConstants.kMinAngleDegrees) && volts < 0) {
       stop();
       return;
     }
 
     // Check if the climber is at the lower limit and trying to move down
-    if (isAtLowerLimit() && volts > 0) {
+    if (isAtAngle(ClimberConstants.kMaxAngleDegrees) && volts > 0) {
       stop();
       return;
     }
@@ -228,48 +226,6 @@ public class ClimberSubsystem extends SubsystemBase {
   }
   
   /**
-   * Check if climber is at or above upper position limit
-   * Upper limit is the minimum angle (more negative) in our coordinate system
-   * @return true if at or past upper limit
-   */
-  private boolean isAtUpperLimit() {
-    return isAtAngle(ClimberConstants.kMinAngleDegrees);
-  }
-  
-  /**
-   * Check if climber is at or below lower position limit
-   * Lower limit is the maximum angle (more positive) in our coordinate system
-   * @return true if at or past lower limit
-   */
-  private boolean isAtLowerLimit() {
-    return isAtAngle(ClimberConstants.kMaxAngleDegrees);
-  }
-  
-  /**
-   * Check if climber is at home position
-   * @return true if within tolerance of home position
-   */
-  private boolean isAtHomePosition() {
-    return isAtAngle(ClimberConstants.kHomeDegrees);
-  }
-  
-  /**
-   * Check if climber is at level 1 climb position
-   * @return true if within tolerance of level 1 climb position
-   */
-  private boolean isAtLevelOneClimbPosition() {
-    return isAtAngle(ClimberConstants.kLevelOneClimbDegrees);
-  }
-  
-  /**
-   * Check if climber is at level 2 climb position
-   * @return true if within tolerance of level 2 climb position
-   */
-  private boolean isAtLevelTwoClimbPosition() {
-    return isAtAngle(ClimberConstants.kLevelTwoClimbDegrees);
-  }
-  
-  /**
    * Check if climber is stalled (high current, low velocity)
    * Useful for detecting when climber hits a hard stop
    * @return true if motor appears stalled
@@ -283,19 +239,19 @@ public class ClimberSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtHomeTrigger = new Trigger(this::isAtHomePosition)
+  public final Trigger isAtHomeTrigger = new Trigger(() -> isAtAngle(ClimberConstants.kHomeDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtUpperLimitTrigger = new Trigger(this::isAtUpperLimit)
+  public final Trigger isAtUpperLimitTrigger = new Trigger(() -> isAtAngle(ClimberConstants.kMinAngleDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLowerLimitTrigger = new Trigger(this::isAtLowerLimit)
+  public final Trigger isAtLowerLimitTrigger = new Trigger(() -> isAtAngle(ClimberConstants.kMaxAngleDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLevelOneClimbPositionTrigger = new Trigger(this::isAtLevelOneClimbPosition)
+  public final Trigger isAtLevelOneClimbPositionTrigger = new Trigger(() -> isAtAngle(ClimberConstants.kLevelOneClimbDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLevelTwoClimbPositionTrigger = new Trigger(this::isAtLevelTwoClimbPosition)
+  public final Trigger isAtLevelTwoClimbPositionTrigger = new Trigger(() -> isAtAngle(ClimberConstants.kLevelTwoClimbDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   public final Trigger isStalledTrigger = new Trigger(this::isStalled)
@@ -345,15 +301,14 @@ public class ClimberSubsystem extends SubsystemBase {
   /**
    * Command to move the climber to a specific position
    * @param targetDegrees Target position in degrees
-   * @param atTarget BooleanSupplier that returns true when the climber is at the target
    * @return Command that moves the climber to the target position
    */
-  public Command setAngleCommand(double targetDegrees, BooleanSupplier atTarget) {
+  public Command setAngleCommand(double targetDegrees) {
     return startEnd(
       () -> setAngle(targetDegrees),
       () -> {}
     )
-    .until(atTarget)
+    .until(() -> isAtAngle(targetDegrees))
     .withTimeout(ClimberConstants.kMoveTimeoutSeconds)
     .finallyDo(this::stop)
     .withName("Climber_MoveToPosition");
@@ -364,7 +319,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the home position
    */
   public Command toHomeCommand() {
-    return setAngleCommand(ClimberConstants.kHomeDegrees, this::isAtHomePosition)
+    return setAngleCommand(ClimberConstants.kHomeDegrees)
       .withName("Climber_Home");
   }
 
@@ -373,7 +328,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the level one position
    */
   public Command toLevelOneCommand() {
-    return setAngleCommand(ClimberConstants.kLevelOneClimbDegrees, this::isAtLevelOneClimbPosition)
+    return setAngleCommand(ClimberConstants.kLevelOneClimbDegrees)
       .withName("Climber_LevelOne");
   }
 
@@ -382,7 +337,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the level two position
    */
   public Command toLevelTwoCommand() {
-    return setAngleCommand(ClimberConstants.kLevelTwoClimbDegrees, this::isAtLevelTwoClimbPosition)
+    return setAngleCommand(ClimberConstants.kLevelTwoClimbDegrees)
       .withName("Climber_LevelTwo");
   }
   
@@ -391,7 +346,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to upper limit then stops
    */
   public Command toUpperLimitCommand() {
-    return setAngleCommand(ClimberConstants.kMinAngleDegrees, this::isAtUpperLimit)
+    return setAngleCommand(ClimberConstants.kMinAngleDegrees)
       .withName("Climber_UpToLimit");
   }
   
@@ -400,7 +355,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that rotates to lower limit then stops
    */
   public Command toLowerLimitCommand() {
-    return setAngleCommand(ClimberConstants.kMaxAngleDegrees, this::isAtLowerLimit)
+    return setAngleCommand(ClimberConstants.kMaxAngleDegrees)
       .withName("Climber_DownToLimit");
   }
 
