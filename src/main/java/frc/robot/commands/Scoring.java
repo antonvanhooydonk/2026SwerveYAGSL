@@ -51,8 +51,10 @@ public class Scoring {
         flywheelSubsystem.isFlywheelAtTargetTrigger
         .and(turretSubsystem.isAtAngleTrigger)
       ).andThen(feederSubsystem.feedCommand()),
-      turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
-        Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
+      turretSubsystem.aimAtPoseCommand(
+        driveSubsystem::getTurretPose, 
+        () -> Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose,
+        () -> driveSubsystem.getFieldRelativeSpeeds()
       ),
       flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
@@ -71,8 +73,10 @@ public class Scoring {
         flywheelSubsystem.isFlywheelAtTargetTrigger
         .and(turretSubsystem.isAtAngleTrigger)
       ).andThen(feederSubsystem.feedCommand()),
-      turretSubsystem.aimAtPoseCommand(driveSubsystem::getTurretPose, () -> 
-        Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose
+      turretSubsystem.aimAtPoseCommand(
+        driveSubsystem::getTurretPose, 
+        () -> Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose,
+        () -> driveSubsystem.getFieldRelativeSpeeds()
       ),
       flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getTurretPose, () -> 
         Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose

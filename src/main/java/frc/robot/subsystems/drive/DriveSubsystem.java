@@ -283,8 +283,16 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Gets the current field-relative chassis speeds
+   * @return Current field-relative ChassisSpeeds
+   */
+  public ChassisSpeeds getFieldRelativeSpeeds() {
+    return swerveDrive.getFieldVelocity();
+  }
+
+  /**
    * Gets the current robot-relative chassis speeds
-   * @return Current ChassisSpeeds
+   * @return Current robot-relative ChassisSpeeds
    */
   private ChassisSpeeds getRobotRelativeSpeeds() {
     return swerveDrive.getRobotVelocity();
