@@ -158,6 +158,9 @@ public class TurretSubsystem extends SubsystemBase {
         TurretConstants.kTurretGearRatio
       ));
 
+    // Keep false: ContinuousWrap on motor rotations would ruin turret positioning 
+    config.ClosedLoopGeneral.ContinuousWrap = false;
+
     // Return the motor configuration
     return config;
   }
@@ -174,55 +177,17 @@ public class TurretSubsystem extends SubsystemBase {
    * @param angleDegrees Target angle in degrees
    */
   private void setTurretAngle(double angleDegrees) {
-    double normalizedAngle = Utils.normalizeAngleDegrees(angleDegrees);
+    // 1. Clamp the raw requested angle strictly within the physical hard walls
+    targetAngleDegrees = MathUtil.clamp(
+      Utils.normalizeAngleDegrees(angleDegrees), 
+      TurretConstants.kMinAngleDegrees, 
+      TurretConstants.kMaxAngleDegrees
+    );
 
-    // Convert current motor rotations to tracking angle space
-    double currentRawPositionDegrees = Conversions.rotationsToDegrees(turretMotor.getPosition().getValueAsDouble(), TurretConstants.kTurretGearRatio);
-    double currentAngle = Utils.normalizeAngleDegrees(currentRawPositionDegrees);
-
-    // Calculate the shortest path to the target angle
-    double shortestDelta = Utils.normalizeAngleDegrees(normalizedAngle - currentAngle);
-    double shortestPathTargetDegrees = currentRawPositionDegrees + shortestDelta;
-    double targetPositionDegrees = shortestPathTargetDegrees;
-
-    // Check if the shortest path target is out of range
-    boolean shortestPathOutOfRange =
-        shortestPathTargetDegrees > TurretConstants.kMaxAngleDegrees
-        || shortestPathTargetDegrees < TurretConstants.kMinAngleDegrees;
-
-    // Check if the shortest path is out of range
-    if (shortestPathOutOfRange) {
-      // Calculate the long path to the target angle
-      double longDelta = shortestDelta > 0 ? shortestDelta - 360.0 : shortestDelta + 360.0;
-      double longPathTargetDegrees = currentRawPositionDegrees + longDelta;
-
-      // Check if the long path target is in range
-      boolean longPathInRange =
-          longPathTargetDegrees <= TurretConstants.kMaxAngleDegrees
-          && longPathTargetDegrees >= TurretConstants.kMinAngleDegrees;
-
-      // If the long path is in range
-      if (longPathInRange) {
-        // Use the long path target
-        targetPositionDegrees = longPathTargetDegrees;
-      } 
-      else {
-        // Otherwise clamp to the nearest limit
-        targetPositionDegrees = MathUtil.clamp(
-          shortestPathTargetDegrees,
-          TurretConstants.kMinAngleDegrees,
-          TurretConstants.kMaxAngleDegrees
-        );
-      }
-    }
-
-    // Update the cached target for telemetry
-    targetAngleDegrees = normalizedAngle;
-
-    // Convert calculation space back to native motor rotations before updating target
-    double targetMotorRotations = Conversions.degreesToRotations(targetPositionDegrees, TurretConstants.kTurretGearRatio);
+    // 3. Convert straight to native motor rotations (No wrapping checks needed)
+    double targetMotorRotations = Conversions.degreesToRotations(targetAngleDegrees, TurretConstants.kTurretGearRatio);
     
-    // Command the turret motor to the target position using MotionMagic
+    // 4. Command the motor
     turretMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
   }
 

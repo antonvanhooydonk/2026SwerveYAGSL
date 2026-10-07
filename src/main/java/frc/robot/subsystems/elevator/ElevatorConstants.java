@@ -42,8 +42,8 @@ public final class ElevatorConstants {
   // Tuning: start low, increase until motion is fast but smooth
   // ------------------------------------------------------------
   public static final double kMaxFreeRPS     = 6000.0 / 60.0; // Max free speed of the motor in rotations per second
-  public static final double kCruiseVelocity = Math.ceil(0.75 * kMaxFreeRPS / kGearRatio); // 75% - 80% of max free rps (adjusted for gear ratio)
-  public static final double kAcceleration   = kCruiseVelocity * 3.0; // set to 2x - 5x cruise velocity
+  public static final double kCruiseVelocity = Math.ceil(0.75 * kMaxFreeRPS); // 75% - 80% of max free rps
+  public static final double kAcceleration   = kCruiseVelocity * 2.5; // set to 2x - 5x cruise velocity
   public static final double kJerk           = kAcceleration * 10; // set to 10x acceleration
 
   // ------------------------------------------------------------

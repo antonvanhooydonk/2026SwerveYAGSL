@@ -11,7 +11,7 @@ public final class TurretConstants {
   // ------------------------------------------------------------
   // Physical constants
   // ------------------------------------------------------------
-  public static final double kTurretGearRatio    =  1.0; // motor shaft rotations per one full 360 deg turret rotation
+  public static final double kTurretGearRatio    =  80.0;  // motor shaft rotations per one full 360 deg turret rotation
   public static final double kMinAngleDegrees    = -150.0; // minimum safe raw (unwrapped) turret position, in degrees
   public static final double kMaxAngleDegrees    =  150.0; // maximum safe raw (unwrapped) turret position, in degrees
   
@@ -30,8 +30,8 @@ public final class TurretConstants {
   // Tuning: start low, increase until motion is fast but smooth
   // ------------------------------------------------------------
   public static final double kMaxFreeRPS     = 6000.0 / 60.0; // Max free speed of the motor in rotations per second
-  public static final double kCruiseVelocity = Math.ceil(0.75 * kMaxFreeRPS / kTurretGearRatio); // 75% - 80% of max free rps (adjusted for gear ratio)
-  public static final double kAcceleration   = kCruiseVelocity * 3.0; // set to 2x - 5x cruise velocity
+  public static final double kCruiseVelocity = Math.ceil(0.60 * kMaxFreeRPS); // 50% - 60% of max free rps
+  public static final double kAcceleration   = kCruiseVelocity * 3.5; // set to 2x - 5x cruise velocity
   public static final double kJerk           = kAcceleration * 10; // set to 10x acceleration
 
   // ------------------------------------------------------------

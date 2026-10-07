@@ -195,7 +195,7 @@ public class ElevatorSubsystem extends SubsystemBase {
       ElevatorConstants.kSpoolCircumferenceMeters
     );
 
-    // Set the target position using MotionMagic with gravity compensation
+    // Set the target position using MotionMagic
     leaderMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
   }
 
