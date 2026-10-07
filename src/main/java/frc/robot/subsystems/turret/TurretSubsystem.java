@@ -170,10 +170,8 @@ public class TurretSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
 
   /**
-   * Sets the turret to a target angle using MotionMagic, taking the shortest
-   * path UNLESS that path would exceed the turret's mechanical range, in
-   * which case the long way around is used instead, or the target is
-   * clamped to the nearest reachable limit if neither path is safe.
+   * Sets the turret to a target angle using MotionMagic ensuring the target
+   * angle is within the safe range defined by TurretConstants.
    * @param angleDegrees Target angle in degrees
    */
   private void setTurretAngle(double angleDegrees) {
