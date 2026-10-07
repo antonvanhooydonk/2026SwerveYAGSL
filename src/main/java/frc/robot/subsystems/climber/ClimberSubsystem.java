@@ -154,7 +154,7 @@ public class ClimberSubsystem extends SubsystemBase {
       ClimberConstants.kMaxAngleDegrees
     );
 
-    // Convert target height to motor rotations
+    // Convert target angle to motor rotations
     double targetMotorRotations = Conversions.degreesToRotations(
       targetAngleDegrees, 
       ClimberConstants.kGearRatio

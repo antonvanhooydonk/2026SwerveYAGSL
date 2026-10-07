@@ -185,7 +185,10 @@ public class TurretSubsystem extends SubsystemBase {
     );
 
     // Convert target angle to motor rotations
-    double targetMotorRotations = Conversions.degreesToRotations(targetAngleDegrees, TurretConstants.kTurretGearRatio);  
+    double targetMotorRotations = Conversions.degreesToRotations(
+      targetAngleDegrees, 
+      TurretConstants.kTurretGearRatio
+    );
 
     // Set the target position using MotionMagic
     turretMotor.setControl(motionMagicRequest.withPosition(targetMotorRotations));
