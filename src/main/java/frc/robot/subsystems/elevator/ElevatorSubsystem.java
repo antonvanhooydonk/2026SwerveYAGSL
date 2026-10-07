@@ -8,8 +8,6 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
-import java.util.function.BooleanSupplier;
-
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -208,13 +206,13 @@ public class ElevatorSubsystem extends SubsystemBase {
     volts = MathUtil.clamp(volts, -12, 12);
 
     // Check if the elevator is at the upper limit and trying to move up
-    if (isAtMaxHeight() && volts > 0) {
+    if (isAtHeight(ElevatorConstants.kMaxHeightMeters) && volts > 0) {
       stop();
       return;
     }
 
     // Check if the elevator is at the lower limit and trying to move down
-    if (isAtMinHeight() && volts < 0) {
+    if (isAtHeight(ElevatorConstants.kMinHeightMeters) && volts < 0) {
       stop();
       return;
     }
@@ -263,85 +261,26 @@ public class ElevatorSubsystem extends SubsystemBase {
     );
   }
 
-  /**
-   * Gets whether the elevator is at its minimum height (home position)
-   * @return True if at home
-   */
-  private boolean isAtHomeHeight() {
-    return isAtHeight(ElevatorConstants.kMinHeightMeters);
-  }
-
-  /**
-   * Gets whether the elevator is at its maximum height
-   * @return True if at max height
-   */
-  private boolean isAtMaxHeight() {
-    return isAtHeight(ElevatorConstants.kMaxHeightMeters);
-  }
-
-  /**
-   * Gets whether the elevator is at its minimum height
-   * @return True if at min height
-   */
-  private boolean isAtMinHeight() {
-    return isAtHeight(ElevatorConstants.kMinHeightMeters);
-  }
-
-  /**
-   * Gets whether the elevator is at its level 1 height
-   * @return True if at level 1 height
-   */
-  private boolean isAtLevelOneHeight() {
-    return isAtHeight(ElevatorConstants.kHeightL1Meters);
-  }
-
-  /**
-   * Gets whether the elevator is at its level 2 height
-   * @return True if at level 2 height
-   */
-  private boolean isAtLevelTwoHeight() {
-    return isAtHeight(ElevatorConstants.kHeightL2Meters);
-  }
-
-  /**
-   * Gets whether the elevator is at level 3 height
-   * @return True if at level 3 height
-   */
-  private boolean isAtLevelThreeHeight() {
-    return isAtHeight(ElevatorConstants.kHeightL3Meters);
-  }
-
-  /**
-   * Gets whether the elevator is at level 4 height
-   * @return True if at level 4 height
-   */
-  private boolean isAtLevelFourHeight() {
-    return isAtHeight(ElevatorConstants.kHeightL4Meters);
-  }
-
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
-
-  public final Trigger isAtHomeTrigger = new Trigger(this::isAtHomeHeight)
-    .debounce(0.1, Debouncer.DebounceType.kRising);
   
-  public final Trigger isAtMinHeightTrigger = new Trigger(this::isAtMinHeight)
+  public final Trigger isAtMinHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kMinHeightMeters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtMaxHeightTrigger = new Trigger(this::isAtMaxHeight)
+  public final Trigger isAtMaxHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kMaxHeightMeters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLevelOneHeightTrigger = new Trigger(this::isAtLevelOneHeight)
+  public final Trigger isAtLevelOneHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kHeightL1Meters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLevelTwoHeightTrigger = new Trigger(this::isAtLevelTwoHeight)
+  public final Trigger isAtLevelTwoHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kHeightL2Meters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLevelThreeHeightTrigger = new Trigger(this::isAtLevelThreeHeight)
+  public final Trigger isAtLevelThreeHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kHeightL3Meters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLevelFourHeightTrigger = new Trigger(this::isAtLevelFourHeight)
+  public final Trigger isAtLevelFourHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kHeightL4Meters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
@@ -390,12 +329,12 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @param heightMeters Target height in meters
    * @return Command to move to the target height
    */
-  public Command toHeightCommand(double heightMeters, BooleanSupplier atTarget) {
+  public Command toHeightCommand(double heightMeters) {
     return startEnd(
       () -> setHeight(heightMeters),
       () -> {}
     )
-    .until(atTarget)
+    .until(() -> isAtHeight(heightMeters))
     .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
     .finallyDo(this::stop)
     .withName("Elevator_MoveToHeight");
@@ -406,7 +345,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the bottom
    */
   public Command toMinimumCommand() {
-    return toHeightCommand(ElevatorConstants.kMinHeightMeters, this::isAtMinHeight)
+    return toHeightCommand(ElevatorConstants.kMinHeightMeters)
       .withName("Elevator_MoveToMinimum");
   }
 
@@ -415,7 +354,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level one height
    */
   public Command toLevelOneCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL1Meters, this::isAtLevelOneHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL1Meters)
       .withName("Elevator_MoveToLevelOne");
   }
 
@@ -424,7 +363,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level two height
    */
   public Command toLevelTwoCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL2Meters, this::isAtLevelTwoHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL2Meters)
       .withName("Elevator_MoveToLevelTwo");
   }
 
@@ -433,7 +372,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level three height
    */
   public Command toLevelThreeCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL3Meters, this::isAtLevelThreeHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL3Meters)
       .withName("Elevator_MoveToLevelThree");
   }
 
@@ -442,7 +381,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level four height
    */
   public Command toLevelFourCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL4Meters, this::isAtLevelFourHeight)
+    return toHeightCommand(ElevatorConstants.kHeightL4Meters)
       .withName("Elevator_MoveToLevelFour");
   }
 
