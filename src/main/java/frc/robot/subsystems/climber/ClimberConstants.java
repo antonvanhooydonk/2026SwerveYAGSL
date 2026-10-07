@@ -33,7 +33,7 @@ public final class ClimberConstants {
   // ------------------------------------------------------------
   public static final double kAngleToleranceDegrees     =   2.0;
   public static final double kStallCurrentThreshold     =  25.5; // Amps - 85% of smart current limit
-  public static final double kStallVelocityThreshold    =   1.0; // Degrees/sec - indicates motor not moving
+  public static final double kStallVelocityThresholdRPM =  10.0; // RPM - indicates motor not moving
   public static final double kManualUpVoltage           = -12.0; // manual up control
   public static final double kManualDownVoltage         =  12.0; // manual down control
 

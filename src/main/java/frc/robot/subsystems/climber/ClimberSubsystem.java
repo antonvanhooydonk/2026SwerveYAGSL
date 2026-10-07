@@ -4,8 +4,8 @@
 
 package frc.robot.subsystems.climber;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.BooleanSupplier;
@@ -64,8 +64,8 @@ public class ClimberSubsystem extends SubsystemBase {
         volts -> climberMotor.setVoltage(volts),
         log -> log.motor("climber")
           .voltage(Volts.of(climberMotor.getAppliedOutput() * climberMotor.getBusVoltage()))
-          .angularPosition(Degrees.of(climberEncoder.getPosition()))
-          .angularVelocity(DegreesPerSecond.of(climberEncoder.getVelocity())),
+          .angularPosition(Rotations.of(climberEncoder.getPosition()))
+          .angularVelocity(RotationsPerSecond.of(climberEncoder.getVelocity())),
         this
       )
     );
@@ -276,7 +276,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   private boolean isStalled() {
     return Math.abs(climberMotor.getOutputCurrent()) > ClimberConstants.kStallCurrentThreshold &&
-           Math.abs(climberEncoder.getVelocity()) < ClimberConstants.kStallVelocityThreshold;
+           Math.abs(climberEncoder.getVelocity()) < ClimberConstants.kStallVelocityThresholdRPM;
   }
 
   // ---------------------------------------------------------------------------------------

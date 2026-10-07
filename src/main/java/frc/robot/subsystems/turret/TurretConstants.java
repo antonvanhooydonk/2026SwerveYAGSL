@@ -29,9 +29,10 @@ public final class TurretConstants {
   // MotionMagic constraints
   // Tuning: start low, increase until motion is fast but smooth
   // ------------------------------------------------------------
-  public static final double kCruiseVelocity = 180.0; // rotations per second
-  public static final double kAcceleration   = 360.0; // rotations per second squared
-  public static final double kJerk           = 3600.0; // rotations per second cubed
+  public static final double kMaxFreeRPS     = 6000.0 / 60.0; // Max free speed of the motor in rotations per second
+  public static final double kCruiseVelocity = Math.ceil(0.75 * kMaxFreeRPS / kTurretGearRatio); // 75% - 80% of max free rps (adjusted for gear ratio)
+  public static final double kAcceleration   = kCruiseVelocity * 3.0; // set to 2x - 5x cruise velocity
+  public static final double kJerk           = kAcceleration * 10; // set to 10x acceleration
 
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
