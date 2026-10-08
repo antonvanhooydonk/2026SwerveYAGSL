@@ -55,5 +55,5 @@ public final class ElevatorConstants {
   public static final double kS = 0.0;  // Static friction - from SysId
   public static final double kV = 0.0;  // Velocity feedforward - from SysId
   public static final double kA = 0.0;  // Acceleration feedforward - from SysId
-  public static final double kG = 0.0;  // Gravity compensation - tune until elevator holds position
+  public static final double kG = 0.1;  // Gravity compensation - tune until elevator holds position
 }
