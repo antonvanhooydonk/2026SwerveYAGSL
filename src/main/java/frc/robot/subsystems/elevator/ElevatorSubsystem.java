@@ -339,7 +339,6 @@ public class ElevatorSubsystem extends SubsystemBase {
     )
     .until(() -> isAtHeight(heightMeters))
     .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
-    .finallyDo(this::stop)
     .withName("Elevator_MoveToHeight");
   }
 
