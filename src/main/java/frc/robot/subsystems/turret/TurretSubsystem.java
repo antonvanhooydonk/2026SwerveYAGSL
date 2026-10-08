@@ -453,7 +453,10 @@ public class TurretSubsystem extends SubsystemBase {
       double dx = shot.virtualTarget().getX() - robotPose.getX();
       double dy = shot.virtualTarget().getY() - robotPose.getY();
       double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
-      setAngle(fieldAngleDegrees - robotPose.getRotation().getDegrees());
+      double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
+
+      // Command the turret to the calculated angle
+      setAngle(turretAngle);
     })
     .withName("Turret_AimAtPose_OnTheMove");
   }

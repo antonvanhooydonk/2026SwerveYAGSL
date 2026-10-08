@@ -96,7 +96,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     );
 
     // Set default command
-    setDefaultCommand(stopCommand());
+    setDefaultCommand(holdPositionCommand());
 
     // Add data to dashboard
     SmartDashboard.putData("Elevator", this);
@@ -386,6 +386,30 @@ public class ElevatorSubsystem extends SubsystemBase {
   public Command toLevelFourCommand() {
     return toHeightCommand(ElevatorConstants.kHeightL4Meters)
       .withName("Elevator_MoveToLevelFour");
+  }
+
+  /**
+   * Holds the elevator with the MotionMagic loop closed (kG + kP fight gravity)
+   * instead of dropping to neutral. On start it keeps the last target if the elevator is within
+   * tolerance of it; otherwise it adopts the current height (so it never snaps back to a stale
+   * target after manual control, SysId, a timeout, or a disable/enable). At the bottom it goes
+   * neutral so the carriage rests on the hard stop.
+   */
+  public Command holdPositionCommand() {
+    return startRun(
+      () -> { 
+        if (!isAtHeight(targetHeightMeters)) {
+          targetHeightMeters = getHeightMeters();
+        }
+      },
+      () -> {
+        if (targetHeightMeters <= ElevatorConstants.kMinHeightMeters + ElevatorConstants.kHeightToleranceMeters) {
+          stop();
+        } else {
+          setHeight(targetHeightMeters);
+        }
+      }
+    ).withName("Elevator_HoldPosition");
   }
 
   /**

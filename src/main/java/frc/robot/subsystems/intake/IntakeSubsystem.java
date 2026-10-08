@@ -86,7 +86,10 @@ public class IntakeSubsystem extends SubsystemBase {
       )
     );
     
-    // set the default command for this subsystem
+    // Ensure the intake is retracted at startup
+    retract();
+
+    // Set the default command for this subsystem
     setDefaultCommand(stopCommand());
 
     // Add data to dashboard
