@@ -52,8 +52,10 @@ public class ClimberSubsystem extends SubsystemBase {
     // Initialize encoder
     climberEncoder = climberMotor.getEncoder();
 
-    // Reset the encoder (assumes climber starts at the home position)
-    resetEncoder();
+    // NOTE: Do NOT zero the encoder here, so a code restart doesn't shift the soft limits.
+    // Use setHomePositionCommand() (disabled-only) with the climber straight up.
+    // Bench-verify that the Spark encoder position survives a code restart.
+    Utils.logInfo("Climber startup angle (deg): " + Utils.showDouble(getAngleDegrees()));
 
     // Initialize SysId routine (leader motor only)
     sysIdRoutine = new SysIdRoutine(

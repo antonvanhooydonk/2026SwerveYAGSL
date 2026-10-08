@@ -42,8 +42,9 @@ import frc.robot.util.Utils;
  * 4. Tune kP until fast response without overshoot
  *
  * IMPORTANT: Since there are no limit switches, the elevator must be at the
- * bottom (home) position when the robot code starts, as the encoder is zeroed
- * at construction. Call homeCommand() to return to home and rezero if needed.
+ * bottom (home) position when the robot is POWERED ON (the TalonFX zeroes its position
+ * on power-up). A code restart does not re-zero. Use setHomePositionCommand() to
+ * re-zero while disabled with the elevator at the bottom.
  */
 public class ElevatorSubsystem extends SubsystemBase {
   // Hardware - leader and follower motors
@@ -76,8 +77,10 @@ public class ElevatorSubsystem extends SubsystemBase {
     // Initialize control requests
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
 
-    // Zero encoder at startup - elevator must be at home position
-    resetEncoder();
+    // NOTE: Do NOT zero the encoder here. The TalonFX keeps its position across a robot code
+    // restart and only resets to 0 on a power cycle. Use setHomePositionCommand() (disabled-only).
+    leaderMotor.getPosition().waitForUpdate(0.25); // make sure the logged value is not a stale 0
+    Utils.logInfo("Elevator startup height (m): " + Utils.showDouble(getHeightMeters()));
 
     // Initialize SysId routine (leader motor only)
     sysIdRoutine = new SysIdRoutine(

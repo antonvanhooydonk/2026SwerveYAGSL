@@ -32,6 +32,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
 import frc.robot.util.Conversions;
+import frc.robot.util.ShotCalculator;
 import frc.robot.util.TalonFXFactory;
 import frc.robot.util.Utils;
 
@@ -73,8 +74,12 @@ public class TurretSubsystem extends SubsystemBase {
     // Initialize control request
     motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
 
-    // Zero turret encoder at startup - turret must be at home position
-    resetEncoder();
+    // NOTE: Do NOT zero the encoder here. The TalonFX keeps its position across a robot code
+    // restart (crash, brownout of the roboRIO, redeploy) and only resets to 0 on a power cycle.
+    // Zeroing in the constructor would silently shift the soft limits whenever the code restarts
+    // with the turret away from home. Use setHomePositionCommand() (disabled-only) instead.
+    turretMotor.getPosition().waitForUpdate(0.25); // make sure the logged value is not a stale 0
+    Utils.logInfo("Turret startup angle (deg): " + Utils.showDouble(getAngleDegrees()));
 
     // Initialize SysId routine
     turretSysIdRoutine = new SysIdRoutine(
@@ -430,43 +435,38 @@ public class TurretSubsystem extends SubsystemBase {
     Supplier<Pose2d> targetPoseSupplier,
     Supplier<ChassisSpeeds> fieldSpeedsSupplier // Inject field-relative chassis speeds here
   ) {
-    // Average velocity of your note/ball when leaving the shooter (meters per second)
-    final double GAME_PIECE_VELOCITY = 12.0; 
-
     return run(() -> {
       Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
       ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
 
-      // If either pose is null, we can't calculate the angle, so just return early
+      // If any input is null, we can't calculate the angle, so stop
       if (robotPose == null || targetPose == null || fieldSpeeds == null) {
         stop();
         return;
       }
 
-      // Calculate raw distance to the physical target
-      double rawDx = targetPose.getX() - robotPose.getX();
-      double rawDy = targetPose.getY() - robotPose.getY();
-      double distanceToTarget = Math.hypot(rawDx, rawDy);
+      // Same solution the flywheel uses, so aim and RPM always agree
+      ShotCalculator.Solution shot = ShotCalculator.solve(robotPose, targetPose.getTranslation(), fieldSpeeds);
 
-      // Estimate how many seconds the game piece will be in the air
-      double timeOfFlight = distanceToTarget / GAME_PIECE_VELOCITY;
-
-      // Calculate a Virtual target pose by subtracting the robot's future travel distance
-      // (If the robot moves +X, we offset the target by -X to look "ahead")
-      double virtualTargetX = targetPose.getX() - (fieldSpeeds.vxMetersPerSecond * timeOfFlight);
-      double virtualTargetY = targetPose.getY() - (fieldSpeeds.vyMetersPerSecond * timeOfFlight);
-
-      // Calculate the angle to the VIRTUAL target pose in field coordinates
-      double dx = virtualTargetX - robotPose.getX();
-      double dy = virtualTargetY - robotPose.getY();      
+      // Angle to the VIRTUAL target in field coordinates, converted to robot-relative
+      double dx = shot.virtualTarget().getX() - robotPose.getX();
+      double dy = shot.virtualTarget().getY() - robotPose.getY();
       double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
-      double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
-      
-      // Command the turret using your safe, self-normalizing function
-      setAngle(turretAngle);
+      setAngle(fieldAngleDegrees - robotPose.getRotation().getDegrees());
     })
     .withName("Turret_AimAtPose_OnTheMove");
+  }
+
+  /**
+   * Command to zero the turret encoder at its current position. Only run this while the
+   * turret is physically at its home position (pit use, disabled only).
+   * @return Command that resets the encoder
+   */
+  public Command setHomePositionCommand() {
+    return runOnce(this::resetEncoder)
+      .ignoringDisable(true)
+      .withName("Turret_SetHomePosition");
   }
 
   /**

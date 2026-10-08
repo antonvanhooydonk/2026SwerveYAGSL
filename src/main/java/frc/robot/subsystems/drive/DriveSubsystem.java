@@ -34,6 +34,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -85,6 +87,9 @@ public class DriveSubsystem extends SubsystemBase {
   // Cache pose info during alignment in disabledPeriodic()
   private String lastAlignAutoName = null;
   private Pose2d cachedStartingPose = null;
+
+  // Alliance that the pose heading was last seeded for (empty = not seeded yet)
+  private Optional<Alliance> seededAlliance = Optional.empty();
 
   /**
    * Creates a new swerve DriveSubsystem using the YAGSL library.
@@ -241,6 +246,24 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Seeds the pose heading to the alliance-forward direction once per alliance. The alliance is
+   * often unknown when the drive subsystem is constructed and can change between matches without
+   * a code restart, so this runs from disabledPeriodic() (and the auto/teleop init as a backstop).
+   * It is a no-op until the alliance is known and after the heading was seeded for that alliance,
+   * so it never fights vision or the driver's manual heading reset. Assumes the robot is placed
+   * facing away from its driver station, as at the start of a match.
+   */
+  public void seedHeadingForAlliance() {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    if (alliance.isEmpty() || alliance.equals(seededAlliance)) {
+      return;
+    }
+    resetHeading(); // reads the current alliance, keeps the translation estimate
+    seededAlliance = alliance;
+    Utils.logInfo("Seeded heading for " + alliance.get() + " alliance");
+  }
+
+  /**
    * Gets the current heading of the robot from the pose estimator.
    * This is what should be fed into the drive (auto and teleop)
    * functions when calculating chassis speeds & module states.
@@ -349,6 +372,9 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.autonomousInit() or a command scheduler binding.
    */
   public void autonomousInit() {
+    // Backstop in case the alliance only became known after the last disabledPeriodic()
+    seedHeadingForAlliance();
+
     // Set motors to brake mode for match (do this before resetting encoders)
     setMotorBrake(true);
 
@@ -381,6 +407,9 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.teleopInit() or a command scheduler binding.
    */
   public void teleopInit() {
+    // Backstop (no-op if already seeded for this alliance, e.g. after autonomous)
+    seedHeadingForAlliance();
+
     // Set motors to brake mode for match (do this before resetting encoders)
     setMotorBrake(true);
 

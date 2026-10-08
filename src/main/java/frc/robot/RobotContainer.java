@@ -166,12 +166,19 @@ public class RobotContainer {
    * controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight joysticks}.
    */
   private void configureButtonBindings() {
+    // pit-only: 
+    // 1. zero the turret (centered) 
+    // 2. home the elevator (bottom) 
+    // 3. home the climber (straight up) 
+    // at their current positions.
+    RobotModeTriggers.disabled().and(driverXbox.back()).onTrue(Commands.parallel(
+      climberSubsystem.setHomePositionCommand(),
+      elevatorSubsystem.setHomePositionCommand(),
+      turretSubsystem.setHomePositionCommand()
+    ).ignoringDisable(true));
+
     // re-zero field-relative heading only (keeps the vision/odometry position)
     RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
-
-    // pit-only: set climber home position. Disabled-only so it can't be hit mid-match. 
-    // (The climber also re-zeros in autonomousInit, so start each match with it at home.)
-    RobotModeTriggers.disabled().and(driverXbox.start()).onTrue(climberSubsystem.setHomePositionCommand());
 
     // toggles the drive mode: field-relative vs robot-relative
     RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeCommand());
@@ -271,6 +278,9 @@ public class RobotContainer {
    * This method is called periodically while the robot is disabled.
    */
   public void disabledPeriodic() {
+    // Seed the pose heading for the current alliance (once per alliance change)
+    driveSubsystem.seedHeadingForAlliance();
+
     // Update the dashboard with the current auto starting pose
     // The chooser value is the PathPlanner auto name ("" = no auto)
     driveSubsystem.publishStartingPoseAlignment(autoChooser::getSelected);

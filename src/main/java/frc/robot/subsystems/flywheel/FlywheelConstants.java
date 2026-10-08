@@ -26,6 +26,10 @@ public final class FlywheelConstants {
   public static final double kFlywheelToleranceRPM    = 50.0;  // RPM window to consider flywheel at target
   public static final double kFlywheelMinSpinningRPM  = 100.0; // RPM threshold to consider flywheel spinning
 
+  // Average fuel exit speed used for time-of-flight / shoot-on-the-move lead. TODO: calibrate
+  // against measured shots (it should correspond to the RPM the table commands).
+  public static final double kShotSpeedMetersPerSecond = 12.0;
+
   public static final double kFlywheelDefaultDistanceToTarget = 2.0; // Default distance to target if robot or target pose is null
   
   // ------------------------------------------------------------

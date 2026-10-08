@@ -21,6 +21,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -29,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.util.ShotCalculator;
 import frc.robot.util.TalonFXFactory;
 import frc.robot.util.TalonFXFactory.MotorPair;
 import frc.robot.util.Utils;
@@ -299,9 +301,8 @@ public class FlywheelSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to shoot at the current target pose by calculating the  
-   * required flywheel speed based on the distance to the target.
-   * @param robotPoseSupplier The supplier for the current pose of the robot
+   * Command to spin the flywheel for a stationary shot at the target pose.
+   * @param robotPoseSupplier The supplier for the current pose of the shooter
    * @param targetPoseSupplier The supplier for the pose of the target (usually an alliance hub)
    * @return Command to shoot at the target
    */
@@ -309,23 +310,39 @@ public class FlywheelSubsystem extends SubsystemBase {
     Supplier<Pose2d> robotPoseSupplier, 
     Supplier<Pose2d> targetPoseSupplier
   ) {
+    return shootAtPoseCommand(robotPoseSupplier, targetPoseSupplier, null);
+  }
+
+  /**
+   * Command to shoot at the target pose while moving. The RPM is looked up for the distance to the
+   * same lead-compensated "virtual target" the turret aims at (see ShotCalculator).
+   * @param robotPoseSupplier The supplier for the current pose of the shooter
+   * @param targetPoseSupplier The supplier for the pose of the target (usually an alliance hub)
+   * @param fieldSpeedsSupplier Supplier for field-relative chassis speeds (null = stationary)
+   * @return Command to shoot at the target
+   */
+  public Command shootAtPoseCommand(
+    Supplier<Pose2d> robotPoseSupplier, 
+    Supplier<Pose2d> targetPoseSupplier,
+    Supplier<ChassisSpeeds> fieldSpeedsSupplier
+  ) {
     return run(() -> {
       Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
+      ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
 
       // Default distance if either pose is null so we don't prevent shooting
       double distanceToTarget = FlywheelConstants.kFlywheelDefaultDistanceToTarget; 
 
-      // Calculate distance to target
+      // Distance to the lead-compensated virtual target (equals the plain distance when stationary)
       if (robotPose != null && targetPose != null) {
-        distanceToTarget = robotPose.getTranslation().getDistance(targetPose.getTranslation());
+        distanceToTarget = ShotCalculator
+          .solve(robotPose, targetPose.getTranslation(), fieldSpeeds)
+          .distanceMeters();
       }
 
       // Interpolated flywheel speed based on distance to target
-      double requiredRPM = rpmTable.get(distanceToTarget);
-
-      // Set flywheel speed
-      setRPM(requiredRPM);
+      setRPM(rpmTable.get(distanceToTarget));
     })
     .withName("Flywheel_ShootAtPose");
   }
