@@ -425,9 +425,6 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.postMatch() or a command scheduler binding.
    */
   public void postMatch() {
-    // Ensure brake mode is disabled
-    setMotorBrake(false);
-
     // Reset drive setpoint for setpoint generator
     driveSetpoint = new SwerveSetpoint(
       new ChassisSpeeds(), 
@@ -860,6 +857,16 @@ public class DriveSubsystem extends SubsystemBase {
     return runOnce(() -> this.slowMode = slowMode)
       .ignoringDisable(true)
       .withName("Drive_SetSlowMode");
+  }
+
+  /**
+   * Enable/disable motor brake mode
+   * @param brake True to enable brake mode, false to disable
+   */
+  public Command setBrakeModeCommand(boolean brake) {
+    return runOnce(() -> setMotorBrake(brake))
+      .ignoringDisable(true)
+      .withName("Drive_SetBrakeMode");
   }
 
   /**
