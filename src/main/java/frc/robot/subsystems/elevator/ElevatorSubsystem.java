@@ -332,7 +332,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @param heightMeters Target height in meters
    * @return Command to move to the target height
    */
-  public Command toHeightCommand(double heightMeters) {
+  public Command setHeightCommand(double heightMeters) {
     return startEnd(
       () -> setHeight(heightMeters),
       () -> {}
@@ -347,7 +347,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the bottom
    */
   public Command toMinimumCommand() {
-    return toHeightCommand(ElevatorConstants.kMinHeightMeters)
+    return setHeightCommand(ElevatorConstants.kMinHeightMeters)
       .withName("Elevator_MoveToMinimum");
   }
 
@@ -356,7 +356,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level one height
    */
   public Command toLevelOneCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL1Meters)
+    return setHeightCommand(ElevatorConstants.kHeightL1Meters)
       .withName("Elevator_MoveToLevelOne");
   }
 
@@ -365,7 +365,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level two height
    */
   public Command toLevelTwoCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL2Meters)
+    return setHeightCommand(ElevatorConstants.kHeightL2Meters)
       .withName("Elevator_MoveToLevelTwo");
   }
 
@@ -374,7 +374,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level three height
    */
   public Command toLevelThreeCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL3Meters)
+    return setHeightCommand(ElevatorConstants.kHeightL3Meters)
       .withName("Elevator_MoveToLevelThree");
   }
 
@@ -383,7 +383,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the level four height
    */
   public Command toLevelFourCommand() {
-    return toHeightCommand(ElevatorConstants.kHeightL4Meters)
+    return setHeightCommand(ElevatorConstants.kHeightL4Meters)
       .withName("Elevator_MoveToLevelFour");
   }
 
@@ -429,8 +429,8 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the climber up (open-loop control)
-   * @return Command that moves the climber up
+   * Command to move the elevator down (open-loop control)
+   * @return Command that moves the elevator down
    */
   public Command downCommand() {
     return run(() -> setVoltage(ElevatorConstants.kManualDownVoltage))
