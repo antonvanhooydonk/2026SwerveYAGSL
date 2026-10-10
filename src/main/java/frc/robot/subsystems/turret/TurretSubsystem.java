@@ -260,7 +260,7 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Calculates the turret's pose in field coordinates based on the robot's pose.
+   * Gets the turret's pose in field coordinates by applying a transform to the robot's pose.
    * @param robotPose The current pose of the robot in field coordinates
    * @return The pose of the turret in field coordinates
    */
