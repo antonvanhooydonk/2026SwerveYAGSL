@@ -367,38 +367,6 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to continuously aim the turret at a target pose on the field.
-   * @param robotPoseSupplier Supplier for the robot's current field pose
-   * @param targetPoseSupplier Supplier for the field-relative target pose to face
-   * @return Command to continuously aim at the target pose
-   */
-  public Command aimAtPoseCommand(
-    Supplier<Pose2d> robotPoseSupplier,
-    Supplier<Pose2d> targetPoseSupplier
-  ) {
-    return run(() -> {
-      Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
-      Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
-
-      // If either pose is null, we can't calculate the angle, so just return early
-      if (robotPose == null || targetPose == null) {
-        stop();
-        return;
-      }
-
-      // Calculate the angle to the target pose in field coordinates
-      double dx = targetPose.getX() - robotPose.getX();
-      double dy = targetPose.getY() - robotPose.getY();
-      double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
-      double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
-      
-      // Command the turret to the calculated angle
-      setAngle(turretAngle);
-    })
-    .withName("Turret_AimAtPose");
-  }
-
-  /**
    * Command to continuously aim the turret at a target pose on the field 
    * and compensate for the robot's movement while doing so.
    * @param robotPoseSupplier Supplier for the robot's current field pose
@@ -409,17 +377,23 @@ public class TurretSubsystem extends SubsystemBase {
   public Command aimAtPoseCommand(
     Supplier<Pose2d> robotPoseSupplier,
     Supplier<Pose2d> targetPoseSupplier,
-    Supplier<ChassisSpeeds> fieldSpeedsSupplier // Inject field-relative chassis speeds here
+    Supplier<ChassisSpeeds> fieldSpeedsSupplier
   ) {
     return run(() -> {
       Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
       ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
 
-      // If any input is null, we can't calculate the angle, so stop
-      if (robotPose == null || targetPose == null || fieldSpeeds == null) {
+      // If any input pose is null, we can't calculate the angle, 
+      // so stop the turret and exit early
+      if (robotPose == null || targetPose == null) {
         stop();
         return;
+      }
+
+      // If the field speeds are null, assume the robot is stationary
+      if (fieldSpeeds == null) {
+        fieldSpeeds = new ChassisSpeeds(0, 0, 0);
       }
 
       // Same solution the flywheel uses, so aim and RPM always agree

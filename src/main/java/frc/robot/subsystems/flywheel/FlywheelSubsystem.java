@@ -331,6 +331,11 @@ public class FlywheelSubsystem extends SubsystemBase {
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
       ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
 
+      // If the field speeds are null, assume the robot is stationary
+      if (fieldSpeeds == null) {
+        fieldSpeeds = new ChassisSpeeds(0, 0, 0);
+      }
+
       // Default distance if either pose is null so we don't prevent shooting
       double distanceToTarget = FlywheelConstants.kFlywheelDefaultDistanceToTarget; 
 
