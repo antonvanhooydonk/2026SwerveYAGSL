@@ -367,6 +367,19 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
+   * Command to continuously aim the turret at a target pose on the field.
+   * @param robotPoseSupplier Supplier for the robot's current field pose
+   * @param targetPoseSupplier Supplier for the field-relative target pose to face
+   * @return Command to continuously aim at the target pose
+   */
+  public Command aimAtPoseCommand(
+    Supplier<Pose2d> robotPoseSupplier,
+    Supplier<Pose2d> targetPoseSupplier
+  ) {
+    return aimAtPoseCommand(robotPoseSupplier, targetPoseSupplier, null);
+  }
+
+  /**
    * Command to continuously aim the turret at a target pose on the field 
    * and compensate for the robot's movement while doing so.
    * @param robotPoseSupplier Supplier for the robot's current field pose
