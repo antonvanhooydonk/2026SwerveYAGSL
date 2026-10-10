@@ -91,7 +91,7 @@ public class ClimberSubsystem extends SubsystemBase {
     
     // Set basic motor parameters
     config
-      .smartCurrentLimit(30) 
+      .smartCurrentLimit(10, 30) 
       .voltageCompensation(12) 
       .idleMode(IdleMode.kBrake)
       .inverted(false);
