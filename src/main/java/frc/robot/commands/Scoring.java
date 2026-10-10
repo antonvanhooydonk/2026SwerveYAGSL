@@ -52,14 +52,14 @@ public class Scoring {
         .and(turretSubsystem.isAtAngleTrigger)
       ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(
-        driveSubsystem::getTurretPose, 
+        () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
         () -> Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose,
         () -> driveSubsystem.getFieldRelativeSpeeds()
       ),
       flywheelSubsystem.shootAtPoseCommand(
-        driveSubsystem::getTurretPose, 
+        () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
         () -> Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose,
-        driveSubsystem::getFieldRelativeSpeeds
+        () -> driveSubsystem.getFieldRelativeSpeeds()
       )
     );
   }
@@ -76,14 +76,14 @@ public class Scoring {
         .and(turretSubsystem.isAtAngleTrigger)
       ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(
-        driveSubsystem::getTurretPose, 
+        () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
         () -> Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose,
         () -> driveSubsystem.getFieldRelativeSpeeds()
       ),
       flywheelSubsystem.shootAtPoseCommand(
-        driveSubsystem::getTurretPose, 
+        () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
         () -> Utils.isRedAlliance() ? FieldConstants.kRedPassPose : FieldConstants.kBluePassPose,
-        driveSubsystem::getFieldRelativeSpeeds
+        () -> driveSubsystem.getFieldRelativeSpeeds()
       )
     );
   }

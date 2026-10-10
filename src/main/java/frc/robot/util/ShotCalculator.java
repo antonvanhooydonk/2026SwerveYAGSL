@@ -26,12 +26,12 @@ public final class ShotCalculator {
   public record Solution(Translation2d virtualTarget, double distanceMeters) {}
 
   /**
-   * @param shooterPose field-relative pose of the shooter (use DriveSubsystem.getTurretPose())
+   * @param turretPose field-relative pose of the turret (use TurretSubsystem.getPose())
    * @param target field-relative target
    * @param fieldSpeeds field-relative chassis speeds (null is treated as stationary)
    */
-  public static Solution solve(Pose2d shooterPose, Translation2d target, ChassisSpeeds fieldSpeeds) {
-    Translation2d shooter = shooterPose.getTranslation();
+  public static Solution solve(Pose2d turretPose, Translation2d target, ChassisSpeeds fieldSpeeds) {
+    Translation2d shooter = turretPose.getTranslation();
     double vx = fieldSpeeds == null ? 0.0 : fieldSpeeds.vxMetersPerSecond;
     double vy = fieldSpeeds == null ? 0.0 : fieldSpeeds.vyMetersPerSecond;
 

@@ -259,6 +259,18 @@ public class TurretSubsystem extends SubsystemBase {
     );
   }
 
+  /**
+   * Calculates the turret's pose in field coordinates based on the robot's pose.
+   * @param robotPose The current pose of the robot in field coordinates
+   * @return The pose of the turret in field coordinates
+   */
+  public Pose2d getPose(Pose2d robotPose) {
+    return new Pose2d(
+      robotPose.getTranslation().plus(TurretConstants.kRobotToTurret.rotateBy(robotPose.getRotation())),
+      robotPose.getRotation()
+    );
+  }
+
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
@@ -368,55 +380,49 @@ public class TurretSubsystem extends SubsystemBase {
 
   /**
    * Command to continuously aim the turret at a target pose on the field.
-   * @param robotPoseSupplier Supplier for the robot's current field pose
+   * @param turretPoseSupplier Supplier for the turret's current field pose
    * @param targetPoseSupplier Supplier for the field-relative target pose to face
    * @return Command to continuously aim at the target pose
    */
   public Command aimAtPoseCommand(
-    Supplier<Pose2d> robotPoseSupplier,
+    Supplier<Pose2d> turretPoseSupplier,
     Supplier<Pose2d> targetPoseSupplier
   ) {
-    return aimAtPoseCommand(robotPoseSupplier, targetPoseSupplier, null);
+    return aimAtPoseCommand(turretPoseSupplier, targetPoseSupplier, null);
   }
 
   /**
    * Command to continuously aim the turret at a target pose on the field 
    * and compensate for the robot's movement while doing so.
-   * @param robotPoseSupplier Supplier for the robot's current field pose
+   * @param turretPoseSupplier Supplier for the turret's current field pose
    * @param targetPoseSupplier Supplier for the field-relative target pose to face
    * @param fieldSpeedsSupplier Supplier for the robot's current field-relative chassis speeds
    * @return Command to continuously aim at the target pose
    */
   public Command aimAtPoseCommand(
-    Supplier<Pose2d> robotPoseSupplier,
+    Supplier<Pose2d> turretPoseSupplier,
     Supplier<Pose2d> targetPoseSupplier,
     Supplier<ChassisSpeeds> fieldSpeedsSupplier
   ) {
     return run(() -> {
-      Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
+      Pose2d turretPose = turretPoseSupplier == null ? null : turretPoseSupplier.get();
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
       ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
 
-      // If any input pose is null, we can't calculate the angle, 
-      // so stop the turret and exit early
-      if (robotPose == null || targetPose == null) {
+      // If any input pose is null, we can't calculate the angle, so stop the turret and exit early
+      if (turretPose == null || targetPose == null) {
         stop();
         return;
       }
 
-      // If the field speeds are null, assume the robot is stationary
-      if (fieldSpeeds == null) {
-        fieldSpeeds = new ChassisSpeeds(0, 0, 0);
-      }
-
       // Same solution the flywheel uses, so aim and RPM always agree
-      ShotCalculator.Solution shot = ShotCalculator.solve(robotPose, targetPose.getTranslation(), fieldSpeeds);
+      ShotCalculator.Solution shot = ShotCalculator.solve(turretPose, targetPose.getTranslation(), fieldSpeeds);
 
       // Angle to the VIRTUAL target in field coordinates, converted to robot-relative
-      double dx = shot.virtualTarget().getX() - robotPose.getX();
-      double dy = shot.virtualTarget().getY() - robotPose.getY();
+      double dx = shot.virtualTarget().getX() - turretPose.getX();
+      double dy = shot.virtualTarget().getY() - turretPose.getY();
       double fieldAngleDegrees = Units.radiansToDegrees(Math.atan2(dy, dx));
-      double turretAngle = fieldAngleDegrees - robotPose.getRotation().getDegrees();
+      double turretAngle = fieldAngleDegrees - turretPose.getRotation().getDegrees();
 
       // Command the turret to the calculated angle
       setAngle(turretAngle);

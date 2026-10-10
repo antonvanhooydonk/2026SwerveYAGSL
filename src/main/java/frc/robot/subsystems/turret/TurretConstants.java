@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.turret;
 
+import edu.wpi.first.math.geometry.Translation2d;
+
 /**
  * Constants for the turret subsystem.
  */
@@ -14,7 +16,10 @@ public final class TurretConstants {
   public static final double kGearRatio    =  80.0;  // motor shaft rotations per one full 360 deg turret rotation
   public static final double kMinAngleDegrees    = -150.0; // minimum safe raw (unwrapped) turret position, in degrees
   public static final double kMaxAngleDegrees    =  150.0; // maximum safe raw (unwrapped) turret position, in degrees
-  
+   
+  // translation from robot center to turret center, in meters
+  public static final Translation2d kRobotToTurret = new Translation2d(0.0, 0.0); 
+ 
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------

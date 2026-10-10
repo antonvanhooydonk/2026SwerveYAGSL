@@ -65,12 +65,13 @@ public class Autos {
         .and(turretSubsystem.isAtAngleTrigger)
       ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(
-        driveSubsystem::getTurretPose, 
+        () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
         () -> Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose,
         () -> driveSubsystem.getFieldRelativeSpeeds()
       ),
-      flywheelSubsystem.shootAtPoseCommand(driveSubsystem::getTurretPose, () -> 
-        Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
+      flywheelSubsystem.shootAtPoseCommand(      
+        () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
+        () -> Utils.isRedAlliance() ? FieldConstants.kRedHubPose : FieldConstants.kBlueHubPose
       )
     ))
     .withTimeout(10)

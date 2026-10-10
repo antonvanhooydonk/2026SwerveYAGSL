@@ -302,47 +302,42 @@ public class FlywheelSubsystem extends SubsystemBase {
 
   /**
    * Command to spin the flywheel for a stationary shot at the target pose.
-   * @param robotPoseSupplier The supplier for the current pose of the shooter
+   * @param turretPoseSupplier The supplier for the current pose of the shooter
    * @param targetPoseSupplier The supplier for the pose of the target (usually an alliance hub)
    * @return Command to shoot at the target
    */
   public Command shootAtPoseCommand(
-    Supplier<Pose2d> robotPoseSupplier, 
+    Supplier<Pose2d> turretPoseSupplier, 
     Supplier<Pose2d> targetPoseSupplier
   ) {
-    return shootAtPoseCommand(robotPoseSupplier, targetPoseSupplier, null);
+    return shootAtPoseCommand(turretPoseSupplier, targetPoseSupplier, null);
   }
 
   /**
    * Command to shoot at the target pose while moving. The RPM is looked up for the distance to the
    * same lead-compensated "virtual target" the turret aims at (see ShotCalculator).
-   * @param robotPoseSupplier The supplier for the current pose of the shooter
+   * @param turretPoseSupplier The supplier for the current pose of the shooter
    * @param targetPoseSupplier The supplier for the pose of the target (usually an alliance hub)
    * @param fieldSpeedsSupplier Supplier for field-relative chassis speeds (null = stationary)
    * @return Command to shoot at the target
    */
   public Command shootAtPoseCommand(
-    Supplier<Pose2d> robotPoseSupplier, 
+    Supplier<Pose2d> turretPoseSupplier, 
     Supplier<Pose2d> targetPoseSupplier,
     Supplier<ChassisSpeeds> fieldSpeedsSupplier
   ) {
     return run(() -> {
-      Pose2d robotPose = robotPoseSupplier == null ? null : robotPoseSupplier.get();
+      Pose2d turretPose = turretPoseSupplier == null ? null : turretPoseSupplier.get();
       Pose2d targetPose = targetPoseSupplier == null ? null : targetPoseSupplier.get();
       ChassisSpeeds fieldSpeeds = fieldSpeedsSupplier == null ? null : fieldSpeedsSupplier.get();
-
-      // If the field speeds are null, assume the robot is stationary
-      if (fieldSpeeds == null) {
-        fieldSpeeds = new ChassisSpeeds(0, 0, 0);
-      }
 
       // Default distance if either pose is null so we don't prevent shooting
       double distanceToTarget = FlywheelConstants.kFlywheelDefaultDistanceToTarget; 
 
       // Distance to the lead-compensated virtual target (equals the plain distance when stationary)
-      if (robotPose != null && targetPose != null) {
+      if (turretPose != null && targetPose != null) {
         distanceToTarget = ShotCalculator
-          .solve(robotPose, targetPose.getTranslation(), fieldSpeeds)
+          .solve(turretPose, targetPose.getTranslation(), fieldSpeeds)
           .distanceMeters();
       }
 
@@ -358,15 +353,15 @@ public class FlywheelSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.addDoubleProperty("Target RPM",         () -> Utils.showDouble(targetRPM), null);
-    builder.addDoubleProperty("Current RPM",        () -> Utils.showDouble(getRPM()), null);
-    builder.addDoubleProperty("RPM Error",          () -> Utils.showDouble(targetRPM - getRPM()), null);
-    builder.addBooleanProperty("At Target",         this::isAtTargetRPM, null);
-    builder.addBooleanProperty("Spinning",          this::isSpinning, null);
-    builder.addDoubleProperty("Leader Voltage (V)", () -> Utils.showDouble(flywheelLeader.getMotorVoltage().getValueAsDouble()), null);
-    builder.addDoubleProperty("Leader Current (A)", () -> Utils.showDouble(flywheelLeader.getSupplyCurrent().getValueAsDouble()), null);
-    builder.addDoubleProperty("Leader Temp (C)",    () -> Utils.showDouble(flywheelLeader.getDeviceTemp().getValueAsDouble()), null);
+    builder.addDoubleProperty("Target RPM",           () -> Utils.showDouble(targetRPM), null);
+    builder.addDoubleProperty("Current RPM",          () -> Utils.showDouble(getRPM()), null);
+    builder.addDoubleProperty("RPM Error",            () -> Utils.showDouble(targetRPM - getRPM()), null);
+    builder.addBooleanProperty("At Target",           this::isAtTargetRPM, null);
+    builder.addBooleanProperty("Spinning",            this::isSpinning, null);
+    builder.addDoubleProperty("Leader Voltage (V)",   () -> Utils.showDouble(flywheelLeader.getMotorVoltage().getValueAsDouble()), null);
+    builder.addDoubleProperty("Leader Current (A)",   () -> Utils.showDouble(flywheelLeader.getSupplyCurrent().getValueAsDouble()), null);
+    builder.addDoubleProperty("Leader Temp (C)",      () -> Utils.showDouble(flywheelLeader.getDeviceTemp().getValueAsDouble()), null);
     builder.addDoubleProperty("Follower Current (A)", () -> Utils.showDouble(flywheelFollower.getSupplyCurrent().getValueAsDouble()), null);
-    builder.addDoubleProperty("Follower Temp (C)",  () -> Utils.showDouble(flywheelFollower.getDeviceTemp().getValueAsDouble()), null);
+    builder.addDoubleProperty("Follower Temp (C)",    () -> Utils.showDouble(flywheelFollower.getDeviceTemp().getValueAsDouble()), null);
   }
 }

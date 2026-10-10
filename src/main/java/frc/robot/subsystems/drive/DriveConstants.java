@@ -104,9 +104,6 @@ public final class DriveConstants {
     new Translation2d(Units.inchesToMeters(-11.5), Units.inchesToMeters(11.5)),       // BL
     new Translation2d(Units.inchesToMeters(-11.5), Units.inchesToMeters(-11.5))              // BR
   };
-    
-  // translation from robot center to turret center, in meters
-  public static final Translation2d kRobotToTurret = new Translation2d(0.0, 0.0); 
 
   // ------------------------------------------------------------
   // Autobuilder Constants
