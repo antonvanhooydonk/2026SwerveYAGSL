@@ -101,7 +101,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     // Initialize YAGSL SwerveDrive
     try {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(DriveConstants.kMaxSpeedMetersPerSecond, getDefaultPose());
+      swerveDrive = new SwerveParser(directory).createSwerveDrive(DriveConstants.kMaxSpeedMetersPerSecond, getSeedPose());
     } catch (Exception ex) {
       throw new RuntimeException("FAILED TO INITIALIZE SWERVE DRIVE!!!", ex);
     }
@@ -231,7 +231,7 @@ public class DriveSubsystem extends SubsystemBase {
    * NOTE: Should never need to call this if vision is working properly.
    */
   private void resetOdometry(Pose2d pose) {
-    swerveDrive.resetOdometry(pose == null ? getDefaultPose() : pose);
+    swerveDrive.resetOdometry(pose == null ? getSeedPose() : pose);
   }
 
   /**
@@ -241,7 +241,7 @@ public class DriveSubsystem extends SubsystemBase {
    * The alliance is read when this runs, not when the command is built.
    */
   private void resetHeading() {
-    Rotation2d forward = getDefaultPose().getRotation();
+    Rotation2d forward = getSeedPose().getRotation();
     swerveDrive.resetOdometry(new Pose2d(getPose().getTranslation(), forward));
   }
 
@@ -278,7 +278,7 @@ public class DriveSubsystem extends SubsystemBase {
    * This is used to seed the pose estimator at the start of a match if no vision is available.
    * @return The default starting Pose2d
    */
-  private Pose2d getDefaultPose() {
+  private Pose2d getSeedPose() {
     return Utils.isRedAlliance() 
       ? new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180)) 
       : new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
@@ -821,7 +821,7 @@ public class DriveSubsystem extends SubsystemBase {
   public Command resetOdometryCommand() {
     // Evaluate the default pose when the command RUNS - the alliance is usually not 
     // known yet when bindings are created in the RobotContainer constructor.
-    return runOnce(() -> resetOdometry(getDefaultPose()))
+    return runOnce(() -> resetOdometry(getSeedPose()))
       .ignoringDisable(true)
       .withName("Drive_ResetOdometry");
   }
