@@ -156,12 +156,12 @@ public class TurretSubsystem extends SubsystemBase {
       .withForwardSoftLimitEnable(true)
       .withForwardSoftLimitThreshold(Conversions.degreesToRotations(
         TurretConstants.kMaxAngleDegrees,
-        TurretConstants.kTurretGearRatio
+        TurretConstants.kGearRatio
       ))
       .withReverseSoftLimitEnable(true)
       .withReverseSoftLimitThreshold(Conversions.degreesToRotations(
         TurretConstants.kMinAngleDegrees,
-        TurretConstants.kTurretGearRatio
+        TurretConstants.kGearRatio
       ));
 
     // Keep false: ContinuousWrap on motor rotations would ruin turret positioning 
@@ -191,7 +191,7 @@ public class TurretSubsystem extends SubsystemBase {
     // Convert target angle to motor rotations
     double targetMotorRotations = Conversions.degreesToRotations(
       targetAngleDegrees, 
-      TurretConstants.kTurretGearRatio
+      TurretConstants.kGearRatio
     );
 
     // Set the target position using MotionMagic
@@ -207,13 +207,13 @@ public class TurretSubsystem extends SubsystemBase {
     volts = MathUtil.clamp(volts, -12, 12);
 
     // Check if the turret is at the upper limit and trying to move up
-    if (isAtUpperLimit() && volts > 0) {
+    if (isAtAngle(TurretConstants.kMaxAngleDegrees) && volts > 0) {
       stop();
       return;
     }
 
     // Check if the turret is at the lower limit and trying to move down
-    if (isAtLowerLimit() && volts < 0) {
+    if (isAtAngle(TurretConstants.kMinAngleDegrees) && volts < 0) {
       stop();
       return;
     }
@@ -229,7 +229,7 @@ public class TurretSubsystem extends SubsystemBase {
   private double getAngleDegrees() {
     return Utils.normalizeAngleDegrees(Conversions.rotationsToDegrees(
       turretMotor.getPosition().getValueAsDouble(), 
-      TurretConstants.kTurretGearRatio
+      TurretConstants.kGearRatio
     ));
   }
 
@@ -259,41 +259,17 @@ public class TurretSubsystem extends SubsystemBase {
     );
   }
 
-  /**
-   * Gets whether the turret is at its target angle within tolerance
-   * @return True if at target
-   */
-  private boolean isAtAngle() {
-    return isAtAngle(targetAngleDegrees);
-  }
-  
-  /**
-   * Check if turret is at or above upper position limit
-   * @return true if at or past upper limit
-   */
-  private boolean isAtUpperLimit() {
-    return isAtAngle(TurretConstants.kMaxAngleDegrees);
-  }
-  
-  /**
-   * Check if turret is at or below lower position limit
-   * @return true if at or past lower limit
-   */
-  private boolean isAtLowerLimit() {
-    return isAtAngle(TurretConstants.kMinAngleDegrees);
-  }
-
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
 
-  public final Trigger isAtAngleTrigger = new Trigger(this::isAtAngle)
+  public final Trigger isAtAngleTrigger = new Trigger(() -> isAtAngle(targetAngleDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtUpperLimitTrigger = new Trigger(this::isAtUpperLimit)
+  public final Trigger isAtUpperLimitTrigger = new Trigger(() -> isAtAngle(TurretConstants.kMaxAngleDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
-  public final Trigger isAtLowerLimitTrigger = new Trigger(this::isAtLowerLimit)
+  public final Trigger isAtLowerLimitTrigger = new Trigger(() -> isAtAngle(TurretConstants.kMinAngleDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   // ----------------------------------------------------------------------------------------
@@ -347,7 +323,7 @@ public class TurretSubsystem extends SubsystemBase {
       () -> setAngle(angleDegrees),
       () -> {}
     )
-    .until(this::isAtAngle)
+    .until(() -> isAtAngle(angleDegrees))
     .withTimeout(TurretConstants.kMoveTimeoutSeconds)
     .finallyDo(this::stop)
     .withName("Turret_setAngle");

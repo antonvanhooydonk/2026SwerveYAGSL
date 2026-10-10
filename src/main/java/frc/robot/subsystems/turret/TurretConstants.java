@@ -11,7 +11,7 @@ public final class TurretConstants {
   // ------------------------------------------------------------
   // Physical constants
   // ------------------------------------------------------------
-  public static final double kTurretGearRatio    =  80.0;  // motor shaft rotations per one full 360 deg turret rotation
+  public static final double kGearRatio    =  80.0;  // motor shaft rotations per one full 360 deg turret rotation
   public static final double kMinAngleDegrees    = -150.0; // minimum safe raw (unwrapped) turret position, in degrees
   public static final double kMaxAngleDegrees    =  150.0; // maximum safe raw (unwrapped) turret position, in degrees
   

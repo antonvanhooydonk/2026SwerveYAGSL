@@ -71,7 +71,7 @@ public class ClimberSubsystem extends SubsystemBase {
     );
     
     // set the default command for this subsystem
-    setDefaultCommand(stopCommand());
+    setDefaultCommand(holdAngleCommand());
 
     // Initialize dashboard
     SmartDashboard.putData("Climber", this);
@@ -359,6 +359,30 @@ public class ClimberSubsystem extends SubsystemBase {
   public Command toLowerLimitCommand() {
     return setAngleCommand(ClimberConstants.kMaxAngleDegrees)
       .withName("Climber_DownToLimit");
+  }
+
+  /**
+   * Holds the elevator with the MotionMagic loop closed (kG + kP fight gravity)
+   * instead of dropping to neutral. On start it keeps the last target if the elevator is within
+   * tolerance of it; otherwise it adopts the current height (so it never snaps back to a stale
+   * target after manual control, SysId, a timeout, or a disable/enable). At the bottom it goes
+   * neutral so the carriage rests on the hard stop.
+   */
+  public Command holdAngleCommand() {
+    return startRun(
+      () -> { 
+        if (!isAtAngle(targetAngleDegrees)) {
+          targetAngleDegrees = getAngleDegrees();
+        }
+      },
+      () -> {
+        if (targetAngleDegrees <= ClimberConstants.kMinAngleDegrees + ClimberConstants.kAngleToleranceDegrees) {
+          stop();
+        } else {
+          setAngle(targetAngleDegrees);
+        }
+      }
+    ).withName("Climber_HoldAngle");
   }
 
   /**
