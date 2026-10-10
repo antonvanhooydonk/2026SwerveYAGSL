@@ -403,8 +403,8 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Command to move the climber up (open-loop control)
-   * @return Command that moves the climber up
+   * Command to move the climber down (open-loop control)
+   * @return Command that moves the climber down
    */
   public Command downCommand() {
     return run(() -> setVoltage(ClimberConstants.kManualDownVoltage))
