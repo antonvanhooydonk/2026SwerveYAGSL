@@ -312,7 +312,6 @@ public class ClimberSubsystem extends SubsystemBase {
     )
     .until(() -> isAtAngle(targetDegrees))
     .withTimeout(ClimberConstants.kMoveTimeoutSeconds)
-    .finallyDo(this::stop)
     .withName("Climber_MoveToPosition");
   }
 
