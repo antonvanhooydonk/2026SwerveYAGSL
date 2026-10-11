@@ -425,13 +425,6 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.postMatch() or a command scheduler binding.
    */
   public void postMatch() {
-    // Reset drive setpoint for setpoint generator
-    driveSetpoint = new SwerveSetpoint(
-      new ChassisSpeeds(), 
-      getModuleStates(), 
-      DriveFeedforwards.zeros(4)
-    );
-
     // Reset slew rate limiters
     xLimiter.reset(0.0);
     yLimiter.reset(0.0);
