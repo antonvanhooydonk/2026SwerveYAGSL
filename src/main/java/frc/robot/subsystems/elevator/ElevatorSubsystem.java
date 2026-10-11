@@ -260,7 +260,7 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets whether the elevator is at its target height within tolerance
+   * Gets whether the elevator is at the specified target height within tolerance
    * @param targetHeightMeters Target height in meters
    * @return True if at target
    */

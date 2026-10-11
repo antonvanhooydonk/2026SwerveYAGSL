@@ -215,15 +215,15 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Check if climber is at the set target position within tolerance
-   * @return true if within tolerance of the target position  
+   * Check if climber is at its target angle within tolerance
+   * @return true if within tolerance of the target angle  
    */
   private boolean isAtAngle() {
     return isAtAngle(targetAngleDegrees);
   }
 
   /**
-   * Check if climber is at a specific target position within tolerance
+   * Check if climber is at the specified target position within tolerance
    * @param targetDegrees The target position in degrees to check against
    * @return true if within tolerance of the target position  
    */

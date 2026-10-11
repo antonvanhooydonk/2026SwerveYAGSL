@@ -256,7 +256,8 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
-   * Gets whether the turret is at its target angle within tolerance
+   * Gets whether the turret is at the specified target angle within tolerance
+   * @param targetAngleDegrees The target angle in degrees
    * @return True if at target
    */
   private boolean isAtAngle(double targetAngleDegrees) {
