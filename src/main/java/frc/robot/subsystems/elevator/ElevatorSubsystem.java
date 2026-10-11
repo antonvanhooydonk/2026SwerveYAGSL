@@ -252,6 +252,14 @@ public class ElevatorSubsystem extends SubsystemBase {
   }
 
   /**
+   * Checks if the elevator is at its target height within tolerance
+   * @return True if at target
+   */
+  private boolean isAtHeight() {
+    return isAtHeight(targetHeightMeters);
+  }
+
+  /**
    * Gets whether the elevator is at its target height within tolerance
    * @param targetHeightMeters Target height in meters
    * @return True if at target
@@ -333,13 +341,10 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the target height
    */
   public Command setHeightCommand(double heightMeters) {
-    return startRun(
-      () -> setHeight(heightMeters),
-      () -> {}
-    )
-    .until(() -> isAtHeight(heightMeters))
-    .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
-    .withName("Elevator_MoveToHeight");
+    return run(() -> setHeight(heightMeters))
+      .until(this::isAtHeight)
+      .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
+      .withName("Elevator_MoveToHeight");
   }
 
   /**

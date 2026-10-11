@@ -43,7 +43,7 @@ public final class ClimberConstants {
   // ------------------------------------------------------------
   public static final double kMaxVelocityDegPerSec    = 100.0; // Maximum velocity for position control
   public static final double kMaxAccelDegPerSec2      = 200.0; // Maximum acceleration for position control
-  public static final double kMoveTimeoutSeconds      =   3.0; // Timeout for move commands
+  public static final double kMoveTimeoutSeconds      =   5.0; // Timeout for move commands
  
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)

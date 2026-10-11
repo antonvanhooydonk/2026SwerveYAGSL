@@ -248,6 +248,14 @@ public class TurretSubsystem extends SubsystemBase {
   }
 
   /**
+   * Checks if the turret is at its target angle within tolerance
+   * @return True if at target
+   */
+  private boolean isAtAngle() {
+    return isAtAngle(targetAngleDegrees);
+  }
+
+  /**
    * Gets whether the turret is at its target angle within tolerance
    * @return True if at target
    */
@@ -331,14 +339,11 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Command to rotate to the given angle
    */
   public Command setAngleCommand(double angleDegrees) {
-    return startRun(
-      () -> setAngle(angleDegrees),
-      () -> {}
-    )
-    .until(() -> isAtAngle(angleDegrees))
-    .withTimeout(TurretConstants.kMoveTimeoutSeconds)
-    .finallyDo(this::stop)
-    .withName("Turret_setAngle");
+    return run(() -> setAngle(angleDegrees))
+      .until(this::isAtAngle)
+      .withTimeout(TurretConstants.kMoveTimeoutSeconds)
+      .finallyDo(this::stop)
+      .withName("Turret_setAngle");
   }
 
   /**

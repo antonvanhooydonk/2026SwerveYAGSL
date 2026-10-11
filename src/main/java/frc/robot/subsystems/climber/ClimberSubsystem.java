@@ -215,6 +215,14 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
+   * Check if climber is at the set target position within tolerance
+   * @return true if within tolerance of the target position  
+   */
+  private boolean isAtAngle() {
+    return isAtAngle(targetAngleDegrees);
+  }
+
+  /**
    * Check if climber is at a specific target position within tolerance
    * @param targetDegrees The target position in degrees to check against
    * @return true if within tolerance of the target position  
@@ -306,13 +314,10 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the target position
    */
   public Command setAngleCommand(double targetDegrees) {
-    return startRun(
-      () -> setAngle(targetDegrees),
-      () -> {}
-    )
-    .until(() -> isAtAngle(targetDegrees))
-    .withTimeout(ClimberConstants.kMoveTimeoutSeconds)
-    .withName("Climber_MoveToPosition");
+    return run(() -> setAngle(targetDegrees))
+      .until(this::isAtAngle)
+      .withTimeout(ClimberConstants.kMoveTimeoutSeconds)
+      .withName("Climber_MoveToPosition");
   }
 
   /**
@@ -361,26 +366,17 @@ public class ClimberSubsystem extends SubsystemBase {
   }
 
   /**
-   * Holds the elevator with the MotionMagic loop closed (kG + kP fight gravity)
-   * instead of dropping to neutral. On start it keeps the last target if the elevator is within
-   * tolerance of it; otherwise it adopts the current height (so it never snaps back to a stale
-   * target after manual control, SysId, a timeout, or a disable/enable). At the bottom it goes
-   * neutral so the carriage rests on the hard stop.
+   * Holds the climber with the Max Motion closed loop controller at the current position
+   * @return Command that holds the climber at the current position
    */
   public Command holdAngleCommand() {
     return startRun(
-      () -> { 
+      () -> {
         if (!isAtAngle(targetAngleDegrees)) {
           targetAngleDegrees = getAngleDegrees();
         }
       },
-      () -> {
-        if (targetAngleDegrees <= ClimberConstants.kMinAngleDegrees + ClimberConstants.kAngleToleranceDegrees) {
-          stop();
-        } else {
-          setAngle(targetAngleDegrees);
-        }
-      }
+      () -> setAngle(targetAngleDegrees)
     ).withName("Climber_HoldAngle");
   }
 
