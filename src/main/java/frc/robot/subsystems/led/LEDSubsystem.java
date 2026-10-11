@@ -62,13 +62,10 @@ public class LEDSubsystem extends SubsystemBase {
    * the command is interrupted or replaced by another command.
    * @param pattern the LED pattern to run
    */
-  private Command runPattern(LEDPattern pattern) {
-    return run(() -> 
-      pattern
-        .atBrightness(Percent.of(LEDConstants.kBrightness * 100))
-        .applyTo(ledBuffer)
-    )
-    .ignoringDisable(true);
+  private Command runPattern(LEDPattern pattern) {    
+    LEDPattern dimmed = pattern.atBrightness(Percent.of(LEDConstants.kBrightness * 100));
+    return run(() -> dimmed.applyTo(ledBuffer))
+      .ignoringDisable(true);
   }
 
   // ==================== Command Factories ====================
