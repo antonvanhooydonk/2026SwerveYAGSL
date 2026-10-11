@@ -355,13 +355,6 @@ public class RobotContainer {
       flywheelSubsystem.postMatch();
       intakeSubsystem.postMatch();
       turretSubsystem.postMatch();
-
-      // Set the drive motors to coast mode after the match is over. 
-      // This makes it easier to push the robot around.
-      RobotModeTriggers
-        .disabled()
-        .debounce(3.0)
-        .onTrue(driveSubsystem.setBrakeModeCommand(false));
     }
   }
 }
