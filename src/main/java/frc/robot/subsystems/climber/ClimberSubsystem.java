@@ -317,7 +317,7 @@ public class ClimberSubsystem extends SubsystemBase {
     return run(() -> setAngle(targetDegrees))
       .until(this::isAtAngle)
       .withTimeout(ClimberConstants.kMoveTimeoutSeconds)
-      .withName("Climber_MoveToPosition");
+      .withName("Climber_SetAngle");
   }
 
   /**
@@ -326,7 +326,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public Command toHomeCommand() {
     return setAngleCommand(ClimberConstants.kHomeDegrees)
-      .withName("Climber_Home");
+      .withName("Climber_ToHome");
   }
 
   /**
@@ -335,7 +335,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public Command toLevelOneCommand() {
     return setAngleCommand(ClimberConstants.kLevelOneClimbDegrees)
-      .withName("Climber_LevelOne");
+      .withName("Climber_ToLevelOne");
   }
 
   /**
@@ -344,7 +344,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public Command toLevelTwoCommand() {
     return setAngleCommand(ClimberConstants.kLevelTwoClimbDegrees)
-      .withName("Climber_LevelTwo");
+      .withName("Climber_ToLevelTwo");
   }
   
   /**
@@ -353,7 +353,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public Command toUpperLimitCommand() {
     return setAngleCommand(ClimberConstants.kMinAngleDegrees)
-      .withName("Climber_UpToLimit");
+      .withName("Climber_ToUpperLimit");
   }
   
   /**
@@ -362,7 +362,7 @@ public class ClimberSubsystem extends SubsystemBase {
    */
   public Command toLowerLimitCommand() {
     return setAngleCommand(ClimberConstants.kMaxAngleDegrees)
-      .withName("Climber_DownToLimit");
+      .withName("Climber_ToLowerLimit");
   }
 
   /**

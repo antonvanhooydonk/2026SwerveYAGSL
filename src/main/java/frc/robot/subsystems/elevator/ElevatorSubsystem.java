@@ -344,7 +344,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     return run(() -> setHeight(heightMeters))
       .until(this::isAtHeight)
       .withTimeout(ElevatorConstants.kMoveTimeoutSeconds)
-      .withName("Elevator_MoveToHeight");
+      .withName("Elevator_SetHeight");
   }
 
   /**
@@ -353,7 +353,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public Command toMinimumCommand() {
     return setHeightCommand(ElevatorConstants.kMinHeightMeters)
-      .withName("Elevator_MoveToMinimum");
+      .withName("Elevator_ToMinimum");
   }
 
   /**
@@ -362,7 +362,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public Command toLevelOneCommand() {
     return setHeightCommand(ElevatorConstants.kHeightL1Meters)
-      .withName("Elevator_MoveToLevelOne");
+      .withName("Elevator_ToLevelOne");
   }
 
   /**
@@ -371,7 +371,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public Command toLevelTwoCommand() {
     return setHeightCommand(ElevatorConstants.kHeightL2Meters)
-      .withName("Elevator_MoveToLevelTwo");
+      .withName("Elevator_ToLevelTwo");
   }
 
   /**
@@ -380,7 +380,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public Command toLevelThreeCommand() {
     return setHeightCommand(ElevatorConstants.kHeightL3Meters)
-      .withName("Elevator_MoveToLevelThree");
+      .withName("Elevator_ToLevelThree");
   }
 
   /**
@@ -389,7 +389,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    */
   public Command toLevelFourCommand() {
     return setHeightCommand(ElevatorConstants.kHeightL4Meters)
-      .withName("Elevator_MoveToLevelFour");
+      .withName("Elevator_ToLevelFour");
   }
 
   /**
