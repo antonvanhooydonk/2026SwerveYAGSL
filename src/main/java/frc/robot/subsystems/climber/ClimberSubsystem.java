@@ -306,7 +306,7 @@ public class ClimberSubsystem extends SubsystemBase {
    * @return Command that moves the climber to the target position
    */
   public Command setAngleCommand(double targetDegrees) {
-    return startEnd(
+    return startRun(
       () -> setAngle(targetDegrees),
       () -> {}
     )

@@ -331,7 +331,7 @@ public class TurretSubsystem extends SubsystemBase {
    * @return Command to rotate to the given angle
    */
   public Command setAngleCommand(double angleDegrees) {
-    return startEnd(
+    return startRun(
       () -> setAngle(angleDegrees),
       () -> {}
     )

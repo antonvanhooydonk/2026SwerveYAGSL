@@ -333,7 +333,7 @@ public class ElevatorSubsystem extends SubsystemBase {
    * @return Command to move to the target height
    */
   public Command setHeightCommand(double heightMeters) {
-    return startEnd(
+    return startRun(
       () -> setHeight(heightMeters),
       () -> {}
     )
