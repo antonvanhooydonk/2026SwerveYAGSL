@@ -276,6 +276,9 @@ public class ElevatorSubsystem extends SubsystemBase {
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
   
+  public final Trigger isAtTargetTrigger = new Trigger(this::isAtHeight)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
+  
   public final Trigger isAtMinHeightTrigger = new Trigger(() -> isAtHeight(ElevatorConstants.kMinHeightMeters))
     .debounce(0.1, Debouncer.DebounceType.kRising);
 

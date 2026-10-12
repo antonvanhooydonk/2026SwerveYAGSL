@@ -248,6 +248,9 @@ public class ClimberSubsystem extends SubsystemBase {
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
+  
+  public final Trigger isAtTargetTrigger = new Trigger(this::isAtAngle)
+    .debounce(0.1, Debouncer.DebounceType.kRising);
 
   public final Trigger isAtHomeTrigger = new Trigger(() -> isAtAngle(ClimberConstants.kHomeDegrees))
     .debounce(0.1, Debouncer.DebounceType.kRising);

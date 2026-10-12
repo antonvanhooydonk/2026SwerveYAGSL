@@ -62,7 +62,7 @@ public class Autos {
     .andThen(Commands.parallel(
       Commands.waitUntil(
         flywheelSubsystem.isFlywheelAtTargetTrigger
-        .and(turretSubsystem.isAtAngleTrigger)
+        .and(turretSubsystem.isAtTargetTrigger)
       ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(
         () -> turretSubsystem.getPose(driveSubsystem.getPose()), 

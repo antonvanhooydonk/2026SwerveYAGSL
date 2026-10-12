@@ -283,8 +283,8 @@ public class TurretSubsystem extends SubsystemBase {
   // ---------------------------------------------------------------------------------------
   // Public triggers that expose private state
   // ---------------------------------------------------------------------------------------
-
-  public final Trigger isAtAngleTrigger = new Trigger(() -> isAtAngle(targetAngleDegrees))
+  
+  public final Trigger isAtTargetTrigger = new Trigger(this::isAtAngle)
     .debounce(0.1, Debouncer.DebounceType.kRising);
 
   public final Trigger isAtUpperLimitTrigger = new Trigger(() -> isAtAngle(TurretConstants.kMaxAngleDegrees))

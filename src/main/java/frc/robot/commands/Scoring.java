@@ -49,7 +49,7 @@ public class Scoring {
     return Commands.parallel(
       Commands.waitUntil(
         flywheelSubsystem.isFlywheelAtTargetTrigger
-        .and(turretSubsystem.isAtAngleTrigger)
+        .and(turretSubsystem.isAtTargetTrigger)
       ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(
         () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
@@ -73,7 +73,7 @@ public class Scoring {
     return Commands.parallel(
       Commands.waitUntil(
         flywheelSubsystem.isFlywheelAtTargetTrigger
-        .and(turretSubsystem.isAtAngleTrigger)
+        .and(turretSubsystem.isAtTargetTrigger)
       ).andThen(feederSubsystem.feedCommand()),
       turretSubsystem.aimAtPoseCommand(
         () -> turretSubsystem.getPose(driveSubsystem.getPose()), 
