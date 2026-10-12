@@ -78,7 +78,6 @@ public class LEDSubsystem extends SubsystemBase {
    */
   public void autonomousInit() {
     cancelCurrentCommand();
-    setDefaultCommand(offCommand());
     Utils.logInfo("LED subsystem initialized for autonomous");
   }
 
@@ -87,7 +86,6 @@ public class LEDSubsystem extends SubsystemBase {
    */
   public void teleopInit() {
     cancelCurrentCommand();
-    setDefaultCommand(offCommand());
     Utils.logInfo("LED subsystem initialized for teleop");
   }
 
@@ -96,7 +94,6 @@ public class LEDSubsystem extends SubsystemBase {
    */
   public void postMatch() {
     cancelCurrentCommand();
-    setDefaultCommand(teamColorsCommand());
     Utils.logInfo("LED subsystem initialized for post match");
   }
 

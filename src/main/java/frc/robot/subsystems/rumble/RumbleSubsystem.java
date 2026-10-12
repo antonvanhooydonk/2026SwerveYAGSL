@@ -80,7 +80,6 @@ public class RumbleSubsystem extends SubsystemBase {
    */
   public void autonomousInit() {
     cancelCurrentCommand();
-    setDefaultCommand(stopCommand());
     Utils.logInfo("Rumble subsystem initialized for autonomous");
   }
 
@@ -89,7 +88,6 @@ public class RumbleSubsystem extends SubsystemBase {
    */
   public void teleopInit() {
     cancelCurrentCommand();
-    setDefaultCommand(stopCommand());
     Utils.logInfo("Rumble subsystem initialized for teleop");
   }
 
@@ -98,7 +96,6 @@ public class RumbleSubsystem extends SubsystemBase {
    */
   public void postMatch() {
     cancelCurrentCommand();
-    setDefaultCommand(stopCommand());
     Utils.logInfo("Rumble subsystem initialized for post match");
   }
 
