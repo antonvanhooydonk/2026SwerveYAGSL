@@ -104,43 +104,43 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a pattern that indicates success (green) with a breathing effect.
+   * Returns a pattern that indicates success.
    * @return LEDPattern that indicates success
    */
   private LEDPattern successPattern() {
-    return LEDPattern.solid(Color.kGreen);
+    return LEDPattern.solid(Color.kLime);
   }
 
   /**
-   * Returns a pattern that indicates information (dark violet) with a breathing effect.
+   * Returns a pattern that indicates information.
    * @return LEDPattern that indicates information
    */
   private LEDPattern infoPattern() {
-    return LEDPattern.solid(Color.kDarkViolet);
+    return LEDPattern.solid(Color.kCyan);
   }
 
   /**
-   * Returns a pattern that indicates a warning (yellow) with a breathing effect.
+   * Returns a pattern that indicates a warning.
    * @return LEDPattern that indicates a warning
    */
   private LEDPattern warningPattern() {
-    return LEDPattern.solid(Color.kYellow);
+    return LEDPattern.solid(Color.kGold);
   }
 
   /**
-   * Returns a pattern that indicates an error (red) with a breathing effect.
+   * Returns a pattern that indicates an error.
    * @return LEDPattern that indicates an error
    */
   private LEDPattern errorPattern() {
-    return LEDPattern.solid(Color.kRed);
+    return LEDPattern.solid(Color.kMagenta);
   }
 
   /**
-   * Returns a pattern that indicates idle state (slate blue) with a slow breathing effect.
+   * Returns a pattern that indicates idle state with a slow breathing effect.
    * @return LEDPattern that indicates idle state
    */
   private LEDPattern idlePattern() {
-    return LEDPattern.solid(Color.kSlateBlue).breathe(Seconds.of(2.0));
+    return LEDPattern.solid(Color.kSlateGray).breathe(Seconds.of(2.0));
   }
 
   /**
@@ -149,8 +149,8 @@ public class LEDSubsystem extends SubsystemBase {
    */
   private LEDPattern alliancePattern() {
     return Utils.isRedAlliance()
-      ? LEDPattern.solid(Color.kDarkRed)
-      : LEDPattern.solid(Color.kDarkBlue);
+      ? LEDPattern.solid(Color.kFirstRed)
+      : LEDPattern.solid(Color.kFirstBlue);
   }
 
   /**
