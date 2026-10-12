@@ -54,22 +54,68 @@ public class LEDSubsystem extends SubsystemBase {
     ledStrip.setData(ledBuffer);
   }
 
-  // ==================== LED Control Methods ====================
+  // ----------------------------------------------------------------------------------------
+  // Private state methods
+  // ----------------------------------------------------------------------------------------
 
+  /**
+   * Cancels the currently running command on the LED subsystem, if any.
+   * The default command will take over after cancellation.
+   */
+  private void cancelCurrentCommand() {
+    Command current = getCurrentCommand();
+    if (current != null) {
+      current.cancel();
+    }
+  }
+  
+  // ----------------------------------------------------------------------------------------
+  // Public methods to run at different phases of the match
+  // ----------------------------------------------------------------------------------------
+
+  /**
+   * Initializes the LED subsystem at the start of the autonomous phase.
+   */
+  public void autonomousInit() {
+    cancelCurrentCommand();
+    setDefaultCommand(offCommand());
+    Utils.logInfo("LED subsystem initialized for autonomous");
+  }
+
+  /**
+   * Initializes the LED subsystem at the start of the teleop phase.
+   */
+  public void teleopInit() {
+    cancelCurrentCommand();
+    setDefaultCommand(offCommand());
+    Utils.logInfo("LED subsystem initialized for teleop");
+  }
+
+  /**
+   * Initializes the LED subsystem for post match (disabled) state.
+   */
+  public void postMatch() {
+    cancelCurrentCommand();
+    setDefaultCommand(teamColorsCommand());
+    Utils.logInfo("LED subsystem initialized for post match");
+  }
+
+  // ----------------------------------------------------------------------------------------
+  // Public Command Factory Methods
+  // ----------------------------------------------------------------------------------------
+  
   /**
    * Creates a command that runs a pattern on the entire LED strip until interrupted. 
    * The pattern will be applied to the entire strip, and will continue to run until 
    * the command is interrupted or replaced by another command.
    * @param pattern the LED pattern to run
    */
-  private Command runPattern(LEDPattern pattern) {    
+  public Command runPattern(LEDPattern pattern) {    
     LEDPattern dimmed = pattern.atBrightness(Percent.of(LEDConstants.kBrightness * 100));
     return run(() -> dimmed.applyTo(ledBuffer))
       .ignoringDisable(true);
   }
 
-  // ==================== Command Factories ====================
-  
   /**
    * Command to set the LED strip off until another command takes over
    * @return Command that sets LED display off

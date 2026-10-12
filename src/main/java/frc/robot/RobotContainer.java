@@ -295,6 +295,8 @@ public class RobotContainer {
     wasInTeleop = false;
 
     // Initialze subsystems
+    ledSubsystem.autonomousInit();
+    rumbleSubsystem.autonomousInit();
     climberSubsystem.autonomousInit();
     driveSubsystem.autonomousInit();
     elevatorSubsystem.autonomousInit();
@@ -316,6 +318,8 @@ public class RobotContainer {
     // This doesn't call the select auto command, it just initializes the 
     // subsystems for autonomous mode.
     if (!wasInAuto) {
+      ledSubsystem.autonomousInit();
+      rumbleSubsystem.autonomousInit();
       climberSubsystem.autonomousInit();
       driveSubsystem.autonomousInit();
       elevatorSubsystem.autonomousInit();
@@ -326,6 +330,8 @@ public class RobotContainer {
     }
 
     // Initialize subsystems
+    ledSubsystem.teleopInit();
+    rumbleSubsystem.teleopInit();
     climberSubsystem.teleopInit();
     driveSubsystem.teleopInit();
     elevatorSubsystem.teleopInit();
@@ -348,6 +354,8 @@ public class RobotContainer {
       wasInTeleop = false;
 
       // Clean up subsystems
+      ledSubsystem.postMatch();
+      rumbleSubsystem.postMatch();
       climberSubsystem.postMatch();
       driveSubsystem.postMatch();
       elevatorSubsystem.postMatch();

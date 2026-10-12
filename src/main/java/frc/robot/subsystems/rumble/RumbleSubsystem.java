@@ -38,7 +38,9 @@ public class RumbleSubsystem extends SubsystemBase {
   @Override
   public void periodic() {}
 
-  // ==================== Rumble Control Methods ====================
+  // ----------------------------------------------------------------------------------------
+  // Private state methods
+  // ----------------------------------------------------------------------------------------
   
   /**
    * Set controller rumble
@@ -52,13 +54,57 @@ public class RumbleSubsystem extends SubsystemBase {
   }
 
   /**
+   * Cancels the currently running command on the Rumble subsystem, if any.
+   * The default command will take over after cancellation.
+   */
+  private void cancelCurrentCommand() {
+    Command current = getCurrentCommand();
+    if (current != null) {
+      current.cancel();
+    }
+  }
+
+  /**
    * Stop controller rumble
    */
   private void stop() {
     setRumble(0);
   }
   
-  // ==================== Command Factories ====================
+  // ----------------------------------------------------------------------------------------
+  // Public methods to run at different phases of the match
+  // ----------------------------------------------------------------------------------------
+
+  /**
+   * Initializes the Rumble subsystem at the start of the autonomous phase.
+   */
+  public void autonomousInit() {
+    cancelCurrentCommand();
+    setDefaultCommand(stopCommand());
+    Utils.logInfo("Rumble subsystem initialized for autonomous");
+  }
+
+  /**
+   * Initializes the Rumble subsystem at the start of the teleop phase.
+   */
+  public void teleopInit() {
+    cancelCurrentCommand();
+    setDefaultCommand(stopCommand());
+    Utils.logInfo("Rumble subsystem initialized for teleop");
+  }
+
+  /**
+   * Initializes the Rumble subsystem for post match (disabled) state.
+   */
+  public void postMatch() {
+    cancelCurrentCommand();
+    setDefaultCommand(stopCommand());
+    Utils.logInfo("Rumble subsystem initialized for post match");
+  }
+
+  // ----------------------------------------------------------------------------------------
+  // Public Command Factory Methods
+  // ----------------------------------------------------------------------------------------
 
   /**
    * Command to rumble controller for a duration and then stop
