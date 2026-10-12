@@ -43,8 +43,7 @@ public class LEDSubsystem extends SubsystemBase {
     ledStrip.setData(ledBuffer);
     ledStrip.start();
 
-    // Set subsystem default command to turn off LEDs when no other command is running
-    // This may be overridden by the match phase initialization methods.
+    // Set subsystem default command
     setDefaultCommand(matchPhaseCommand());
     
     // Output initialization progress
