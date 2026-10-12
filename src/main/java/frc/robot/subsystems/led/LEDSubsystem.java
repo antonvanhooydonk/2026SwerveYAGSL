@@ -104,7 +104,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a pattern that indicates success.
+   * Returns a solid lime pattern that indicates success.
    * @return LEDPattern that indicates success
    */
   private LEDPattern successPattern() {
@@ -112,7 +112,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a pattern that indicates information.
+   * Returns a solid cyan pattern that indicates information.
    * @return LEDPattern that indicates information
    */
   private LEDPattern infoPattern() {
@@ -120,7 +120,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a pattern that indicates a warning.
+   * Returns a solid gold pattern that indicates a warning.
    * @return LEDPattern that indicates a warning
    */
   private LEDPattern warningPattern() {
@@ -128,7 +128,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a pattern that indicates an error.
+   * Returns a solid magenta pattern that indicates an error.
    * @return LEDPattern that indicates an error
    */
   private LEDPattern errorPattern() {
@@ -136,7 +136,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a pattern that indicates idle state with a slow breathing effect.
+   * Returns a solid slate gray pattern with a slow breathing effect that indicates idle state
    * @return LEDPattern that indicates idle state
    */
   private LEDPattern idlePattern() {
