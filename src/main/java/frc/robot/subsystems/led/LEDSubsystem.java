@@ -41,7 +41,9 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    ledStrip.setData(ledBuffer);
+  }
 
   // ----------------------------------------------------------------------------------------
   // Private state methods
@@ -142,11 +144,8 @@ public class LEDSubsystem extends SubsystemBase {
    */
   private Command runPatternCommand(LEDPattern pattern) {
     LEDPattern dimmed = pattern.atBrightness(LEDConstants.kBrightness);
-    return run(() -> {
-      dimmed.applyTo(ledBuffer);
-      ledStrip.setData(ledBuffer);
-    })
-    .ignoringDisable(true);
+    return run(() -> dimmed.applyTo(ledBuffer))
+      .ignoringDisable(true);
   }
 
   // ----------------------------------------------------------------------------------------
