@@ -30,7 +30,9 @@ public class LEDSubsystem extends SubsystemBase {
   private final AddressableLED ledStrip;
   private final AddressableLEDBuffer ledBuffer;
 
-  private char matchPhase = '?'; // 'A' = autonomous, 'T' = teleop, 'P' = post match
+  public enum MatchPhase { NONE, AUTO, TELEOP, POST }
+
+  private volatile MatchPhase matchPhase = MatchPhase.NONE;
       
   /**
    * Creates a new LEDSubsystem.
@@ -51,21 +53,11 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
-    ledStrip.setData(ledBuffer);
-  }
+  public void periodic() {}
 
   // ----------------------------------------------------------------------------------------
   // Private state methods
   // ----------------------------------------------------------------------------------------
-
-  /**
-   * Applies the given LED pattern to the LED buffer.
-   * @param pattern the LED pattern to apply
-   */
-  private void displayPattern(LEDPattern pattern) {
-    pattern.applyTo(ledBuffer);
-  }
 
   /**
    * Cancels the currently running command on the LED subsystem, if any.
@@ -136,21 +128,37 @@ public class LEDSubsystem extends SubsystemBase {
   }
 
   /**
-   * Returns a solid slate gray pattern with a slow breathing effect that indicates idle state
-   * @return LEDPattern that indicates idle state
-   */
-  private LEDPattern idlePattern() {
-    return LEDPattern.solid(Color.kSlateGray).breathe(Seconds.of(2.0));
-  }
-
-  /**
    * Returns a solid colour pattern based on the alliance color (red or blue).
    * @return LEDPattern that shows the alliance color
    */
   private LEDPattern alliancePattern() {
-    return Utils.isRedAlliance()
-      ? LEDPattern.solid(Color.kFirstRed)
-      : LEDPattern.solid(Color.kFirstBlue);
+    final LEDPattern red = LEDPattern.solid(Color.kFirstRed);
+    final LEDPattern blue = LEDPattern.solid(Color.kFirstBlue);
+    
+    return (reader, writer) -> {
+      (Utils.isRedAlliance() ? red : blue).applyTo(reader, writer);
+    };
+  }
+
+  /**
+   * Returns a pattern that matches the current match phase (autonomous, teleop, post-match, or none).
+   * @return LEDPattern that matches the current match phase
+   */
+  private LEDPattern matchPhasePattern() {
+    final LEDPattern none = offPattern();
+    final LEDPattern auto = matrixPattern();
+    final LEDPattern teleop = alliancePattern();
+    final LEDPattern post = teamColorsPattern();
+
+    return (reader, writer) -> {
+      LEDPattern p = switch (matchPhase) {
+        case AUTO -> auto;
+        case TELEOP -> teleop;
+        case POST -> post;
+        case NONE -> none;
+      };
+      p.applyTo(reader, writer);
+    };
   }
 
   /**
@@ -434,7 +442,7 @@ public class LEDSubsystem extends SubsystemBase {
    */
   public void autonomousInit() {
     cancelCurrentCommand();
-    matchPhase = 'A';
+    matchPhase = MatchPhase.AUTO;
     Utils.logInfo("LED subsystem initialized for autonomous");
   }
 
@@ -443,7 +451,7 @@ public class LEDSubsystem extends SubsystemBase {
    */
   public void teleopInit() {
     cancelCurrentCommand();
-    matchPhase = 'T';
+    matchPhase = MatchPhase.TELEOP;
     Utils.logInfo("LED subsystem initialized for teleop");
   }
 
@@ -452,49 +460,73 @@ public class LEDSubsystem extends SubsystemBase {
    */
   public void postMatch() {
     cancelCurrentCommand();
-    matchPhase = 'P';
+    matchPhase = MatchPhase.POST;
     Utils.logInfo("LED subsystem initialized for post match");
+  }
+
+  // ----------------------------------------------------------------------------------------
+  // Private Command Factory Methods
+  // ----------------------------------------------------------------------------------------
+  
+  /**
+   * Continuously applies and updates an LED pattern every frame.
+   * Best for scrolling, flickering (flame), or breathing animations.
+   */
+  private Command runPatternCommand(LEDPattern pattern) {
+    return runPatternCommand(pattern, 9999);
+  }
+
+  /**
+   * Continuously applies and updates an LED pattern every frame for a specified duration.
+   * Best for scrolling, flickering (flame), or breathing animations. After the duration,
+   * the command will end and the default command will take over.
+   */
+  private Command runPatternCommand(LEDPattern pattern, double durationSeconds) {
+    return run(() -> {
+      pattern.atBrightness(LEDConstants.kBrightness).applyTo(ledBuffer);
+      ledStrip.setData(ledBuffer);
+    })
+    .withTimeout(durationSeconds)
+    .ignoringDisable(true);
+  }
+
+  /**
+   * Applies non-animated or solid patterns to the LED strip.
+   * Saves massive amounts of RoboRIO CPU bandwidth because it 
+   * doesn't slam the PWM serial lines every 20ms.
+   */
+  private Command staticPatternCommand(LEDPattern pattern) {
+    return staticPatternCommand(pattern, 9999);
+  }
+
+  /**
+   * Applies non-animated or solid patterns to the LED strip for a specified duration.
+   * Saves massive amounts of RoboRIO CPU bandwidth because it doesn't slam the PWM serial 
+   * lines every 20ms. After the duration, the command will end and the default command 
+   * will take over.
+   */
+  private Command staticPatternCommand(LEDPattern pattern, double durationSeconds) {
+    return startRun(
+      () -> {
+        pattern.atBrightness(LEDConstants.kBrightness).applyTo(ledBuffer);
+        ledStrip.setData(ledBuffer);
+      },
+      () -> {}
+    )
+    .withTimeout(durationSeconds)
+    .ignoringDisable(true);
   }
 
   // ----------------------------------------------------------------------------------------
   // Public Command Factory Methods
   // ----------------------------------------------------------------------------------------
-  
-  /**
-   * Creates a command that runs a pattern on the entire LED strip until interrupted. 
-   * @param pattern the LED pattern to run
-   */
-  public Command displayCommand(LEDPattern pattern) {
-    LEDPattern dimmed = pattern.atBrightness(LEDConstants.kBrightness);
-    return run(() -> displayPattern(dimmed)).ignoringDisable(true);
-  }
-
-  /**
-   * Returns a command that runs a pattern based on the current match phase.
-   * @return Command corresponding to the current match phase
-   */
-  public Command matchPhaseCommand() {
-    // Return a command based on the current match phase
-    if (matchPhase == 'A') {
-      return matrixCommand();
-    } 
-    else if (matchPhase == 'T') {
-      return allianceCommand();
-    } 
-    else if (matchPhase == 'P') {
-      return teamColorsCommand();
-    } 
-
-    // If no match phase is set, default to turning off the LEDs
-    return offCommand();
-  }
 
   /**
    * Command to set the LED strip off until another command takes over
    * @return Command that sets LED display off
    */
   public Command offCommand() {
-    return displayCommand(offPattern()).withName("LED_Off");
+    return staticPatternCommand(offPattern()).withName("LED_Off");
   }
   
   /**
@@ -502,7 +534,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with success LED
    */
   public Command successCommand() {
-    return displayCommand(successPattern()).withName("LED_Success");
+    return staticPatternCommand(successPattern(), 1.0).withName("LED_Success");
   }
   
   /**
@@ -510,7 +542,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with info LED
    */
   public Command infoCommand() {
-    return displayCommand(infoPattern()).withName("LED_Info");
+    return staticPatternCommand(infoPattern(), 1.0).withName("LED_Info");
   }
   
   /**
@@ -518,7 +550,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with warning LED
    */
   public Command warningCommand() {
-    return displayCommand(warningPattern()).withName("LED_Warning");
+    return staticPatternCommand(warningPattern(), 1.0).withName("LED_Warning");
   }
   
   /**
@@ -526,15 +558,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command with error LED
    */
   public Command errorCommand() {
-    return displayCommand(errorPattern()).withName("LED_Error");
-  }
-  
-  /**
-   * Command to set idle feedback until interrupted
-   * @return Command that sets idle LED display
-   */
-  public Command idleCommand() {
-    return displayCommand(idlePattern()).withName("LED_Idle");
+    return staticPatternCommand(errorPattern()).withName("LED_Error");
   }
   
   /**
@@ -542,15 +566,23 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows the alliance colors
    */
   public Command allianceCommand() {
-    return displayCommand(alliancePattern()).withName("LED_AllianceColors");
+    return staticPatternCommand(alliancePattern()).withName("LED_AllianceColors");
+  }  
+
+  /**
+   * Returns a command that runs a pattern based on the current match phase.
+   * @return Command corresponding to the current match phase
+   */
+  public Command matchPhaseCommand() {
+    return runPatternCommand(matchPhasePattern()).withName("LED_MatchPhase"); 
   }
-  
+
   /**
    * Command to display team colors (scrolling gradient) until interrupted  
    * @return Command that scrolls between green & copper
    */
   public Command teamColorsCommand() {
-    return displayCommand(teamColorsPattern()).withName("LED_TeamColors");
+    return runPatternCommand(teamColorsPattern()).withName("LED_TeamColors");
   }
 
   /**
@@ -558,15 +590,15 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows rotating red and white stripes
    */
   public Command candyCaneCommand() {
-    return displayCommand(candyCanePattern()).withName("LED_CandyCane");
+    return runPatternCommand(candyCanePattern()).withName("LED_CandyCane");
   }
 
   /**
    * Command to display disco pattern (scrolling rainbow) until interrupted
-   * @return Command that shows random flashing rainbow colors
+   * @return Command that shows scrolling rainbow colors
    */
   public Command discoCommand() {
-    return displayCommand(discoPattern()).withName("LED_Disco");
+    return runPatternCommand(discoPattern()).withName("LED_Disco");
   }
 
   /**
@@ -574,7 +606,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows an animated fire effect
    */
   public Command flameCommand() {
-    return displayCommand(flamePattern()).withName("LED_Flame");
+    return runPatternCommand(flamePattern()).withName("LED_Flame");
   }
 
   /**
@@ -582,7 +614,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows a heartbeat pulse
    */
   public Command heartbeatCommand() {
-    return displayCommand(heartbeatPattern()).withName("LED_Heartbeat");
+    return runPatternCommand(heartbeatPattern()).withName("LED_Heartbeat");
   }
 
   /**
@@ -590,7 +622,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows streaming comets
    */
   public Command meteorCommand() {
-    return displayCommand(meteorPattern()).withName("LED_Meteor");
+    return runPatternCommand(meteorPattern()).withName("LED_Meteor");
   }
 
   /**
@@ -598,7 +630,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows a scanning red light
    */
   public Command knightRiderCommand() {
-    return displayCommand(knightRiderPattern()).withName("LED_KnightRider");
+    return runPatternCommand(knightRiderPattern()).withName("LED_KnightRider");
   }
 
   /**
@@ -606,7 +638,7 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows a hypnotic lava lamp effect
    */
   public Command lavaLampCommand() {
-    return displayCommand(lavaLampPattern()).withName("LED_LavaLamp");
+    return runPatternCommand(lavaLampPattern()).withName("LED_LavaLamp");
   }
 
   /**
@@ -614,6 +646,6 @@ public class LEDSubsystem extends SubsystemBase {
    * @return Command that shows Matrix-style digital rain
    */
   public Command matrixCommand() {
-    return displayCommand(matrixPattern()).withName("LED_Matrix");
+    return runPatternCommand(matrixPattern()).withName("LED_Matrix");
   }
 }
