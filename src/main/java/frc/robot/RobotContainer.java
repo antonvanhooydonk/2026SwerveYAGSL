@@ -199,18 +199,6 @@ public class RobotContainer {
     RobotModeTriggers.teleop().and(driverXbox.povDown()).onTrue(Commands.none());
     RobotModeTriggers.teleop().and(driverXbox.povLeft()).onTrue(Commands.none());
 
-    // show various feedbacks for fun when disabled
-    RobotModeTriggers.disabled().and(driverXbox.a()).onTrue(ledSubsystem.flameCommand());
-    RobotModeTriggers.disabled().and(driverXbox.b()).onTrue(ledSubsystem.knightRiderCommand());
-    RobotModeTriggers.disabled().and(driverXbox.x()).onTrue(ledSubsystem.heartbeatCommand());
-    RobotModeTriggers.disabled().and(driverXbox.y()).onTrue(ledSubsystem.discoCommand());
-    RobotModeTriggers.disabled().and(driverXbox.povUp()).onTrue(ledSubsystem.teamColorsCommand());
-    RobotModeTriggers.disabled().and(driverXbox.povRight()).onTrue(ledSubsystem.meteorCommand());
-    RobotModeTriggers.disabled().and(driverXbox.povDown()).onTrue(ledSubsystem.lavaLampCommand());
-    RobotModeTriggers.disabled().and(driverXbox.povLeft()).onTrue(ledSubsystem.candyCaneCommand());
-    RobotModeTriggers.disabled().and(driverXbox.leftTrigger()).onTrue(ledSubsystem.matrixCommand());
-    RobotModeTriggers.disabled().and(driverXbox.leftBumper()).onTrue(ledSubsystem.offCommand());
-
     // SysId bindings - typically on a controller with a modifier button held
     RobotModeTriggers.test().and(driverXbox.a()).whileTrue(driveSubsystem.sysIdDriveMotorCommand());
     RobotModeTriggers.test().and(driverXbox.b()).whileTrue(driveSubsystem.sysIdAngleMotorCommand());
