@@ -161,7 +161,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
   
   /**
-   * Command to indicate success state until interrupted
+   * Command to briefly indicate success state
    * @return Command with success LED
    */
   public Command successCommand() {
@@ -171,7 +171,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
   
   /**
-   * Command to indicate info state until interrupted
+   * Command to briefly indicate info state
    * @return Command with info LED
    */
   public Command infoCommand() {
@@ -181,7 +181,7 @@ public class LEDSubsystem extends SubsystemBase {
   }
   
   /**
-   * Command to indicate warning state until interrupted
+   * Command to briefly indicate warning state
    * @return Command with warning LED
    */
   public Command warningCommand() {
