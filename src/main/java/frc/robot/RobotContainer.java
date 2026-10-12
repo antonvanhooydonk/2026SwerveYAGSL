@@ -207,7 +207,9 @@ public class RobotContainer {
     RobotModeTriggers.disabled().and(driverXbox.povUp()).onTrue(ledSubsystem.teamColorsCommand());
     RobotModeTriggers.disabled().and(driverXbox.povRight()).onTrue(ledSubsystem.meteorCommand());
     RobotModeTriggers.disabled().and(driverXbox.povDown()).onTrue(ledSubsystem.lavaLampCommand());
-    RobotModeTriggers.disabled().and(driverXbox.povLeft()).onTrue(ledSubsystem.offCommand());
+    RobotModeTriggers.disabled().and(driverXbox.povLeft()).onTrue(ledSubsystem.candyCaneCommand());
+    RobotModeTriggers.disabled().and(driverXbox.leftTrigger()).onTrue(ledSubsystem.matrixCommand());
+    RobotModeTriggers.disabled().and(driverXbox.leftBumper()).onTrue(ledSubsystem.offCommand());
 
     // SysId bindings - typically on a controller with a modifier button held
     RobotModeTriggers.test().and(driverXbox.a()).whileTrue(driveSubsystem.sysIdDriveMotorCommand());
@@ -218,11 +220,6 @@ public class RobotContainer {
    * Use this to configure triggers that should respond to robot/subsystem state changes.
    */
   private void configureEventTriggers() {
-    // feedback when drive has switched to robot-relative mode
-    RobotModeTriggers.teleop()
-      .and(driveSubsystem.isFieldRelativeTrigger)
-      .onFalse(feedback.warningCommand());
-
     // feedback when climber is at level one climb position
     RobotModeTriggers.teleop()
       .and(climberSubsystem.isAtLevelOneClimbPositionTrigger)

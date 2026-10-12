@@ -4,6 +4,12 @@
 
 package frc.robot.subsystems.led;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Percent;
+
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.Distance;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean constants. This
  * class should not be used for any other purpose. All constants should be declared globally (i.e. public static). Do
@@ -14,8 +20,14 @@ package frc.robot.subsystems.led;
  */
 public final class LEDConstants {
   /** Number of LEDs in the strip */
-  public static final int kLEDLength = 60;
+  public static final int kLEDCount = 60;
 
-  /** Control the brightness of the LEDs 0.0 to 1.0 */
-  public static final double kBrightness = 0.65;
+  /** Length of the LED strip in meters */
+  public static final double kLEDLengthMeters = 1.0;
+
+  /** Distance between LEDs in meters */
+  public static final Distance kLEDSpacing =  Meters.of(kLEDLengthMeters / kLEDCount);
+
+  /** Control the brightness of the LEDs [0, 100] */
+  public static final Dimensionless kBrightness = Percent.of(65);
 }
