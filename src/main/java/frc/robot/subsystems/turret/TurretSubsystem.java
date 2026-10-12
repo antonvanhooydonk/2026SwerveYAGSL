@@ -351,6 +351,23 @@ public class TurretSubsystem extends SubsystemBase {
    * Command to continuously rotate the turret to track a field-relative angle,
    * accounting for the robot's current heading.
    * @param fieldAngleDegreesSupplier Supplier for the desired field-relative angle
+   * @param robotPoseSupplier Supplier for the robot's current field pose
+   * @return Command to continuously track the field-relative angle
+   */
+  public Command aimAtFieldAngleCommand(
+    DoubleSupplier fieldAngleDegreesSupplier,
+    Supplier<Pose2d> robotPoseSupplier
+  ) {
+    return aimAtFieldAngleCommand(
+      fieldAngleDegreesSupplier,
+      () -> robotPoseSupplier.get().getRotation().getDegrees()
+    );
+  }
+
+  /**
+   * Command to continuously rotate the turret to track a field-relative angle,
+   * accounting for the robot's current heading.
+   * @param fieldAngleDegreesSupplier Supplier for the desired field-relative angle
    * @param robotHeadingDegreesSupplier Supplier for the robot's current field heading
    * @return Command to continuously track the field-relative angle
    */
@@ -365,23 +382,6 @@ public class TurretSubsystem extends SubsystemBase {
       setAngle(turretAngle);
     })
     .withName("Turret_AimAtFieldAngle");
-  }
-
-  /**
-   * Command to continuously rotate the turret to track a field-relative angle,
-   * accounting for the robot's current heading.
-   * @param fieldAngleDegreesSupplier Supplier for the desired field-relative angle
-   * @param robotPoseSupplier Supplier for the robot's current field pose
-   * @return Command to continuously track the field-relative angle
-   */
-  public Command aimAtFieldAngleCommand(
-    DoubleSupplier fieldAngleDegreesSupplier,
-    Supplier<Pose2d> robotPoseSupplier
-  ) {
-    return aimAtFieldAngleCommand(
-      fieldAngleDegreesSupplier,
-      () -> robotPoseSupplier.get().getRotation().getDegrees()
-    );
   }
 
   /**
