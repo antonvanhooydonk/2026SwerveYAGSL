@@ -26,7 +26,7 @@ public final class LEDConstants {
   public static final double kLEDLengthMeters = 1.0;
 
   /** Distance between LEDs in meters */
-  public static final Distance kLEDSpacing =  Meters.of(kLEDLengthMeters / kLEDCount);
+  public static final Distance kLEDSpacing = Meters.of(kLEDLengthMeters / kLEDCount);
 
   /** Control the brightness of the LEDs [0, 100] */
   public static final Dimensionless kBrightness = Percent.of(65);
