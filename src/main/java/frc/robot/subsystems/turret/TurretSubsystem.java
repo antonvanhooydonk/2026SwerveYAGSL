@@ -433,7 +433,7 @@ public class TurretSubsystem extends SubsystemBase {
       // Command the turret to the calculated angle
       setAngle(turretAngle);
     })
-    .withName("Turret_AimAtPose_OnTheMove");
+    .withName("Turret_AimAtPose");
   }
 
   /**
