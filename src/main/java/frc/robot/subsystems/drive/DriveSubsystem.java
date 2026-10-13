@@ -145,7 +145,7 @@ public class DriveSubsystem extends SubsystemBase {
       this::getPose, // Robot pose supplier
       this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
       this::getRobotRelativeSpeeds, // ChassisSpeeds supplier
-      (speeds, feedforwards) -> driveRobotRelative(speeds, feedforwards), // Method that will drive the robot given ChassisSpeeds
+      this::driveRobotRelative, // Method that will drive the robot given ChassisSpeeds & feedforwards
       new PPHolonomicDriveController(
         new PIDConstants(5.0, 0.0, 0.0), // Translation
         new PIDConstants(5.0, 0.0, 0.0)  // Rotation
@@ -171,15 +171,6 @@ public class DriveSubsystem extends SubsystemBase {
   // ----------------------------------------------------------------------------------------
   // Private state methods
   // ----------------------------------------------------------------------------------------
-
-  /**
-   * Drive the robot using the given robot-relative chassis speeds, with no feedforward override.
-   * Used by manual driving and anywhere we don't have precomputed module forces.
-   * @param speeds The desired robot-relative speeds
-   */
-  private void driveRobotRelative(ChassisSpeeds speeds) {
-    driveRobotRelative(speeds, null);
-  }
 
   /**
    * Drive the robot using the given robot-relative chassis speeds.
@@ -223,7 +214,7 @@ public class DriveSubsystem extends SubsystemBase {
    * to resist being pushed by other robots while on defense.
    */
   private void stopAndLockWheels() {
-    driveRobotRelative(new ChassisSpeeds());
+    driveRobotRelative(new ChassisSpeeds(), null);
     swerveDrive.lockPose();
   }
 
@@ -712,7 +703,7 @@ public class DriveSubsystem extends SubsystemBase {
       }
 
       // Drive the robot with robot-relative speeds
-      driveRobotRelative(chassisSpeeds);
+      driveRobotRelative(chassisSpeeds, null);
     })
     .withName("Drive_DriveManual");
   }
