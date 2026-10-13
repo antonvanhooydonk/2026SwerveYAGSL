@@ -461,6 +461,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addDoubleProperty("Target Height (m)",   () -> Utils.showDouble(targetHeightMeters), null);
     builder.addDoubleProperty("Current Height (m)",  () -> Utils.showDouble(getHeightMeters()), null);
     builder.addDoubleProperty("Leader Current (A)",  () -> Utils.showDouble(leaderMotor.getSupplyCurrent().getValueAsDouble()), null);

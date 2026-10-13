@@ -479,6 +479,7 @@ public class TurretSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addDoubleProperty("Target Angle (deg)",  () -> Utils.showDouble(targetAngleDegrees), null);
     builder.addDoubleProperty("Current Angle (deg)", () -> Utils.showDouble(getAngleDegrees()), null);
     builder.addDoubleProperty("Current (A)",         () -> Utils.showDouble(turretMotor.getSupplyCurrent().getValueAsDouble()), null);

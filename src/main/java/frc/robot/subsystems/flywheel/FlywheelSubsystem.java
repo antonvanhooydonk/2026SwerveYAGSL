@@ -353,14 +353,13 @@ public class FlywheelSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addDoubleProperty("Target RPM",           () -> Utils.showDouble(targetRPM), null);
     builder.addDoubleProperty("Current RPM",          () -> Utils.showDouble(getRPM()), null);
-    builder.addDoubleProperty("RPM Error",            () -> Utils.showDouble(targetRPM - getRPM()), null);
-    builder.addBooleanProperty("At Target",           this::isAtTargetRPM, null);
-    builder.addBooleanProperty("Spinning",            this::isSpinning, null);
     builder.addDoubleProperty("Leader Voltage (V)",   () -> Utils.showDouble(flywheelLeader.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Current (A)",   () -> Utils.showDouble(flywheelLeader.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Leader Temp (C)",      () -> Utils.showDouble(flywheelLeader.getDeviceTemp().getValueAsDouble()), null);
+    builder.addDoubleProperty("Follower Voltage (V)", () -> Utils.showDouble(flywheelFollower.getMotorVoltage().getValueAsDouble()), null);
     builder.addDoubleProperty("Follower Current (A)", () -> Utils.showDouble(flywheelFollower.getSupplyCurrent().getValueAsDouble()), null);
     builder.addDoubleProperty("Follower Temp (C)",    () -> Utils.showDouble(flywheelFollower.getDeviceTemp().getValueAsDouble()), null);
   }

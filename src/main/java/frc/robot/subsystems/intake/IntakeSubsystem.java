@@ -306,6 +306,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addBooleanProperty("Deployed",   this::isDeployed, null);
     builder.addDoubleProperty("Target RPM",  () -> Utils.showDouble(targetRPM), null);
     builder.addDoubleProperty("Current RPM", () -> Utils.showDouble(getRollerRPM()), null);

@@ -283,6 +283,7 @@ public class FeederSubsystem extends SubsystemBase {
 
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addDoubleProperty("Target RPM",   () -> Utils.showDouble(targetRPM), null);
     builder.addDoubleProperty("Current RPM",  () -> Utils.showDouble(getRPM()), null);
     builder.addDoubleProperty("RPM Error",    () -> Utils.showDouble(targetRPM - getRPM()), null);

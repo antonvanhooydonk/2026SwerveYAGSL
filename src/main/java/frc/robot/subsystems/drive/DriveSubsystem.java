@@ -381,10 +381,6 @@ public class DriveSubsystem extends SubsystemBase {
     // Reset state variables
     fieldRelative = true;
     slowMode = false;
-    acceptedVisionCount = 0;
-    rejectedVisionCount = 0;
-    blurRejectedVisionCount = 0;
-    consecutiveRejectedJumps = 0;
 
     // Log initialization
     Utils.logInfo("Drive subsystem initialized for autonomous");
@@ -859,6 +855,7 @@ public class DriveSubsystem extends SubsystemBase {
    */
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addBooleanProperty("Field Relative", this::isFieldRelative, null);
     builder.addBooleanProperty("Slow Mode", this::isSlowMode, null);
     builder.addDoubleProperty("Accepted Vision Count", () -> Utils.showDouble(acceptedVisionCount), null);
