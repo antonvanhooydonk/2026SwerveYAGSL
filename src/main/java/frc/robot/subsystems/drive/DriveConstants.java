@@ -90,7 +90,7 @@ public final class DriveConstants {
   public static final double kWheelCOF = 1.19; // could try 1.0 to 1.3, coefficient of friction of wheel on carpet
   public static final double kRobotMassKg = Units.lbsToKilograms(134);
   public static final double kRobotMOI = 0.083333333 * kRobotMassKg * ((kTrackWidthMeters * kTrackWidthMeters) + (kWheelBaseMeters * kWheelBaseMeters)); // kg m^2, moment of inertia about center of robot
-  public static final double kMaxDriveVelocityAt12VoltsMPS = Units.feetToMeters(15.5) * 0.85; // MK4i L2 Kraken non-FOC With 14t pinion (https://www.swervedrivespecialties.com/products/mk4i-swerve-module?variant=47316033798445)
+  public static final double kMaxDriveVelocityAt12VoltsMPS = Units.feetToMeters(15.5); // MK4i L2 Kraken non-FOC With 14t pinion (https://www.swervedrivespecialties.com/products/mk4i-swerve-module?variant=47316033798445)
   public static final double kSteerMaxAngularSpeedRadsPerSecond = Units.rotationsToRadians(3.0); // steering motor max rotational speed (not the same as robot rotational speed)
 
   public static final double kGyroAngleOffsetDegrees = 0.0; // default 0.0 - Rotate the gyro X axis if the gyro was not installed facing forward
@@ -108,22 +108,38 @@ public final class DriveConstants {
   // ------------------------------------------------------------
   // Autobuilder Constants
   // ------------------------------------------------------------
-  public static final PathConstraints kPathfindingConstraints = new PathConstraints(
-    3.0, // Velocity (m/s)
-    4.0, // Acceleration (m/s^2)
-    Units.degreesToRadians(540), // Angular velocity (rad/s)
-    Units.degreesToRadians(720) // Angular acceleration (rad/s^2)
+  public static final double kStagingDistanceMeters = 0.75;
+  public static final double kStagingEndVelocityMPS = 0.03;
+  public static final double kAlignTranslationToleranceMeters = 0.025;
+  public static final double kAlignRotationToleranceRadians = Units.degreesToRadians(2.0);
+  public static final double kAlignTimeoutSeconds = 6.0;
+
+  // Fast open field travel when approaching 
+  public static final PathConstraints kStagingConstraints = new PathConstraints(
+    3.5,
+    3.0,
+    Units.degreesToRadians(540),
+    Units.degreesToRadians(720)
+  );
+  
+  // Slow creeping control for the final alignment
+  public static final PathConstraints kPrecisionConstraints = new PathConstraints(
+    1.0, 
+    1.5,
+    Units.degreesToRadians(180), 
+    Units.degreesToRadians(360)
   );
 
+  // Path Planner robot configuration
   public static final RobotConfig kRobotConfig = new RobotConfig(
     kRobotMassKg,
     kRobotMOI,
     new ModuleConfig(
       kWheelRadiusMeters,
-      kMaxDriveVelocityAt12VoltsMPS,
+      kMaxDriveVelocityAt12VoltsMPS * 0.85,
       kWheelCOF, 
       DCMotor.getKrakenX60(1).withReduction(kDriveGearRatio),
-      60.0,
+      40.0, // must match currentLimit.drive in physicalproperties.json
       1
     ),
     kSwerveModuleTranslations

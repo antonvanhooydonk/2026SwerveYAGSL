@@ -147,8 +147,8 @@ public class DriveSubsystem extends SubsystemBase {
       this::getRobotRelativeSpeeds, // ChassisSpeeds supplier
       (speeds, feedforwards) -> driveRobotRelative(speeds, feedforwards), // Method that will drive the robot given ChassisSpeeds
       new PPHolonomicDriveController(
-        new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
-        new PIDConstants(5.0, 0.0, 0.0)  // Rotation PID constants
+        new PIDConstants(5.0, 0.0, 0.0), // Translation
+        new PIDConstants(5.0, 0.0, 0.0)  // Rotation
       ),
       DriveConstants.kRobotConfig, // Robot configuration
       Utils::isRedAlliance, // Method to flip path based on alliance color
@@ -339,6 +339,15 @@ public class DriveSubsystem extends SubsystemBase {
    */
   private boolean isSlowMode() {
     return slowMode;
+  }
+
+  /**
+   * Calculates the distance from the current pose to a target pose.
+   * @param target The target to calculate distance to
+   * @return The distance to the target pose
+   */
+  private double distanceTo(Pose2d targetPose) {
+    return getPose().getTranslation().getDistance(targetPose.getTranslation());
   }
 
   // ---------------------------------------------------------------------------------------
@@ -709,7 +718,11 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Creates a command to align the robot at a specified AprilTag
+   * Creates a command to align the robot at a specified AprilTag. It extracts the
+   * AprilTag pose from the field layout and computes a target pose for the robot
+   * to drive to, with the specified offsets. The robot will face the AprilTag 
+   * when it reaches the target pose.
+   * Use case: Teleop auto-alignment in front of a specific "scoring" AprilTag
    * @param tagIdSupplier A supplier of the fiducial ID of the AprilTag to align with
    * @param xOffset The X offset from the tag in meters (positive is forward, negative is backward)
    * @param yOffset The Y offset from the tag in meters (positive is left, negative is right)
@@ -721,29 +734,37 @@ public class DriveSubsystem extends SubsystemBase {
     DoubleSupplier yOffsetSupplier
   ) {
     return pathfindToPoseCommand(() -> {
-      // Get the tag ID and offsets from the suppliers
-      int tagId = tagIdSupplier.getAsInt();
-      double xOffset = xOffsetSupplier.getAsDouble();
-      double yOffset = yOffsetSupplier.getAsDouble();
+      int tagId = tagIdSupplier == null ? -1 : tagIdSupplier.getAsInt();
+      double xOffset = xOffsetSupplier == null ? 0.0 : xOffsetSupplier.getAsDouble();
+      double yOffset = yOffsetSupplier == null ? 0.0 : yOffsetSupplier.getAsDouble();
 
-      // Get the pose of the AprilTag from the field layout
-      Optional<Pose3d> tagPose = FieldConstants.kFieldLayout.getTagPose(tagId);
-
-      // Calculate offset
-      if (tagPose.isPresent()) {
-        return tagPose.get().toPose2d().transformBy(
-          new Transform2d(xOffset, yOffset, Rotation2d.fromDegrees(180))
-        );
+      // Ensure tagId is valid
+      if (tagId < 0) {
+        Utils.logError("alignToTag: invalid tagId " + tagId);
+        return null;
       }
 
-       // driveToPoseCommand will handle this null safely
-      return null;
-    })
-    .withName("Drive_AlignToTag");
+      // Get the pose of the specified AprilTag from the field layout
+      Optional<Pose3d> tag = FieldConstants.kFieldLayout.getTagPose(tagId);
+      if (tag.isEmpty()) {
+        Utils.logError("alignToTag: tag " + tagId + " not in field layout");
+        return null;
+      }
+
+      // Robot faces the tag with the specified offsets
+      // Ensure the offset accounts for 1/2 the robot length + bumper
+      // to avoid smashing into the tag or the wall behind it
+      return tag.get().toPose2d().transformBy(new Transform2d(
+        xOffset, 
+        yOffset, 
+        Rotation2d.k180deg
+      ));
+    });
   }
 
   /**
-   * Creates a command to drive to a specified pose using PathPlanner
+   * Creates a command to drive to a specified pose using PathPlanner.
+   * Use case: Teleop auto-alignment or quick, simple dynamic targets.
    * @param targetSupplier A supplier of a Pose2d to drive to
    * @return Command to drive via PathPlanner to the target pose
    */
@@ -752,33 +773,55 @@ public class DriveSubsystem extends SubsystemBase {
     // Set.of(this) ensures driveSubsystem is required
     return Commands.defer(() -> {
       // Get the target pose from the supplier when the command is scheduled
-      Pose2d targetPose = targetSupplier.get();
+      Pose2d targetPose = targetSupplier == null ? null : targetSupplier.get();
 
-      // Check for null target pose
+      // Handle null target pose
       if (targetPose == null) {
-        return Commands.print("driveToPoseCommand: Target pose is null.");
+        Utils.logError("pathfindToPose: target pose is null");
+        return Commands.none();
       }
 
-      // Since AutoBuilder is configured, we can use it to build pathfinding commands
-      return AutoBuilder.pathfindToPose(
+      // Create a staging pose to approach the target pose from a safe distance
+      Pose2d stagingPose = targetPose.transformBy(new Transform2d(
+        -DriveConstants.kStagingDistanceMeters, 
+        0.0, 
+        Rotation2d.kZero
+      ));
+
+      // Create a command to pathfind to the staging pose, 
+      // unless we are already close enough to the target pose
+      Command staging = AutoBuilder.pathfindToPose(
+        stagingPose, 
+        DriveConstants.kStagingConstraints, 
+        DriveConstants.kStagingEndVelocityMPS
+      ).unless(() -> distanceTo(targetPose) < DriveConstants.kStagingDistanceMeters + 0.3);
+
+      // Create a command to pathfind precisely to the target pose
+      Command precise = AutoBuilder.pathfindToPose(
         targetPose, 
-        DriveConstants.kPathfindingConstraints, 
+        DriveConstants.kPrecisionConstraints, 
         0.0
       );
-    }, Set.of(this))
-    .withTimeout(7.0)
-    .withName("Drive_PathfindToPose");
+
+      // Chain the staging and precise commands together with a timeout
+      return staging
+        .andThen(precise)
+        .withTimeout(DriveConstants.kAlignTimeoutSeconds)
+        .withName("Drive_PathfindToPose");
+    }, Set.of(this));
   }
 
   /**
-   * Creates a command to follow a PathPlanner path by name.
+   * Creates a command to follow a pre-defined PathPlanner path by name.
+   * The robot should already be at the starting pose of the path when this command is scheduled.
+   * Use case: Fixed, predictable paths (usually in the Autonomous period)
    * @param pathName The name of the PathPlanner path to follow (without the .path extension)
    * @return Command to follow the specified PathPlanner path
    */
   public Command followPathCommand(String pathName) {
     try {
-      return AutoBuilder
-        .followPath(PathPlannerPath.fromPathFile(pathName))
+      // PathConstraints are defined in the path file / GUI
+      return AutoBuilder.followPath(PathPlannerPath.fromPathFile(pathName))
         .withName("Drive_FollowPath_" + pathName);
     } catch (Exception ex) {
       Utils.logError("Drive_FollowPath_" + pathName + ": " + ex.getMessage());
@@ -788,17 +831,19 @@ public class DriveSubsystem extends SubsystemBase {
 
   /**
    * Creates a command to pathfind from current pose to a PathPlanner path and then follow it.
+   * Use case: Entering a complex, multi-step autonomous sequence from an unpredictable spot.
    * @param pathName The name of the PathPlanner path to find then follow (without the .path extension)
    * @return Command to find then follow the specified PathPlanner path
    */
   public Command pathfindThenFollowPath(String pathName) {
     try {
-      return AutoBuilder
-        .pathfindThenFollowPath(
-          PathPlannerPath.fromPathFile(pathName), 
-          DriveConstants.kPathfindingConstraints
-        )
-        .withName("Drive_PathfindThenFollowPath_" + pathName);
+      // use the staging constraints for the pathfinding portion, 
+      // then follow the path with its own constraints
+      return AutoBuilder.pathfindThenFollowPath(
+        PathPlannerPath.fromPathFile(pathName), 
+        DriveConstants.kStagingConstraints
+      )
+      .withName("Drive_PathfindThenFollowPath_" + pathName);
     } catch (Exception ex) {
       Utils.logError("Drive_PathfindThenFollowPath_ " + pathName + ": " + ex.getMessage());
       return Commands.none();
