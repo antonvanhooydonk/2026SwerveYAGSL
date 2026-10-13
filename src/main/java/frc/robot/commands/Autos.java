@@ -75,7 +75,7 @@ public class Autos {
       )
     ))
     .withTimeout(10)
-    .andThen(driveSubsystem.driveToPoseCommand(null))
+    .andThen(driveSubsystem.pathfindToPoseCommand(null))
     .andThen(climberSubsystem.toLevelOneCommand())
     .andThen(feedback.successCommand());
   }

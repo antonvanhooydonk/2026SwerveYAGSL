@@ -82,7 +82,7 @@ public class RobotContainer {
       () -> -1 * driverXbox.getRightX()
     ));
 
-    // register named autos
+    // register named autos - do this BEFORE any PathPlanner autos are created
     registerNamedAutos();
 
     // configure auto routines

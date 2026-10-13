@@ -709,30 +709,6 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Creates a command to drive to a specified pose using PathPlanner
-   * @param targetSupplier A supplier of a Pose2d to drive to
-   * @return Command to drive via PathPlanner to the target pose
-   */
-  public Command driveToPoseCommand(Supplier<Pose2d> targetSupplier) {
-    // Deferred command to get latest pose when scheduled
-    // Set.of(this) ensures driveSubsystem is required
-    return Commands.defer(() -> {
-      // Get the target pose from the supplier when the command is scheduled
-      Pose2d targetPose = targetSupplier.get();
-
-      // Check for null target pose
-      if (targetPose == null) {
-        return Commands.print("driveToPoseCommand: Target pose is null. Cannot generate pathfinding command.");
-      }
-
-      // Since AutoBuilder is configured, we can use it to build pathfinding commands
-      return AutoBuilder.pathfindToPose(targetPose, DriveConstants.kPathfindingConstraints, 0.0);
-    }, Set.of(this))
-    .withTimeout(7.0)
-    .withName("Drive_DriveToPose");
-  }
-
-  /**
    * Creates a command to align the robot at a specified AprilTag
    * @param tagIdSupplier A supplier of the fiducial ID of the AprilTag to align with
    * @param xOffset The X offset from the tag in meters (positive is forward, negative is backward)
@@ -744,7 +720,7 @@ public class DriveSubsystem extends SubsystemBase {
     DoubleSupplier xOffsetSupplier, 
     DoubleSupplier yOffsetSupplier
   ) {
-    return driveToPoseCommand(() -> {
+    return pathfindToPoseCommand(() -> {
       // Get the tag ID and offsets from the suppliers
       int tagId = tagIdSupplier.getAsInt();
       double xOffset = xOffsetSupplier.getAsDouble();
@@ -767,6 +743,34 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
+   * Creates a command to drive to a specified pose using PathPlanner
+   * @param targetSupplier A supplier of a Pose2d to drive to
+   * @return Command to drive via PathPlanner to the target pose
+   */
+  public Command pathfindToPoseCommand(Supplier<Pose2d> targetSupplier) {
+    // Deferred command to get latest pose when scheduled
+    // Set.of(this) ensures driveSubsystem is required
+    return Commands.defer(() -> {
+      // Get the target pose from the supplier when the command is scheduled
+      Pose2d targetPose = targetSupplier.get();
+
+      // Check for null target pose
+      if (targetPose == null) {
+        return Commands.print("driveToPoseCommand: Target pose is null.");
+      }
+
+      // Since AutoBuilder is configured, we can use it to build pathfinding commands
+      return AutoBuilder.pathfindToPose(
+        targetPose, 
+        DriveConstants.kPathfindingConstraints, 
+        0.0
+      );
+    }, Set.of(this))
+    .withTimeout(7.0)
+    .withName("Drive_PathfindToPose");
+  }
+
+  /**
    * Creates a command to follow a PathPlanner path by name.
    * @param pathName The name of the PathPlanner path to follow (without the .path extension)
    * @return Command to follow the specified PathPlanner path
@@ -777,7 +781,26 @@ public class DriveSubsystem extends SubsystemBase {
         .followPath(PathPlannerPath.fromPathFile(pathName))
         .withName("Drive_FollowPath_" + pathName);
     } catch (Exception ex) {
-      Utils.logError("Couldn't load path " + pathName + ": " + ex.getMessage());
+      Utils.logError("Drive_FollowPath_" + pathName + ": " + ex.getMessage());
+      return Commands.none();
+    }
+  }
+
+  /**
+   * Creates a command to pathfind from current pose to PathPlanner path and then follow it.
+   * @param pathName The name of the PathPlanner path to find then follow (without the .path extension)
+   * @return Command to find then follow the specified PathPlanner path
+   */
+  public Command pathfindThenFollowPath(String pathName) {
+    try {
+      return AutoBuilder
+        .pathfindThenFollowPath(
+          PathPlannerPath.fromPathFile(pathName), 
+          DriveConstants.kPathfindingConstraints
+        )
+        .withName("Drive_PathfindThenFollowPath_" + pathName);
+    } catch (Exception ex) {
+      Utils.logError("Drive_PathfindThenFollowPath_ " + pathName + ": " + ex.getMessage());
       return Commands.none();
     }
   }
