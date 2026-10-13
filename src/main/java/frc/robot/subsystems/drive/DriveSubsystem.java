@@ -787,7 +787,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Creates a command to pathfind from current pose to PathPlanner path and then follow it.
+   * Creates a command to pathfind from current pose to a PathPlanner path and then follow it.
    * @param pathName The name of the PathPlanner path to find then follow (without the .path extension)
    * @return Command to find then follow the specified PathPlanner path
    */
