@@ -15,6 +15,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.FlippingUtil;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
@@ -731,33 +732,8 @@ public class DriveSubsystem extends SubsystemBase {
       // Since AutoBuilder is configured, we can use it to build pathfinding commands
       return AutoBuilder.pathfindToPose(targetPose, DriveConstants.kPathfindingConstraints, 0.0);
     }, Set.of(this))
+    .withTimeout(7.0)
     .withName("Drive_DriveToPose");
-  }
-
-  /**
-   * Creates a command to drive the robot a given distance in a given direction.
-   * @param distanceMeters The distance to drive in meters
-   * @param heading The field-relative heading to drive in (e.g. Rotation2d.fromDegrees(0) = forward)
-   * @return Command to drive the given distance
-   */
-  public Command driveDistanceCommand(double distanceMeters, Rotation2d heading) {
-    return Commands.defer(() -> {
-      // Calculate the translation offset based on the desired distance and heading
-      Translation2d offset = new Translation2d(distanceMeters, heading);
-
-      // Get the current pose of the robot
-      Pose2d currentPose = getPose();
-
-      // Calculate the target pose by applying the offset to the current pose
-      Pose2d targetPose = new Pose2d(
-        currentPose.getTranslation().plus(offset),
-        currentPose.getRotation() // Maintain current heading
-      );
-
-      // Return a command to drive to the target pose
-      return driveToPoseCommand(() -> targetPose);
-    }, Set.of(this))
-    .withName("Drive_DriveDistance");
   }
 
   /**
@@ -792,6 +768,22 @@ public class DriveSubsystem extends SubsystemBase {
       return null;
     })
     .withName("Drive_AlignToTag");
+  }
+
+  /**
+   * Creates a command to follow a PathPlanner path by name.
+   * @param pathName The name of the PathPlanner path to follow (without the .path extension)
+   * @return Command to follow the specified PathPlanner path
+   */
+  public Command followPathCommand(String pathName) {
+    try {
+      return AutoBuilder
+        .followPath(PathPlannerPath.fromPathFile(pathName))
+        .withName("Drive_FollowPath_" + pathName);
+    } catch (Exception ex) {
+      Utils.logError("Couldn't load path " + pathName + ": " + ex.getMessage());
+      return Commands.none();
+    }
   }
 
   /**
