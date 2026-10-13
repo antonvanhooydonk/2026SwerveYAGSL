@@ -127,7 +127,7 @@ public class RobotContainer {
     // "/deploy/pathplanner/autos" directory. Use the auto name without the 
     // ".auto" extension for the second argument.
     autoChooser.setDefaultOption("No auto", "");
-    addAutoToChooser("Example Auto", "Example Auto");
+    addAutoToChooser("Example Auto", "ExampleAuto");
     
     // Add auto chooser to dashboard
     SmartDashboard.putData("Auto Command", autoChooser);
@@ -263,12 +263,15 @@ public class RobotContainer {
    * This method is called periodically while the robot is disabled.
    */
   public void disabledPeriodic() {
-    // Seed the pose heading for the current alliance (once per alliance change)
-    driveSubsystem.seedHeadingForAlliance();
+    // Pre-match
+    if (!wasInAuto && !wasInTeleop) {
+      // Seed the pose heading for the current alliance (once per alliance change)
+      driveSubsystem.seedHeadingForAlliance();
 
-    // Update the dashboard with the current auto starting pose
-    // The chooser value is the PathPlanner auto name ("" = no auto)
-    driveSubsystem.publishStartingPoseAlignment(autoChooser::getSelected);
+      // Update the dashboard with the current auto starting pose
+      // The chooser value is the PathPlanner auto name ("" = no auto)
+      driveSubsystem.publishStartingPoseAlignment(autoChooser::getSelected);
+    }
   }
 
   /**
@@ -328,10 +331,8 @@ public class RobotContainer {
 
   /**
    * Initializes all subsystems for post match mode. Should be called from Robot.disabledInit().
-   * The robot may be disabled briefly by the field management system before the match is over, 
-   * when moving between match phases, so we only want to run this once after teleop.
    */
-  public void postMatch() {
+  public void disabledInit() {
     // Post match comes after teleop
     if (wasInTeleop) {
       // Reset state change tracking

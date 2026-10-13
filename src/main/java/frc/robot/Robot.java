@@ -40,7 +40,7 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledInit() {
     // Initialize for post match state
-    m_robotContainer.postMatch();
+    m_robotContainer.disabledInit();
   }
 
   @Override
