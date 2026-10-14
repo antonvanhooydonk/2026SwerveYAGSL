@@ -383,6 +383,7 @@ public class VisionSubsystem extends SubsystemBase {
    */
   @Override
   public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
     builder.addBooleanProperty("Enabled", this::isEnabled, null);
     builder.addBooleanProperty("Has Targets", this::hasTargets, null);
     builder.addDoubleProperty("Total Targets", this::getTotalTargetCount, null);
