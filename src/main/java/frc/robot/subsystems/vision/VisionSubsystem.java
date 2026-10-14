@@ -56,8 +56,8 @@ public class VisionSubsystem extends SubsystemBase {
       return;
     }
 
-    // Get the defined camera configurations
-    Map<String, Transform3d> configs = VisionConstants.kCameraConfigs;
+    // Get the defined AprilTag camera configurations
+    Map<String, Transform3d> configs = VisionConstants.kAprilTagCameras;
     
     // Add each to camera the list
     for (String cameraName : configs.keySet()) {
@@ -389,27 +389,29 @@ public class VisionSubsystem extends SubsystemBase {
     builder.addDoubleProperty("Total Targets", this::getTotalTargetCount, null);
     
     // Individual camera status - call getLatestResult() in the lambda
-    for (Camera camera : cameras) {
-      String prefix = "Camera/" + camera.getName() + "/";
-    
-      builder.addBooleanProperty(prefix + "Connected", () -> camera.getCamera().isConnected(), null);
-      builder.addBooleanProperty(prefix + "Has Targets", () -> camera.getLatestResult().hasTargets(), null);
-      builder.addDoubleProperty(prefix + "Target Count", () -> camera.getLatestResult().getTargets().size(), null);
-      builder.addDoubleProperty(prefix + "Unread Results", () -> camera.getCachedResults().size(), null);
+    if (VisionConstants.kDebug) {
+      for (Camera camera : cameras) {
+        String prefix = "Camera/" + camera.getName() + "/";
       
-      // For best target data, check if targets exist each time
-      builder.addDoubleProperty(prefix + "Best Target ID", () -> {
-        PhotonPipelineResult r = camera.getLatestResult();
-        return r.hasTargets() ? r.getBestTarget().getFiducialId() : -1;
-      }, null);
-      builder.addDoubleProperty(prefix + "Best Target Distance", () -> {
-        PhotonPipelineResult r = camera.getLatestResult();
-        return r.hasTargets() ? r.getBestTarget().getBestCameraToTarget().getTranslation().getNorm() : 0;
-      }, null);
-      builder.addDoubleProperty(prefix + "Best Target Ambiguity", () -> {
-        PhotonPipelineResult r = camera.getLatestResult();
-        return r.hasTargets() ? r.getBestTarget().getPoseAmbiguity() : 0;
-      }, null);
+        builder.addBooleanProperty(prefix + "Connected", () -> camera.getCamera().isConnected(), null);
+        builder.addBooleanProperty(prefix + "Has Targets", () -> camera.getLatestResult().hasTargets(), null);
+        builder.addDoubleProperty(prefix + "Target Count", () -> camera.getLatestResult().getTargets().size(), null);
+        builder.addDoubleProperty(prefix + "Unread Results", () -> camera.getCachedResults().size(), null);
+        
+        // For best target data, check if targets exist each time
+        builder.addDoubleProperty(prefix + "Best Target ID", () -> {
+          PhotonPipelineResult r = camera.getLatestResult();
+          return r.hasTargets() ? r.getBestTarget().getFiducialId() : -1;
+        }, null);
+        builder.addDoubleProperty(prefix + "Best Target Distance", () -> {
+          PhotonPipelineResult r = camera.getLatestResult();
+          return r.hasTargets() ? r.getBestTarget().getBestCameraToTarget().getTranslation().getNorm() : 0;
+        }, null);
+        builder.addDoubleProperty(prefix + "Best Target Ambiguity", () -> {
+          PhotonPipelineResult r = camera.getLatestResult();
+          return r.hasTargets() ? r.getBestTarget().getPoseAmbiguity() : 0;
+        }, null);
+      }
     }
   }
 }

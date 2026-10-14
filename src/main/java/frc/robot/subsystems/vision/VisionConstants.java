@@ -21,7 +21,8 @@ import edu.wpi.first.math.util.Units;
  */
 public final class VisionConstants {
   // Vision configuration constants
-  public static final boolean kEnableVision             = true;
+  public static final boolean kEnableVision             = true; // ensure true at competitions
+  public static final boolean kDebug                    = true && kEnableVision; // ensure false at competitions
   public static final double kPoseAmbiguityThreshold    = 0.20;
   public static final double kFieldBorderMargin         = 0.50; // meters
   public static final double kZMargin                   = 0.75; // meters
@@ -49,10 +50,13 @@ public final class VisionConstants {
 
   // ----------------------------------------------------------
   // Define the robot's cameras
+  // IMPORTANT:
+  //   - Keep camera types separate from each other (AprilTag, ObjectDetection, DriverFeed)
+  //   - The vision susbsystem currently only supports AprilTag cameras
   // ----------------------------------------------------------
   // See: https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
   //      for coordinate system conventions
-  public static final Map<String, Transform3d> kCameraConfigs = Map.of(
+  public static final Map<String, Transform3d> kAprilTagCameras = Map.of(
     "VISION_FRONT", new Transform3d(
       new Translation3d(
         Units.inchesToMeters(8),    // forward 8 inches
@@ -70,4 +74,7 @@ public final class VisionConstants {
       new Rotation3d(0, 0, Math.PI) 
     )
   );
+
+  public static final Map<String, Transform3d> kObjectDetectionCameras = Map.of();
+  public static final Map<String, Transform3d> kDriverFeedCameras = Map.of();
 }
