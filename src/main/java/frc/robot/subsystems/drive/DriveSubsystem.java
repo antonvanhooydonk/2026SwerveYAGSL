@@ -652,10 +652,10 @@ public class DriveSubsystem extends SubsystemBase {
       // Apply circular deadband for translation 
       if (magnitude > DriveConstants.kJoystickDeadband) {
         // Rescale so speed starts at 0 at the edge of the deadband
-        double clippedMagnitude = (magnitude - DriveConstants.kJoystickDeadband) / (1.0 - DriveConstants.kJoystickDeadband);
+        double clippedMagnitude = MathUtil.clamp((magnitude - DriveConstants.kJoystickDeadband) / (1.0 - DriveConstants.kJoystickDeadband), 0.0, 1.0);
         
         // Apply squaring/cubing to the clipped magnitude
-        double curvedMagnitude = Math.copySign(Math.pow(clippedMagnitude, DriveConstants.kJoystickInputExponent), clippedMagnitude);
+        double curvedMagnitude = Math.pow(clippedMagnitude, DriveConstants.kJoystickInputExponent);
 
         // Re-apply the direction sign to the new magnitude
         xSpeed = (rawX / magnitude) * curvedMagnitude;
