@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.Constants.TuningConstants;
 import frc.robot.util.Conversions;
 import frc.robot.util.TalonFXFactory.MotorPair;
 import frc.robot.util.TalonFXFactory;
@@ -101,13 +102,65 @@ public class ElevatorSubsystem extends SubsystemBase {
     // Add data to dashboard
     SmartDashboard.putData("Elevator", this);
 
+    // Initialize tuning constants on the SmartDashboard for real-time tuning
+    initTuningDashboard();
+
     // Output initialization progress
     Utils.logInfo("Elevator subsystem initialized");
   }
 
   @Override
   public void periodic() {
-    // Nothing needed - TalonFX handles control loop onboard
+    getTuningFromDashboard();
+  }
+
+  /**
+   * Initialize tuning constants on the SmartDashboard for real-time tuning.
+   * This method is called once during subsystem initialization.
+   */
+  private void initTuningDashboard() {
+    if (TuningConstants.kTuneElevator) {
+      SmartDashboard.putNumber("Elevator/P", ElevatorConstants.kP);
+      SmartDashboard.putNumber("Elevator/I", ElevatorConstants.kI);
+      SmartDashboard.putNumber("Elevator/D", ElevatorConstants.kD);
+      SmartDashboard.putNumber("Elevator/kS", ElevatorConstants.kS);
+      SmartDashboard.putNumber("Elevator/kV", ElevatorConstants.kV);
+      SmartDashboard.putNumber("Elevator/kA", ElevatorConstants.kA);
+      SmartDashboard.putNumber("Elevator/kG", ElevatorConstants.kG);
+    }
+  }
+
+  /**
+   * Read tuning constants from SmartDashboard and apply them to the climber motor.
+   * This allows for real-time tuning of PIDF constants without redeploying code.
+   */
+  private void getTuningFromDashboard() {
+    // Check if tuning mode is enabled
+    if (TuningConstants.kTuneElevator) {
+      // Read PIDF constants from SmartDashboard
+      double p = SmartDashboard.getNumber("Elevator/P", ElevatorConstants.kP);
+      double i = SmartDashboard.getNumber("Elevator/I", ElevatorConstants.kI);
+      double d = SmartDashboard.getNumber("Elevator/D", ElevatorConstants.kD);
+      double kS = SmartDashboard.getNumber("Elevator/kS", ElevatorConstants.kS);
+      double kV = SmartDashboard.getNumber("Elevator/kV", ElevatorConstants.kV);
+      double kA = SmartDashboard.getNumber("Elevator/kA", ElevatorConstants.kA);
+      double kG = SmartDashboard.getNumber("Elevator/kG", ElevatorConstants.kG);
+
+      // Update the controller with the new constants
+      TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
+      tuneConfig.Slot0
+        .withKP(p)
+        .withKI(i)
+        .withKD(d)
+        .withKS(kS)
+        .withKV(kV)
+        .withKA(kA)
+        .withKG(kG)
+        .withGravityType(GravityTypeValue.Elevator_Static);
+      
+      TalonFXFactory.applyConfig(leaderMotor, tuneConfig);
+      TalonFXFactory.applyConfig(followerMotor, tuneConfig);
+    }
   }
   
   /**
@@ -138,15 +191,15 @@ public class ElevatorSubsystem extends SubsystemBase {
       .withSupplyVoltageTimeConstant(0.02);
 
     // Set PID and feedforward gains
-    config.Slot0
-      .withKP(ElevatorConstants.kP)
-      .withKI(ElevatorConstants.kI)
-      .withKD(ElevatorConstants.kD)
-      .withKS(ElevatorConstants.kS)
-      .withKV(ElevatorConstants.kV)
-      .withKA(ElevatorConstants.kA)
-      .withKG(ElevatorConstants.kG)
-      .withGravityType(GravityTypeValue.Elevator_Static);
+      config.Slot0
+        .withKP(ElevatorConstants.kP)
+        .withKI(ElevatorConstants.kI)
+        .withKD(ElevatorConstants.kD)
+        .withKS(ElevatorConstants.kS)
+        .withKV(ElevatorConstants.kV)
+        .withKA(ElevatorConstants.kA)
+        .withKG(ElevatorConstants.kG)
+        .withGravityType(GravityTypeValue.Elevator_Static);
 
     // Set motion control parameters
     config.MotionMagic

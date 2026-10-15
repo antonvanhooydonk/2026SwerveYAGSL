@@ -23,19 +23,48 @@ public final class SparkMaxFactory {
 
   /**
    * Applies a SparkMax configuration to a motor with retry logic.
+   * This method will merge the given configuration with any 
+   * existing configuration applied to the motor.
+   * @param motor The SparkMax motor
+   * @param config The SparkMax configuration
+   * @return True if the configuration was applied successfully, false otherwise
+   */
+  public static boolean patchConfig(SparkMax motor, SparkMaxConfig config) {
+    return applyConfig(motor, config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+  }
+
+  /**
+   * Applies a SparkMax configuration to a motor with retry logic.
    * This method will replace any existing configuration applied to the motor.
    * @param motor The SparkMax motor
    * @param config The SparkMax configuration
    * @return True if the configuration was applied successfully, false otherwise
    */
   public static boolean applyConfig(SparkMax motor, SparkMaxConfig config) {
+    return applyConfig(motor, config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+  }
+
+  /**
+   * Applies a SparkMax configuration to a motor with retry logic.
+   * @param motor The SparkMax motor
+   * @param config The SparkMax configuration
+   * @param resetMode The reset mode to use when applying the configuration
+   * @param persistMode The persist mode to use when applying the configuration
+   * @return True if the configuration was applied successfully, false otherwise
+   */
+  public static boolean applyConfig(
+    SparkMax motor, 
+    SparkMaxConfig config, 
+    ResetMode resetMode, 
+    PersistMode persistMode
+  ) {
     // Apply the configuration to the motor
-    REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    REVLibError err = motor.configure(config, resetMode, persistMode);
 
     // Retry up to 3 times if the configuration fails
     for (int i = 0; i < 3 && err != REVLibError.kOk; i++) {
       Utils.logError("Failed to apply SparkMax config, retrying... (" + (i + 1) + "/3)");
-      err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+      err = motor.configure(config, resetMode, persistMode);
     }
 
     // Return true if the configuration was applied successfully, false otherwise
@@ -197,11 +226,7 @@ public final class SparkMaxFactory {
         .analogVoltagePeriodMs(500); 
     }
 
-    // Apply the configuration to the motor
-    motor.configure(
-      signals, 
-      ResetMode.kNoResetSafeParameters, // merges this partial config into the existing config
-      PersistMode.kPersistParameters // persists the configuration to the motor's flash memory
-    );
+    // Partial patch the configuration to the motor
+    patchConfig(motor, signals);
   }
 }

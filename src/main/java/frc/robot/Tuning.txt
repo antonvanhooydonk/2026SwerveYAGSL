@@ -1,0 +1,81 @@
+=============================
+Tuning Tips
+=============================
+
+The best practice for tuning core subsystems is feedforward plus a light feedback loop, not PID alone. 
+Feedforward predicts the output the mechanism needs from a physical model, and PID only cleans up 
+the leftover error. This is much more robust than a PID loop with large gains trying to do 
+everything. 
+
+-----------------------------
+Shared approach for all four
+-----------------------------
+
+Characterize the mechanism (e.g., with WPILib’s SysId) to get:
+kS (static friction), 
+kV (voltage per unit velocity)
+kA (voltage per unit acceleration)
+kG for gravity (elevator and vertical arms) 
+
+Use motion profiling (trapezoidal or similar) for anything that moves to a position, so the 
+setpoint is reachable and the feedforward is meaningful.
+
+Avoid the I term. Feedforward removes most steady-state error, and integral action tends to cause 
+windup and oscillation. Run the loop on the motor controller (e.g., Talon FX, Spark MAX) if 
+possible, since it runs at ~1 kHz with direct sensor access.
+
+Flow:
+1. Run SysId on each mechanism
+2. Copy the values from SysId to the appropriate constants files
+3. Enable tuning in Constants.java for the appropriate subsystems
+3. Use manual Elastic dashboard tuning to adjust P (usually) if necessary
+4. Disable tuning in Constants.java during matches at competitions
+
+-----------------------------
+Rotating arm
+-----------------------------
+Position control with a profile, gravity feedforward of kG·cos(θ) (θ measured from horizontal), 
+plus kS, kV, kA, and a P (or PD) loop on top. The cosine term matters because gravity torque 
+changes with angle, and a plain PID loop either sags at horizontal or overshoots near 
+vertical. If the load changes (e.g., holding a game piece), consider adjusting kG or 
+adding a state-space/LQR design.
+
+-----------------------------
+Elevator
+-----------------------------
+Same structure as the arm, except gravity is constant, so kG is a fixed voltage offset. 
+Use a profile, kG + kS + kV·v + kA·a, and a P or PD loop. Add soft limits and a homing 
+routine, since elevators are easy to damage at their hard stops.
+
+-----------------------------
+Turret
+-----------------------------
+No gravity term, so it’s just kS, kV, kA, a profiled position, and a PD loop. Special 
+considerations are wraparound (use continuous input or handle cable limits explicitly), 
+soft limits, and often feeding in the robot’s angular velocity as feedforward so the 
+turret can counter-rotate and stay on target while the chassis spins.
+
+-----------------------------
+Flywheel / Intake / Feeder
+-----------------------------
+This is velocity control, not position control, and feedforward does most of the work: 
+voltage ≈ kS·sign(v) + kV·v. Add a small P term to correct error, and no I or D 
+(D amplifies velocity-measurement noise). 
+
+Two notes:
+
+- Velocity measurements are noisy and delayed, so filter them (a median or low-pass filter helps) 
+or use a Kalman filter. 
+
+- Bang-bang control (full power when below target, off when above) combined with feedforward is 
+a legitimate, popular choice for high-inertia flywheels. It recovers fastest after a ball shot, 
+and the flywheel’s inertia smooths out the on/off switching. Don’t use it on low-inertia 
+mechanisms.
+
+-----------------------------
+When to go beyond this
+-----------------------------
+State-space control (LQR plus a Kalman filter) is the more principled version of all of the above. 
+It handles the model, noise, and constraints in one framework and is worth it if you need the 
+extra precision or you’re tuning many mechanisms. For most teams and projects, 
+feedforward + profile + P/PD is simple to tune and gets you 90-95% of the benefit.

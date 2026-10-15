@@ -21,15 +21,28 @@ import edu.wpi.first.math.util.Units;
  */
 public final class Constants {
   /**
-   * Analog IO contants
+   * Tuning constants - Turn dashboard tuning on/off for each subsystem.  
+   *                    SET TO FALSE AT COMPETITIONS.
    */
-  public static final class AnalogConstants {
-    // Swerve module absolute encoders are defined in /deploy/swerve/YYYY/modules/*.json
-    // Ensure that analog constants defined here do not conflict  with file definitions
+  public static final class TuningConstants {
+    public static final boolean kTuneClimber = true;
+    public static final boolean kTuneDrive = true;
+    public static final boolean kTuneElevator = true;
+    public static final boolean kTuneFeeder = true;
+    public static final boolean kTuneFlywheel = true;
+    public static final boolean kTuneIntake = true;
+    public static final boolean kTuneTurret = true;    
   }
 
   /**
-   * CAN bus IO contants
+   * Analog IO constants
+   */
+  public static final class AnalogConstants {
+    public static final int kArmMotorID = 15;
+  }
+
+  /**
+   * CAN bus IO constants
    */
   public static final class CANConstants {
     // Swerve module drive & steer motor IDs are defined in /deploy/swerve/YYYY/modules/*.json

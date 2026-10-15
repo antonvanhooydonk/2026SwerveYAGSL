@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.Constants.TuningConstants;
 import frc.robot.util.Conversions;
 import frc.robot.util.ShotCalculator;
 import frc.robot.util.TalonFXFactory;
@@ -100,13 +101,60 @@ public class TurretSubsystem extends SubsystemBase {
     // Add data to dashboard
     SmartDashboard.putData("Turret", this);
 
+    // Initialize tuning constants on the SmartDashboard for real-time tuning
+    initTuningDashboard();
+
     // Output initialization progress
     Utils.logInfo("Turret subsystem initialized");
   }
 
   @Override
   public void periodic() {
-    // Nothing needed - TalonFX handles the control loop onboard
+    getTuningFromDashboard();
+  }
+
+  /**
+   * Initialize tuning constants on the SmartDashboard for real-time tuning.
+   * This method is called once during subsystem initialization.
+   */
+  private void initTuningDashboard() {
+    if (TuningConstants.kTuneTurret) {
+      SmartDashboard.putNumber("Turret/P", TurretConstants.kP);
+      SmartDashboard.putNumber("Turret/I", TurretConstants.kI);
+      SmartDashboard.putNumber("Turret/D", TurretConstants.kD);
+      SmartDashboard.putNumber("Turret/kS", TurretConstants.kS);
+      SmartDashboard.putNumber("Turret/kV", TurretConstants.kV);
+      SmartDashboard.putNumber("Turret/kA", TurretConstants.kA);
+    }
+  }
+
+  /**
+   * Read tuning constants from SmartDashboard and apply them to the climber motor.
+   * This allows for real-time tuning of PIDF constants without redeploying code.
+   */
+  private void getTuningFromDashboard() {
+    // Check if tuning mode is enabled
+    if (TuningConstants.kTuneTurret) {
+      // Read PIDF constants from SmartDashboard
+      double p = SmartDashboard.getNumber("Turret/P", TurretConstants.kP);
+      double i = SmartDashboard.getNumber("Turret/I", TurretConstants.kI);
+      double d = SmartDashboard.getNumber("Turret/D", TurretConstants.kD);
+      double kS = SmartDashboard.getNumber("Turret/kS", TurretConstants.kS);
+      double kV = SmartDashboard.getNumber("Turret/kV", TurretConstants.kV);
+      double kA = SmartDashboard.getNumber("Turret/kA", TurretConstants.kA);
+
+      // Update the controller with the new constants
+      TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
+      tuneConfig.Slot0
+        .withKP(p)
+        .withKI(i)
+        .withKD(d)
+        .withKS(kS)
+        .withKV(kV)
+        .withKA(kA);
+      
+      TalonFXFactory.applyConfig(turretMotor, tuneConfig);
+    }
   }
   
   /**

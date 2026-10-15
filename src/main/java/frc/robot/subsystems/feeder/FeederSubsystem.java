@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.Constants.CANConstants;
+import frc.robot.Constants.TuningConstants;
 import frc.robot.util.TalonFXFactory;
 import frc.robot.util.Utils;
 
@@ -79,13 +80,60 @@ public class FeederSubsystem extends SubsystemBase {
     // Add data to dashboard
     SmartDashboard.putData("Feeder", this);
 
+    // Initialize tuning constants on the SmartDashboard for real-time tuning
+    initTuningDashboard();
+
     // Output initialization progress
     Utils.logInfo("Feeder subsystem initialized");
   }
 
   @Override
   public void periodic() {
-    // Nothing needed - TalonFX handles the control loop onboard
+    getTuningFromDashboard();
+  }
+
+  /**
+   * Initialize tuning constants on the SmartDashboard for real-time tuning.
+   * This method is called once during subsystem initialization.
+   */
+  private void initTuningDashboard() {
+    if (TuningConstants.kTuneFeeder) {
+      SmartDashboard.putNumber("Feeder/P", FeederConstants.kP);
+      SmartDashboard.putNumber("Feeder/I", FeederConstants.kI);
+      SmartDashboard.putNumber("Feeder/D", FeederConstants.kD);
+      SmartDashboard.putNumber("Feeder/kS", FeederConstants.kS);
+      SmartDashboard.putNumber("Feeder/kV", FeederConstants.kV);
+      SmartDashboard.putNumber("Feeder/kA", FeederConstants.kA);
+    }
+  }
+
+  /**
+   * Read tuning constants from SmartDashboard and apply them to the climber motor.
+   * This allows for real-time tuning of PIDF constants without redeploying code.
+   */
+  private void getTuningFromDashboard() {
+    // Check if tuning mode is enabled
+    if (TuningConstants.kTuneFeeder) {
+      // Read PIDF constants from SmartDashboard
+      double p = SmartDashboard.getNumber("Feeder/P", FeederConstants.kP);
+      double i = SmartDashboard.getNumber("Feeder/I", FeederConstants.kI);
+      double d = SmartDashboard.getNumber("Feeder/D", FeederConstants.kD);
+      double kS = SmartDashboard.getNumber("Feeder/kS", FeederConstants.kS);
+      double kV = SmartDashboard.getNumber("Feeder/kV", FeederConstants.kV);
+      double kA = SmartDashboard.getNumber("Feeder/kA", FeederConstants.kA);
+
+      // Update the controller with the new constants
+      TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
+      tuneConfig.Slot0
+        .withKP(p)
+        .withKI(i)
+        .withKD(d)
+        .withKS(kS)
+        .withKV(kV)
+        .withKA(kA);
+      
+      TalonFXFactory.applyConfig(feederMotor, tuneConfig);
+    }
   }
   
   /**
