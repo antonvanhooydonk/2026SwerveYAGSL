@@ -104,8 +104,12 @@ public class ClimberSubsystem extends SubsystemBase {
     config.closedLoop
       .p(ClimberConstants.kP)
       .i(ClimberConstants.kI)
-      .d(ClimberConstants.kD);
-    
+      .d(ClimberConstants.kD)
+      .feedForward
+        .kS(ClimberConstants.kS)
+        .kV(ClimberConstants.kV)
+        .kA(ClimberConstants.kA);
+
     // Set motion control parameters for closed-loop control
     config.closedLoop.maxMotion
       .cruiseVelocity(Conversions.degreesToRotations(

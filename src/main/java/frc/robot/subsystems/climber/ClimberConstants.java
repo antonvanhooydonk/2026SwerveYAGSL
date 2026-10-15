@@ -51,4 +51,7 @@ public final class ClimberConstants {
   public static final double kP = 0.05; // Proportional gain for position control
   public static final double kI = 0.0; // Integral gain for position control
   public static final double kD = 0.0; // Derivative gain for position control
+  public static final double kS = 0.2; // Static gain for feedforward
+  public static final double kV = 0.02; // Velocity gain for feedforward
+  public static final double kA = 0.001; // Acceleration gain for feedforward
 }
