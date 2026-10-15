@@ -21,10 +21,10 @@ public final class FlywheelConstants {
   // ------------------------------------------------------------
   // Control constants
   // ------------------------------------------------------------
-  public static final double kFlywheelMinRPM = 0.0;    // Minimum RPM for flywheel
-  public static final double kFlywheelMaxRPM = 6000.0; // Maximum RPM for flywheel
-  public static final double kFlywheelToleranceRPM    = 50.0;  // RPM window to consider flywheel at target
-  public static final double kFlywheelMinSpinningRPM  = 100.0; // RPM threshold to consider flywheel spinning
+  public static final double kFlywheelMinRPM          = 0.0;    // Minimum RPM for flywheel
+  public static final double kFlywheelMaxRPM          = 6000.0; // Maximum RPM for flywheel
+  public static final double kFlywheelToleranceRPM    = 100.0;  // RPM window to consider flywheel at target
+  public static final double kFlywheelMinSpinningRPM  = 100.0;  // RPM threshold to consider flywheel spinning
 
   // Average fuel exit speed used for time-of-flight / shoot-on-the-move lead. TODO: calibrate
   // against measured shots (it should correspond to the RPM the table commands).
