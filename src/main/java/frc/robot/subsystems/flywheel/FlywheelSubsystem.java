@@ -174,6 +174,7 @@ public class FlywheelSubsystem extends SubsystemBase {
         .withKA(kA);
       
       TalonFXFactory.applyConfig(flywheelLeader, tuneConfig);
+      TalonFXFactory.applyConfig(flywheelFollower, tuneConfig);
     }
   }
   
