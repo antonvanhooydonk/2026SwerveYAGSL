@@ -177,6 +177,9 @@ public class RobotContainer {
       turretSubsystem.setHomePositionCommand()
     ).ignoringDisable(true));
 
+    // toggles the drive brake mode: brake vs coast
+    RobotModeTriggers.disabled().and(driverXbox.start()).onTrue(driveSubsystem.toggleBrakeModeCommand());
+
     // re-zero field-relative heading only (keeps the vision/odometry position)
     RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
 

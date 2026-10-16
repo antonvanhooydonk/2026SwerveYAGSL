@@ -80,6 +80,7 @@ public class DriveSubsystem extends SubsystemBase {
   // Current robot state
   private boolean fieldRelative = true;
   private boolean slowMode = false;
+  private boolean brakeMode = true;
   private long acceptedVisionCount = 0;
   private long rejectedVisionCount = 0;
   private long blurRejectedVisionCount = 0;
@@ -206,7 +207,8 @@ public class DriveSubsystem extends SubsystemBase {
    * @param brake True to enable motor brake, false for coast
    */
   private void setMotorBrake(boolean brake) {
-    swerveDrive.setMotorIdleMode(brake);
+    this.brakeMode = brake;
+    swerveDrive.setMotorIdleMode(this.brakeMode);
   }
 
   /**
@@ -331,6 +333,13 @@ public class DriveSubsystem extends SubsystemBase {
   private boolean isSlowMode() {
     return slowMode;
   }
+  /**
+   * Gets whether brake mode is enabled
+   * @return Brake mode status
+   */
+  private boolean isBrakeMode() {
+    return brakeMode;
+  }
 
   /**
    * Calculates the distance from the current pose to a target pose.
@@ -349,6 +358,9 @@ public class DriveSubsystem extends SubsystemBase {
     .debounce(0.05, DebounceType.kBoth);
     
   public final Trigger isSlowModeTrigger = new Trigger(this::isSlowMode)
+    .debounce(0.05, DebounceType.kBoth);
+    
+  public final Trigger isBrakeModeTrigger = new Trigger(this::isBrakeMode)
     .debounce(0.05, DebounceType.kBoth);
 
   // ----------------------------------------------------------------------------------------
@@ -422,6 +434,9 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.postMatch() or a command scheduler binding.
    */
   public void postMatch() {
+    // Set motors to brake mode for match (do this before resetting encoders)
+    setMotorBrake(true);
+  
     // Reset slew rate limiters
     xLimiter.reset(0.0);
     yLimiter.reset(0.0);
@@ -901,12 +916,11 @@ public class DriveSubsystem extends SubsystemBase {
 
   /**
    * Enable/disable motor brake mode
-   * @param brake True to enable brake mode, false to disable
    */
-  public Command setBrakeModeCommand(boolean brake) {
-    return runOnce(() -> setMotorBrake(brake))
+  public Command toggleBrakeModeCommand() {
+    return runOnce(() -> setMotorBrake(!brakeMode))
       .ignoringDisable(true)
-      .withName("Drive_SetBrakeMode");
+      .withName("Drive_ToggleBrakeMode");
   }
 
   /**
