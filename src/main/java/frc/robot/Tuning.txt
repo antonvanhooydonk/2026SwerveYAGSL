@@ -25,10 +25,10 @@ windup and oscillation. Run the loop on the motor controller (e.g., Talon FX, Sp
 possible, since it runs at ~1 kHz with direct sensor access.
 
 Flow:
-1. Run SysId on each mechanism
-2. Copy the values from SysId to the appropriate constants files
-3. Enable tuning in Constants.java for the appropriate subsystems
-3. Use manual Elastic dashboard tuning to adjust P (usually) if necessary
+1. Run SysId first: Get your raw physical constants (kS, kV, kG) and copy them into your code.
+2. Input SysId's suggested kP: This provides a starting point that is usually safe and functional.
+3. Open Elastic Dashboard: Use the "Tuning Mode" switch infrastructure to slightly bump kP up or 
+   down until the mechanism is perfectly snappy, responsive, and doesn't oscillate
 4. Disable tuning in Constants.java during matches at competitions
 
 -----------------------------
