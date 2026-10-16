@@ -235,8 +235,7 @@ public class DriveSubsystem extends SubsystemBase {
    * The alliance is read when this runs, not when the command is built.
    */
   private void resetHeading() {
-    Rotation2d forward = getSeedPose().getRotation();
-    swerveDrive.resetOdometry(new Pose2d(getPose().getTranslation(), forward));
+    swerveDrive.resetOdometry(new Pose2d(getPose().getTranslation(), getSeedPose().getRotation()));
   }
 
   /**
