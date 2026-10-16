@@ -67,13 +67,14 @@ public class VisionSubsystem extends SubsystemBase {
       return;
     }
 
-    // Get the defined AprilTag camera configurations
-    Map<String, Transform3d> configs = VisionConstants.kAprilTagCameras;
-
+    // Initialize vision simulation if running in simulation mode
     if (RobotBase.isSimulation()) {
       visionSim = new VisionSystemSim("main");
       visionSim.addAprilTags(FieldConstants.kFieldLayout);
     }
+
+    // Get the defined AprilTag camera configurations
+    Map<String, Transform3d> configs = VisionConstants.kAprilTagCameras;
     
     // Add each to camera the list
     for (String cameraName : configs.keySet()) {
@@ -90,11 +91,6 @@ public class VisionSubsystem extends SubsystemBase {
       } catch (Exception ex) {
         Utils.logError("Failed to initialize camera " + cameraName + ": " + ex.getMessage());
       }
-    }
-    
-    // Warn if no cameras initialized
-    if (cameras.isEmpty()) {
-      Utils.logError("Vision enabled but no cameras initialized!");
     }
 
     // Initialize dashboard values
