@@ -8,15 +8,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -40,15 +46,20 @@ public class VisionSubsystem extends SubsystemBase {
   // Vision measurement consumer (injected from drive subsystem for pose estimator updates)
   private final VisionMeasurementConsumer visionConsumer;
 
+  // Sim variables
+  private final Supplier<Pose2d> simTruthPoseSupplier;
+  private VisionSystemSim visionSim;
+
   // Camera object storage
   private final List<Camera> cameras = new ArrayList<>();
 
   /**
    * Creates a new VisionSubsystem
    */
-  public VisionSubsystem(VisionMeasurementConsumer visionConsumer) {
+  public VisionSubsystem(VisionMeasurementConsumer visionConsumer, Supplier<Pose2d> simTruthPoseSupplier) {
     // Store the vision consumer for pose estimator updates
     this.visionConsumer = visionConsumer;
+    this.simTruthPoseSupplier = simTruthPoseSupplier;
 
     // Exit early if vision is not enabled to avoid unnecessary initialization
     if (!VisionConstants.kEnableVision) {
@@ -58,11 +69,24 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Get the defined AprilTag camera configurations
     Map<String, Transform3d> configs = VisionConstants.kAprilTagCameras;
+
+    if (RobotBase.isSimulation()) {
+      visionSim = new VisionSystemSim("main");
+      visionSim.addAprilTags(FieldConstants.kFieldLayout);
+    }
     
     // Add each to camera the list
     for (String cameraName : configs.keySet()) {
       try {
-        cameras.add(new Camera(cameraName, configs.get(cameraName)));
+        Camera camera = new Camera(cameraName, configs.get(cameraName));
+        cameras.add(camera);
+
+        // Add camera to simulation if in sim mode
+        if (visionSim != null) {
+          var cameraSim = new PhotonCameraSim(camera.getCamera(), createSimCameraProperties());
+          cameraSim.enableDrawWireframe(VisionConstants.kDebug);  // costs CPU, so debug only
+          visionSim.addCamera(cameraSim, configs.get(cameraName));
+        }
       } catch (Exception ex) {
         Utils.logError("Failed to initialize camera " + cameraName + ": " + ex.getMessage());
       }
@@ -75,6 +99,11 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Initialize dashboard values
     SmartDashboard.putData("Vision", this);
+
+    // Add vision sim field to dashboard if in simulation
+    if (visionSim != null) {
+      SmartDashboard.putData("Vision Sim", visionSim.getDebugField());
+    }
 
     // Output initialization progress
     Utils.logInfo("Vision subsystem initialized");
@@ -100,6 +129,14 @@ public class VisionSubsystem extends SubsystemBase {
     
     // Process vision measurements using cached data
     updateVisionMeasurements();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    if (visionSim == null || !isEnabled()) {
+      return;
+    }
+    visionSim.update(simTruthPoseSupplier.get());
   }
 
   // ==================== Internal State Modifiers ====================
@@ -278,6 +315,20 @@ public class VisionSubsystem extends SubsystemBase {
 
     // Return the calculated standard deviations for x, y, and theta
     return new double[] { xyStdDev, xyStdDev, thetaStdDev };
+  }
+
+  /**
+   * Creates simulated camera properties for PhotonVision simulation
+   * @return SimCameraProperties object with configured properties
+   */
+  private static SimCameraProperties createSimCameraProperties() {
+    var props = new SimCameraProperties();
+    props.setCalibration(1280, 800, Rotation2d.fromDegrees(90));
+    props.setCalibError(0.25, 0.08);   // avg / std-dev pixel error
+    props.setFPS(30);
+    props.setAvgLatencyMs(35);
+    props.setLatencyStdDevMs(5);
+    return props;
   }
 
   // ==================== Public state accessors ====================

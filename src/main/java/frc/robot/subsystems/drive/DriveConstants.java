@@ -82,6 +82,7 @@ public final class DriveConstants {
   // ------------------------------------------------------------
   public static final double kTrackWidthMeters = Units.inchesToMeters(23); // distance between left and right wheels
   public static final double kWheelBaseMeters = Units.inchesToMeters(23); // distance between front and back wheels
+  public static final double kRobotBaseWithBumpersMeters = Units.inchesToMeters(30); // distance between front and back bumpers
   public static final double kWheelDiameterMeters = Units.inchesToMeters(4.0);
   public static final double kWheelRadiusMeters = kWheelDiameterMeters / 2.0;
   public static final double kWheelCircumference = kWheelDiameterMeters * Math.PI;
@@ -95,7 +96,8 @@ public final class DriveConstants {
 
   public static final double kGyroAngleOffsetDegrees = 0.0; // default 0.0 - Rotate the gyro X axis if the gyro was not installed facing forward
   public static final double kPeriodicTimeSeconds = 0.02; // 20ms (default)
-
+  public static final double kSeedXMeters = kRobotBaseWithBumpersMeters / 2;
+  
   // Define the module translations from the robot's center
   // See: https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#coordinate-system
   public static final Translation2d[] kSwerveModuleTranslations = new Translation2d[] {

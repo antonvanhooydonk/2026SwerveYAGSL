@@ -31,12 +31,12 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -51,6 +51,7 @@ import frc.robot.util.Utils;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 import swervelib.parser.SwerveParser;
+import swervelib.simulation.ironmaple.simulation.SimulatedArena;
 import swervelib.telemetry.SwerveDriveTelemetry;
 
 /**
@@ -169,6 +170,17 @@ public class DriveSubsystem extends SubsystemBase {
     swerveDrive.updateOdometry();
   }
 
+  @Override
+  public void simulationPeriodic() {
+    // Advance the maple-sim physics world.
+    // If another subsystem (intake, game pieces) also needs this, call it in
+    // Robot.simulationPeriodic() instead so it only runs once per loop.
+    SimulatedArena.getInstance().simulationPeriodic();
+
+    // Show the physics "truth" pose next to the estimated pose
+    getSimPose().ifPresent(p -> swerveDrive.field.getObject("Sim Truth").setPose(p));
+  }
+
   // ----------------------------------------------------------------------------------------
   // Private state methods
   // ----------------------------------------------------------------------------------------
@@ -251,9 +263,19 @@ public class DriveSubsystem extends SubsystemBase {
     if (alliance.isEmpty() || alliance.equals(seededAlliance)) {
       return;
     }
-    resetHeading(); // reads the current alliance, keeps the translation estimate
+
+    // In sim there is no real position to preserve, so seed the whole pose.
+    // On a real robot, only do this if vision hasn't given us a position yet.
+    if (RobotBase.isSimulation() || acceptedVisionCount == 0) {
+      // seed the whole pose
+      swerveDrive.resetOdometry(getSeedPose());
+    } else {
+      // reads the current alliance but keeps the translation estimate
+      resetHeading();
+    }
+    
+    // cache the alliance so we don't re-seed until it changes
     seededAlliance = alliance;
-    Utils.logInfo("Seeded heading for " + alliance.get() + " alliance");
   }
 
   /**
@@ -272,9 +294,12 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The default starting Pose2d
    */
   private Pose2d getSeedPose() {
-    return Utils.isRedAlliance() 
-      ? new Pose2d(new Translation2d(0, 0), Rotation2d.k180deg)
-      : new Pose2d(new Translation2d(0, 0), Rotation2d.kZero);
+    Pose2d bluePose = new Pose2d(
+      DriveConstants.kSeedXMeters,
+      FieldConstants.kFieldWidthMeters / 2.0,
+      Rotation2d.kZero
+    );
+    return Utils.isRedAlliance() ? FlippingUtil.flipFieldPose(bluePose) : bluePose;
   }
 
   /**
@@ -283,6 +308,13 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public Pose2d getPose() {
     return swerveDrive.getPose();
+  }
+
+  /**
+   * Gets the current simulated pose of the robot in the simulation world.
+   */
+  public Optional<Pose2d> getSimPose() {
+    return swerveDrive.getSimulationDriveTrainPose();
   }
 
   /**
@@ -314,6 +346,9 @@ public class DriveSubsystem extends SubsystemBase {
    * @return True if the gyro is connected and functional, false otherwise
    */
   private boolean isGyroConnected() {
+    if (RobotBase.isSimulation()) {
+      return true;
+    }
     return gyro != null && gyro.isConnected();
   }
 
@@ -680,10 +715,13 @@ public class DriveSubsystem extends SubsystemBase {
       double rSpeed = MathUtil.applyDeadband(rawR, DriveConstants.kJoystickDeadband);
       rSpeed = Math.copySign(Math.pow(Math.abs(rSpeed), DriveConstants.kJoystickInputExponent), rSpeed);
 
-      // Apply slew rate limiting to smooth out sudden changes in speed
-      xSpeed = xLimiter.calculate(xSpeed);
-      ySpeed = yLimiter.calculate(ySpeed);
-      rSpeed = rLimiter.calculate(rSpeed);
+      // If not using the setpoint generator, apply slew rate 
+      // limiting to smooth out sudden changes in speed
+      if (!DriveConstants.kUseSetpointGenerator) {
+        xSpeed = xLimiter.calculate(xSpeed);
+        ySpeed = yLimiter.calculate(ySpeed);
+        rSpeed = rLimiter.calculate(rSpeed);
+      }
 
       // If slow mode is enabled, scale down speeds for finer control
       if (isSlowMode()) {
