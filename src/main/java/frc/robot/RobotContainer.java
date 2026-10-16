@@ -183,11 +183,11 @@ public class RobotContainer {
     // toggles the drive brake mode: brake vs coast
     RobotModeTriggers.disabled().and(driverXbox.start()).onTrue(driveSubsystem.toggleBrakeModeCommand());
 
-    // re-zero field-relative heading only (keeps the vision/odometry position)
-    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
-
     // toggles the drive mode: field-relative vs robot-relative
     RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeCommand());
+
+    // re-zero field-relative heading only (keeps the vision/odometry position)
+    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
 
     // teleop button bindings
     RobotModeTriggers.teleop().and(driverXbox.a()).onTrue(Commands.none());
