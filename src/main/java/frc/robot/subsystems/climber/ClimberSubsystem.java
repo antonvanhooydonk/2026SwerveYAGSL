@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Arrays;
+
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
@@ -41,6 +43,9 @@ public class ClimberSubsystem extends SubsystemBase {
 
   // SysId routine
   private final SysIdRoutine sysIdRoutine;
+
+  // Tuning constants from the SmartDashboard (for real-time tuning)
+  private double[] lastTuning = new double[0];
  
   /** Creates a new ClimberSubsystem. */
   public ClimberSubsystem() {    
@@ -109,29 +114,34 @@ public class ClimberSubsystem extends SubsystemBase {
    * This allows for real-time tuning of PIDF constants without redeploying code.
    */
   private void getTuningFromDashboard() {
-    // Check if tuning mode is enabled
-    if (TuningConstants.kTuneClimber) {
-      // Read PIDF constants from SmartDashboard
-      double p = SmartDashboard.getNumber("Climber/P", ClimberConstants.kP);
-      double i = SmartDashboard.getNumber("Climber/I", ClimberConstants.kI);
-      double d = SmartDashboard.getNumber("Climber/D", ClimberConstants.kD);
-      double kS = SmartDashboard.getNumber("Climber/kS", ClimberConstants.kS);
-      double kV = SmartDashboard.getNumber("Climber/kV", ClimberConstants.kV);
-      double kA = SmartDashboard.getNumber("Climber/kA", ClimberConstants.kA);
+    if (!TuningConstants.kTuneClimber) return;
 
-      // Update the controller with the new constants
-      SparkMaxConfig tuneConfig = new SparkMaxConfig();
-      tuneConfig.closedLoop
-        .p(p)
-        .i(i)
-        .d(d)
-        .feedForward
-          .kS(kS)
-          .kV(kV)
-          .kA(kA);
-      
-      SparkMaxFactory.patchConfig(climberMotor, tuneConfig);
-    }
+    // Get the current tuning values from the SmartDashboard
+    double[] current = {
+      SmartDashboard.getNumber("Climber/P", ClimberConstants.kP),
+      SmartDashboard.getNumber("Climber/I", ClimberConstants.kI),
+      SmartDashboard.getNumber("Climber/D", ClimberConstants.kD),
+      SmartDashboard.getNumber("Climber/kS", ClimberConstants.kS),
+      SmartDashboard.getNumber("Climber/kV", ClimberConstants.kV),
+      SmartDashboard.getNumber("Climber/kA", ClimberConstants.kA),
+    };
+    if (Arrays.equals(current, lastTuning)) return;
+
+    // Cache the current tuning values to avoid unnecessary updates
+    lastTuning = current;
+
+    // Update the controller with the new constants
+    SparkMaxConfig tuneConfig = new SparkMaxConfig();
+    tuneConfig.closedLoop
+      .p(current[0])
+      .i(current[1])
+      .d(current[2])
+      .feedForward
+        .kS(current[3])
+        .kV(current[4])
+        .kA(current[5]);
+    
+    SparkMaxFactory.patchConfig(climberMotor, tuneConfig);
   }
   
   /**

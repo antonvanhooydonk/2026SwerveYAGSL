@@ -8,6 +8,8 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Arrays;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -55,6 +57,9 @@ public class IntakeSubsystem extends SubsystemBase {
   
   // SysId routine
   private final SysIdRoutine rollerSysIdRoutine;
+
+  // Tuning constants from the SmartDashboard (for real-time tuning)
+  private double[] lastTuning = new double[0];
 
   /**
    * Creates a new IntakeSubsystem
@@ -128,28 +133,33 @@ public class IntakeSubsystem extends SubsystemBase {
    * This allows for real-time tuning of PIDF constants without redeploying code.
    */
   private void getTuningFromDashboard() {
-    // Check if tuning mode is enabled
-    if (TuningConstants.kTuneIntake) {
-      // Read PIDF constants from SmartDashboard
-      double p = SmartDashboard.getNumber("Intake/P", IntakeConstants.kP);
-      double i = SmartDashboard.getNumber("Intake/I", IntakeConstants.kI);
-      double d = SmartDashboard.getNumber("Intake/D", IntakeConstants.kD);
-      double kS = SmartDashboard.getNumber("Intake/kS", IntakeConstants.kS);
-      double kV = SmartDashboard.getNumber("Intake/kV", IntakeConstants.kV);
-      double kA = SmartDashboard.getNumber("Intake/kA", IntakeConstants.kA);
+    if (!TuningConstants.kTuneIntake) return;
 
-      // Update the controller with the new constants
-      TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
-      tuneConfig.Slot0
-        .withKP(p)
-        .withKI(i)
-        .withKD(d)
-        .withKS(kS)
-        .withKV(kV)
-        .withKA(kA);
-      
-      TalonFXFactory.applyConfig(rollerMotor, tuneConfig);
-    }
+    // Get the current tuning values from the SmartDashboard
+    double[] current = {
+      SmartDashboard.getNumber("Intake/P", IntakeConstants.kP),
+      SmartDashboard.getNumber("Intake/I", IntakeConstants.kI),
+      SmartDashboard.getNumber("Intake/D", IntakeConstants.kD),
+      SmartDashboard.getNumber("Intake/kS", IntakeConstants.kS),
+      SmartDashboard.getNumber("Intake/kV", IntakeConstants.kV),
+      SmartDashboard.getNumber("Intake/kA", IntakeConstants.kA),
+    };
+    if (Arrays.equals(current, lastTuning)) return;
+
+    // Cache the current tuning values to avoid unnecessary updates
+    lastTuning = current;
+
+    // Update the controller with the new constants
+    TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
+    tuneConfig.Slot0
+      .withKP(current[0])
+      .withKI(current[1])
+      .withKD(current[2])
+      .withKS(current[3])
+      .withKV(current[4])
+      .withKA(current[5]);
+    
+    TalonFXFactory.applyConfig(rollerMotor, tuneConfig);
   }
   
   /**

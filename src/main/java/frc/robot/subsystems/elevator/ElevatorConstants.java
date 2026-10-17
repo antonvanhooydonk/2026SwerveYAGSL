@@ -13,6 +13,7 @@ public final class ElevatorConstants {
   // ------------------------------------------------------------
   // Physical constants - adjust for your robot
   // ------------------------------------------------------------
+  public static final double kCarriageMassKg            = 6.0;  // total moving mass (carriage + stages as seen by the spool)
   public static final double kGearRatio                 = 10.0; // Motor rotations per output shaft rotation
   public static final double kSpoolDiameterMeters       = Units.inchesToMeters(1.5);
   public static final double kSpoolCircumferenceMeters  = kSpoolDiameterMeters * Math.PI;

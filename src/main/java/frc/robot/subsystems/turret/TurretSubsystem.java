@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Arrays;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -17,13 +18,24 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -65,6 +77,14 @@ public class TurretSubsystem extends SubsystemBase {
   // SysId routine
   private final SysIdRoutine turretSysIdRoutine;
 
+  // Tuning constants from the SmartDashboard (for real-time tuning)
+  private double[] lastTuning = new double[0];
+
+  // Simulation (null on a real robot)
+  private DCMotorSim turretSim;
+  private TalonFXSimState turretMotorSim;
+  private StructPublisher<Pose3d> simPosePublisher;
+
   /**
    * Creates a new TurretSubsystem
    */
@@ -104,6 +124,11 @@ public class TurretSubsystem extends SubsystemBase {
     // Initialize tuning constants on the SmartDashboard for real-time tuning
     initTuningDashboard();
 
+    // Initialize simulation if running in simulation mode
+    if (RobotBase.isSimulation()) {
+      initSimulation();
+    }
+
     // Output initialization progress
     Utils.logInfo("Turret subsystem initialized");
   }
@@ -111,6 +136,64 @@ public class TurretSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     getTuningFromDashboard();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    turretMotorSim.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+    turretSim.setInputVoltage(turretMotorSim.getMotorVoltage());
+    turretSim.update(0.020);
+
+    // Hard stops just past the soft limits, so momentum can't carry the turret through them
+    double minRad = Units.degreesToRadians(TurretConstants.kMinAngleDegrees);
+    double maxRad = Units.degreesToRadians(TurretConstants.kMaxAngleDegrees);
+    double pos = turretSim.getAngularPositionRad();
+    double vel = turretSim.getAngularVelocityRadPerSec();
+    if ((pos < minRad && vel < 0) || (pos > maxRad && vel > 0)) {
+      turretSim.setState(MathUtil.clamp(pos, minRad, maxRad), 0.0);
+    }
+
+    turretMotorSim.setRawRotorPosition(Conversions.degreesToRotations(
+      turretSim.getAngularPositionRad(), 
+      TurretConstants.kGearRatio
+    ));
+    turretMotorSim.setRotorVelocity(Conversions.degreesToRotations(
+      turretSim.getAngularVelocityRadPerSec(), 
+      TurretConstants.kGearRatio
+    ));
+
+    // Robot-relative turret rotation for AdvantageScope's 3D robot model
+    simPosePublisher.set(new Pose3d(0, 0, 0, new Rotation3d(0, 0, turretSim.getAngularPositionRad())));
+  }
+
+  /**
+   * Initialize the simulation for the turret subsystem. This sets 
+   * up the physics model and visualization for simulation mode.
+   */
+  private void initSimulation() {
+    turretMotorSim = turretMotor.getSimState();
+
+    // Must match the InvertedValue in getMotorConfig()
+    turretMotorSim.Orientation = ChassisReference.CounterClockwise_Positive;
+
+    DCMotor gearbox = DCMotor.getFalcon500(1);
+    turretSim = new DCMotorSim(
+      LinearSystemId.createDCMotorSystem(
+        gearbox,
+        TurretConstants.kMOIKgMetersSq,
+        TurretConstants.kGearRatio
+      ),
+      gearbox
+    );
+
+    // Start at home (0), matching the TalonFX's power-on position
+    turretSim.setState(0.0, 0.0);
+    turretMotorSim.setRawRotorPosition(0.0);
+
+    simPosePublisher = NetworkTableInstance.getDefault()
+      .getStructTopic("Sim/TurretPose", Pose3d.struct)
+      .publish();
   }
 
   /**
@@ -133,28 +216,33 @@ public class TurretSubsystem extends SubsystemBase {
    * This allows for real-time tuning of PIDF constants without redeploying code.
    */
   private void getTuningFromDashboard() {
-    // Check if tuning mode is enabled
-    if (TuningConstants.kTuneTurret) {
-      // Read PIDF constants from SmartDashboard
-      double p = SmartDashboard.getNumber("Turret/P", TurretConstants.kP);
-      double i = SmartDashboard.getNumber("Turret/I", TurretConstants.kI);
-      double d = SmartDashboard.getNumber("Turret/D", TurretConstants.kD);
-      double kS = SmartDashboard.getNumber("Turret/kS", TurretConstants.kS);
-      double kV = SmartDashboard.getNumber("Turret/kV", TurretConstants.kV);
-      double kA = SmartDashboard.getNumber("Turret/kA", TurretConstants.kA);
+    if (!TuningConstants.kTuneTurret) return;
 
-      // Update the controller with the new constants
-      TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
-      tuneConfig.Slot0
-        .withKP(p)
-        .withKI(i)
-        .withKD(d)
-        .withKS(kS)
-        .withKV(kV)
-        .withKA(kA);
-      
-      TalonFXFactory.applyConfig(turretMotor, tuneConfig);
-    }
+    // Get the current tuning values from the SmartDashboard
+    double[] current = {
+      SmartDashboard.getNumber("Turret/P", TurretConstants.kP),
+      SmartDashboard.getNumber("Turret/I", TurretConstants.kI),
+      SmartDashboard.getNumber("Turret/D", TurretConstants.kD),
+      SmartDashboard.getNumber("Turret/kS", TurretConstants.kS),
+      SmartDashboard.getNumber("Turret/kV", TurretConstants.kV),
+      SmartDashboard.getNumber("Turret/kA", TurretConstants.kA)
+    };
+    if (Arrays.equals(current, lastTuning)) return;
+
+    // Cache the current tuning values to avoid unnecessary updates
+    lastTuning = current;
+
+    // Update the controller with the new constants
+    TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
+    tuneConfig.Slot0
+      .withKP(current[0])
+      .withKI(current[1])
+      .withKD(current[2])
+      .withKS(current[3])
+      .withKV(current[4])
+      .withKA(current[5]);
+    
+    TalonFXFactory.applyConfig(turretMotor, tuneConfig);
   }
   
   /**

@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Arrays;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -64,6 +65,9 @@ public class FlywheelSubsystem extends SubsystemBase {
 
   // SysId routine
   private final SysIdRoutine flywheelSysIdRoutine;
+
+  // Tuning constants from the SmartDashboard (for real-time tuning)
+  private double[] lastTuning = new double[0];
 
   /**
    * Creates a new FlywheelSubsystem
@@ -153,29 +157,34 @@ public class FlywheelSubsystem extends SubsystemBase {
    * This allows for real-time tuning of PIDF constants without redeploying code.
    */
   private void getTuningFromDashboard() {
-    // Check if tuning mode is enabled
-    if (TuningConstants.kTuneFlywheel) {
-      // Read PIDF constants from SmartDashboard
-      double p = SmartDashboard.getNumber("Flywheel/P", FlywheelConstants.kP);
-      double i = SmartDashboard.getNumber("Flywheel/I", FlywheelConstants.kI);
-      double d = SmartDashboard.getNumber("Flywheel/D", FlywheelConstants.kD);
-      double kS = SmartDashboard.getNumber("Flywheel/kS", FlywheelConstants.kS);
-      double kV = SmartDashboard.getNumber("Flywheel/kV", FlywheelConstants.kV);
-      double kA = SmartDashboard.getNumber("Flywheel/kA", FlywheelConstants.kA);
+    if (!TuningConstants.kTuneFlywheel) return;
 
-      // Update the controller with the new constants
-      TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
-      tuneConfig.Slot0
-        .withKP(p)
-        .withKI(i)
-        .withKD(d)
-        .withKS(kS)
-        .withKV(kV)
-        .withKA(kA);
-      
-      TalonFXFactory.applyConfig(flywheelLeader, tuneConfig);
-      TalonFXFactory.applyConfig(flywheelFollower, tuneConfig);
-    }
+    // Get the current tuning values from the SmartDashboard
+    double[] current = {
+      SmartDashboard.getNumber("Flywheel/P", FlywheelConstants.kP),
+      SmartDashboard.getNumber("Flywheel/I", FlywheelConstants.kI),
+      SmartDashboard.getNumber("Flywheel/D", FlywheelConstants.kD),
+      SmartDashboard.getNumber("Flywheel/kS", FlywheelConstants.kS),
+      SmartDashboard.getNumber("Flywheel/kV", FlywheelConstants.kV),
+      SmartDashboard.getNumber("Flywheel/kA", FlywheelConstants.kA),
+    };
+    if (Arrays.equals(current, lastTuning)) return;
+
+    // Cache the current tuning values to avoid unnecessary updates
+    lastTuning = current;
+
+    // Update the controller with the new constants
+    TalonFXConfiguration tuneConfig = new TalonFXConfiguration();
+    tuneConfig.Slot0
+      .withKP(current[0])
+      .withKI(current[1])
+      .withKD(current[2])
+      .withKS(current[3])
+      .withKV(current[4])
+      .withKA(current[5]);
+    
+    TalonFXFactory.applyConfig(flywheelLeader, tuneConfig);
+    TalonFXFactory.applyConfig(flywheelFollower, tuneConfig);
   }
   
   /**
