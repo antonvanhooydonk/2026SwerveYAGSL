@@ -11,7 +11,6 @@ import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-import frc.robot.Robot;
 
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
@@ -32,7 +31,7 @@ public final class DriveConstants {
   public static final double kSlowModeScaling = 0.25; // scaling factor for "slow mode", typically 0.25 to 0.5, adjust as needed for driver control at low speeds
 
   public static final TelemetryVerbosity kTelemetryVerbosity = TelemetryVerbosity.LOW; // set to LOW at competition
-  public static final boolean kUseSetpointGenerator = true && Robot.isReal();
+  public static final boolean kUseSetpointGenerator = true;
 
   // ------------------------------------------------------------
   // Driver joystick settings
@@ -96,7 +95,7 @@ public final class DriveConstants {
 
   public static final double kGyroAngleOffsetDegrees = 0.0; // default 0.0 - Rotate the gyro X axis if the gyro was not installed facing forward
   public static final double kPeriodicTimeSeconds = 0.02; // 20ms (default)
-  public static final double kSeedXMeters = kRobotBaseWithBumpersMeters / 2;
+  public static final double kSeedXMeters = kRobotBaseWithBumpersMeters / 2 + 2.0; // 2 meters in front of robot center, for seeding vision measurements
   
   // Define the module translations from the robot's center
   // See: https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#coordinate-system
@@ -138,7 +137,7 @@ public final class DriveConstants {
     kRobotMOI,
     new ModuleConfig(
       kWheelRadiusMeters,
-      kMaxDriveVelocityAt12VoltsMPS * 0.85,
+      kMaxDriveVelocityAt12VoltsMPS,
       kWheelCOF, 
       DCMotor.getKrakenX60(1).withReduction(kDriveGearRatio),
       40.0, // must match currentLimit.drive in physicalproperties.json

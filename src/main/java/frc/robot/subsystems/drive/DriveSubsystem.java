@@ -186,6 +186,11 @@ public class DriveSubsystem extends SubsystemBase {
    *                     If null, feedforward is computed by the setpoint generator (or omitted).
    */
   private void driveRobotRelative(ChassisSpeeds speeds, DriveFeedforwards feedforwards) {
+    // Reject non-finite input before it reaches either path
+    if (!isValidSpeeds(speeds)) {
+      speeds = new ChassisSpeeds();
+    }
+
     // By-pass the setpoint generator and drive directly with the desired speeds if necessary
     if (!DriveConstants.kUseSetpointGenerator) {
       if (feedforwards != null) {
@@ -199,6 +204,16 @@ public class DriveSubsystem extends SubsystemBase {
 
     // Create a new drive setpoint based on the current drive setpoint & the desired chassis speeds.
     driveSetpoint = setpointGenerator.generateSetpoint(driveSetpoint, speeds, DriveConstants.kPeriodicTimeSeconds);
+    
+    // If the generator produced garbage, reset from the real module states and skip this cycle
+    if (!isValidSpeeds(driveSetpoint.robotRelativeSpeeds())) {
+      driveSetpoint = new SwerveSetpoint(
+        new ChassisSpeeds(),
+        getModuleStates(),
+        DriveFeedforwards.zeros(4)
+      );
+      return;
+    }
 
     // Move the robot using the new setpoint
     swerveDrive.drive(
@@ -206,6 +221,23 @@ public class DriveSubsystem extends SubsystemBase {
       driveSetpoint.moduleStates(),
       driveSetpoint.feedforwards().linearForces()
     );
+  }
+
+  /**
+   * Validates that the given chassis speeds are finite numbers (not NaN or infinite).
+   * @param speeds The robot-relative chassis speeds to validate
+   * @return True if all speeds are finite, false otherwise
+   */
+  private boolean isValidSpeeds(ChassisSpeeds speeds) {
+    if (
+      speeds == null ||
+      !Double.isFinite(speeds.vxMetersPerSecond) ||
+      !Double.isFinite(speeds.vyMetersPerSecond) ||
+      !Double.isFinite(speeds.omegaRadiansPerSecond)
+    ) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -677,7 +709,15 @@ public class DriveSubsystem extends SubsystemBase {
     DoubleSupplier rSpeedSupplier
   ) {
     // Return a command that runs the drive logic
-    return run(() -> {
+    return startRun(
+      () -> {
+        driveSetpoint = new SwerveSetpoint(
+          new ChassisSpeeds(), 
+          getModuleStates(), 
+          DriveFeedforwards.zeros(4)
+        );
+      }, 
+      () -> {
       // Get raw joystick inputs from the suppliers every cycle
       double rawX = xSpeedSupplier.getAsDouble();
       double rawY = ySpeedSupplier.getAsDouble();
