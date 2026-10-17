@@ -85,7 +85,9 @@ public class VisionSubsystem extends SubsystemBase {
         // Add camera to simulation if in sim mode
         if (visionSim != null) {
           var cameraSim = new PhotonCameraSim(camera.getCamera(), createSimCameraProperties());
-          cameraSim.enableDrawWireframe(VisionConstants.kDebug);  // costs CPU, so debug only
+          cameraSim.enableDrawWireframe(false);
+          cameraSim.enableRawStream(false);
+          cameraSim.enableProcessedStream(false);
           visionSim.addCamera(cameraSim, configs.get(cameraName));
         }
       } catch (Exception ex) {
@@ -319,9 +321,9 @@ public class VisionSubsystem extends SubsystemBase {
    */
   private static SimCameraProperties createSimCameraProperties() {
     var props = new SimCameraProperties();
-    props.setCalibration(1280, 800, Rotation2d.fromDegrees(90));
+    props.setCalibration(640, 480, Rotation2d.fromDegrees(90));
     props.setCalibError(0.25, 0.08);   // avg / std-dev pixel error
-    props.setFPS(30);
+    props.setFPS(20);
     props.setAvgLatencyMs(35);
     props.setLatencyStdDevMs(5);
     return props;
