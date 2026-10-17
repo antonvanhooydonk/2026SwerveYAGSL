@@ -51,7 +51,6 @@ import frc.robot.util.Utils;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 import swervelib.parser.SwerveParser;
-import swervelib.simulation.ironmaple.simulation.SimulatedArena;
 import swervelib.telemetry.SwerveDriveTelemetry;
 
 /**
@@ -172,11 +171,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void simulationPeriodic() {
-    // Advance the maple-sim physics world.
-    // If another subsystem (intake, game pieces) also needs this, call it in
-    // Robot.simulationPeriodic() instead so it only runs once per loop.
-    SimulatedArena.getInstance().simulationPeriodic();
-
     // Show the physics "truth" pose next to the estimated pose
     getSimPose().ifPresent(p -> swerveDrive.field.getObject("Sim Truth").setPose(p));
   }

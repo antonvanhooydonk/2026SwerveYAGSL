@@ -10,6 +10,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
+import swervelib.simulation.ironmaple.simulation.SimulatedArena;
+
 public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
   private Command m_autonomousCommand;
@@ -35,6 +37,12 @@ public class Robot extends TimedRobot {
     // subsystem periodic() methods. This must be called from the robot's periodic block in order 
     // for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // Advance the maple-sim physics world.
+    SimulatedArena.getInstance().simulationPeriodic();
   }
 
   @Override
