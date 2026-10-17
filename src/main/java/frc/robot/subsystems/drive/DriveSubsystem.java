@@ -709,15 +709,7 @@ public class DriveSubsystem extends SubsystemBase {
     DoubleSupplier rSpeedSupplier
   ) {
     // Return a command that runs the drive logic
-    return startRun(
-      () -> {
-        driveSetpoint = new SwerveSetpoint(
-          new ChassisSpeeds(), 
-          getModuleStates(), 
-          DriveFeedforwards.zeros(4)
-        );
-      }, 
-      () -> {
+    return run(() -> {
       // Get raw joystick inputs from the suppliers every cycle
       double rawX = xSpeedSupplier.getAsDouble();
       double rawY = ySpeedSupplier.getAsDouble();
