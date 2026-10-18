@@ -319,13 +319,8 @@ public class DriveSubsystem extends SubsystemBase {
    * This is used to seed the pose estimator at the start of a match if no vision is available.
    * @return The default starting Pose2d
    */
-  private Pose2d getSeedPose() {
-    Pose2d bluePose = new Pose2d(
-      DriveConstants.kSeedXMeters,
-      FieldConstants.kFieldWidthMeters / 2.0,
-      Rotation2d.kZero
-    );
-    return Utils.isRedAlliance() ? FlippingUtil.flipFieldPose(bluePose) : bluePose;
+  private Pose2d getSeedPose() {    
+    return Utils.isRedAlliance() ? DriveConstants.kRedSeedPose : DriveConstants.kBlueSeedPose;
   }
 
   /**

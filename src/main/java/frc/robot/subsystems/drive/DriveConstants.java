@@ -7,11 +7,14 @@ package frc.robot.subsystems.drive;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.util.FlippingUtil;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.util.Units;
-
+import frc.robot.Constants.FieldConstants;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 /**
@@ -44,6 +47,8 @@ public final class DriveConstants {
   // ------------------------------------------------------------
   // Alignment tolerances for auto start pose
   // ------------------------------------------------------------
+  public static final Pose2d kBlueSeedPose = new Pose2d(2.0, FieldConstants.kFieldWidthMeters / 2.0, Rotation2d.kZero);
+  public static final Pose2d kRedSeedPose = FlippingUtil.flipFieldPose(kBlueSeedPose);
   public static final double kStartPoseTranslationToleranceMeters = Units.inchesToMeters(0.5);
   public static final double kStartPoseRotationToleranceDegrees = 0.5;  
 
@@ -95,7 +100,6 @@ public final class DriveConstants {
 
   public static final double kGyroAngleOffsetDegrees = 0.0; // default 0.0 - Rotate the gyro X axis if the gyro was not installed facing forward
   public static final double kPeriodicTimeSeconds = 0.02; // 20ms (default)
-  public static final double kSeedXMeters = kRobotBaseWithBumpersMeters / 2 + 2.0; // 2 meters in front of robot center, for seeding vision measurements
   
   // Define the module translations from the robot's center
   // See: https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#coordinate-system
