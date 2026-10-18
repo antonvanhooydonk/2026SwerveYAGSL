@@ -294,7 +294,7 @@ public class DriveSubsystem extends SubsystemBase {
     // On a real robot, only do this if vision hasn't given us a position yet.
     if (RobotBase.isSimulation() || acceptedVisionCount == 0) {
       // seed the whole pose
-      swerveDrive.resetOdometry(getSeedPose());
+      resetOdometry(getSeedPose());
     } else {
       // reads the current alliance but keeps the translation estimate
       resetHeading();
