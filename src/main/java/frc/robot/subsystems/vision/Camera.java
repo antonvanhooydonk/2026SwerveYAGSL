@@ -36,7 +36,7 @@ public class Camera {
     this.robotToCamera = robotToCamera;
     this.camera = new PhotonCamera(cameraName);
     this.poseEstimator = new PhotonPoseEstimator(FieldConstants.kFieldLayout, robotToCamera);
-    this.disconnectedAlert = new Alert("Vision camera \"" + cameraName + "\" is disconnected", AlertType.kError);
+    this.disconnectedAlert = new Alert("Camera \"" + cameraName + "\" is disconnected", AlertType.kError);
   }
       
   /**
