@@ -245,6 +245,7 @@ public class DriveSubsystem extends SubsystemBase {
    * @param brake True to enable motor brake, false for coast
    */
   private void setMotorBrake(boolean brake) {
+    if (brake == this.brakeMode) return;
     this.brakeMode = brake;
     swerveDrive.setMotorIdleMode(this.brakeMode);
   }
@@ -427,6 +428,11 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.autonomousInit() or a command scheduler binding.
    */
   public void autonomousInit() {
+    // Never start a match in coast (pit toggle may have been left on)
+    if (!brakeMode) {
+      setMotorBrake(true);
+    }
+
     // Backstop in case the alliance only became known after the last disabledPeriodic()
     seedHeadingForAlliance();
 
@@ -458,6 +464,11 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.teleopInit() or a command scheduler binding.
    */
   public void teleopInit() {
+    // Never start a match in coast (pit toggle may have been left on)
+    if (!brakeMode) {
+      setMotorBrake(true);
+    }
+
     // Backstop (no-op if already seeded for this alliance, e.g. after autonomous)
     seedHeadingForAlliance();
 
@@ -974,6 +985,15 @@ public class DriveSubsystem extends SubsystemBase {
 
   /**
    * Enable/disable motor brake mode
+   */
+  public Command setBrakeModeCommand(boolean brakeMode) {
+    return runOnce(() -> setMotorBrake(brakeMode))
+      .ignoringDisable(true)
+      .withName("Drive_SetBrakeMode");
+  }
+
+  /**
+   * Toggle motor brake mode
    */
   public Command toggleBrakeModeCommand() {
     return runOnce(() -> setMotorBrake(!brakeMode))

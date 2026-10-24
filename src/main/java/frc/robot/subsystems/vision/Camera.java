@@ -11,6 +11,8 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 
 import frc.robot.Constants.FieldConstants;
 
@@ -19,6 +21,7 @@ public class Camera {
   private final Transform3d robotToCamera;
   private final PhotonCamera camera;
   private final PhotonPoseEstimator poseEstimator;
+  private final Alert disconnectedAlert;
   
   // Cached data from current periodic cycle
   private List<PhotonPipelineResult> cachedResults = new ArrayList<>();
@@ -33,13 +36,18 @@ public class Camera {
     this.robotToCamera = robotToCamera;
     this.camera = new PhotonCamera(cameraName);
     this.poseEstimator = new PhotonPoseEstimator(FieldConstants.kFieldLayout, robotToCamera);
+    this.disconnectedAlert = new Alert("Vision camera \"" + cameraName + "\" is disconnected", AlertType.kError);
   }
       
   /**
    * Updates cached results - CALL ONLY ONCE PER PERIODIC CYCLE
    */
   public void updateCache() {
+    // Get all unread results from camera
     cachedResults = camera.getAllUnreadResults();
+
+    // Update alert state
+    disconnectedAlert.set(!camera.isConnected());
   }
       
   /**

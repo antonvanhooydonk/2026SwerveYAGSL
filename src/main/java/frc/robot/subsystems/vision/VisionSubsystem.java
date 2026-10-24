@@ -437,12 +437,16 @@ public class VisionSubsystem extends SubsystemBase {
     builder.addBooleanProperty("Has Targets", this::hasTargets, null);
     builder.addDoubleProperty("Total Targets", this::getTotalTargetCount, null);
     
+    // Always publish connection status (not gated by kDebug) so a dropped camera is visible at competition
+    for (Camera camera : cameras) {
+      builder.addBooleanProperty("Camera/" + camera.getName() + "/Connected", camera::isConnected, null);
+    }
+
     // Individual camera status - call getLatestResult() in the lambda
     if (VisionConstants.kDebug) {
       for (Camera camera : cameras) {
         String prefix = "Camera/" + camera.getName() + "/";
       
-        builder.addBooleanProperty(prefix + "Connected", () -> camera.getCamera().isConnected(), null);
         builder.addBooleanProperty(prefix + "Has Targets", () -> camera.getLatestResult().hasTargets(), null);
         builder.addDoubleProperty(prefix + "Target Count", () -> camera.getLatestResult().getTargets().size(), null);
         builder.addDoubleProperty(prefix + "Unread Results", () -> camera.getCachedResults().size(), null);
