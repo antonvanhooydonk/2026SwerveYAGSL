@@ -208,7 +208,9 @@ public final class SparkMaxFactory {
     
     if (isFollower) {
       signals.signals
+        .primaryEncoderPositionAlwaysOn(false)
         .primaryEncoderPositionPeriodMs(200)
+        .primaryEncoderVelocityAlwaysOn(false)
         .primaryEncoderVelocityPeriodMs(200)
         .externalOrAltEncoderPosition(500)
         .externalOrAltEncoderVelocity(500)
@@ -217,7 +219,9 @@ public final class SparkMaxFactory {
         .analogVoltagePeriodMs(500); 
     } else {
       signals.signals
+        .primaryEncoderPositionAlwaysOn(true)
         .primaryEncoderPositionPeriodMs(primaryEncoderPositionPeriodMs)
+        .primaryEncoderVelocityAlwaysOn(true)
         .primaryEncoderVelocityPeriodMs(primaryEncoderVelocityPeriodMs)
         .externalOrAltEncoderPosition(500)
         .externalOrAltEncoderVelocity(500)
