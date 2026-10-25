@@ -929,10 +929,10 @@ public class DriveSubsystem extends SubsystemBase {
    * Reset only the robot heading to face away from the alliance driver station,
    * leaving the translation estimate (vision/odometry) untouched.
    */
-  public Command resetHeadingCommand() {
-    return runOnce(this::resetHeading)
+  public Command seedHeadingForAllianceCommand() {
+    return runOnce(this::seedHeadingForAlliance)
       .ignoringDisable(true)
-      .withName("Drive_ResetHeading");
+      .withName("Drive_SeedHeadingForAlliance");
   }
 
   /**

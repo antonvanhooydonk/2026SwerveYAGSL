@@ -187,7 +187,7 @@ public class RobotContainer {
     RobotModeTriggers.teleop().and(driverXbox.back()).onTrue(driveSubsystem.toggleFieldRelativeCommand());
 
     // re-zero field-relative heading only (keeps the vision/odometry position)
-    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.resetHeadingCommand());
+    RobotModeTriggers.teleop().and(driverXbox.start()).onTrue(driveSubsystem.seedHeadingForAllianceCommand());
 
     // teleop button bindings
     RobotModeTriggers.teleop().and(driverXbox.a()).onTrue(Commands.none());
