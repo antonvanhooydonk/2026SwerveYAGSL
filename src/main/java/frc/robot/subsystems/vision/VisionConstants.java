@@ -26,7 +26,6 @@ public final class VisionConstants {
   public static final double kPoseAmbiguityThreshold    = 0.20;
   public static final double kFieldBorderMargin         = 0.50; // meters
   public static final double kZMargin                   = 0.75; // meters
-  public static final double kMaxDistanceMeters         = 6.00; // anything over this is max std dev
 
   // PhotonVision's target area is a PERCENT of the image (0-100), not pixels.
   // Calibrate: stand ~5 m from a tag, read its area in the PhotonVision UI, and set this
@@ -34,20 +33,16 @@ public final class VisionConstants {
   // (a tag at 5 m is ~0.09%) and MUST be checked against your actual cameras.
   public static final double kMinTagAreaPercent         = 0.08;
   
-  // Theta trust. Single-tag heading is ambiguous, so vision heading is ignored
-  // and the NavX owns heading. Use a large finite value rather than infinity.
-  public static final double kIgnoredThetaStdDev        = 1.0e6;
-  public static final double kMultiTagBaseThetaStdDev   = 0.10;  // radians (~5.7 deg), was 0.01
-  public static final double kMinThetaStdDev            = 0.05;  // radians (~2.9 deg) floor
-
-  // Single-tag estimates beyond this are rejected outright
-  public static final double kSingleTagMaxDistanceMeters = 4.0;
-
-  // XY trust. Single-tag XY is less reliable than multi-tag, so
-  // we use a larger base std dev for single-tag estimates.
-  public static final double kSingleTagBaseXYstdDev     = 0.08; // meters
-  public static final double kMultiTagBaseXYstdDev      = 0.02; // meters
-
+  // Vision std dev model: stdDev = baseline * distance^2 / tagCount
+  public static final double kLinearStdDevBaseline        = 0.02;  // meters at 1 m with one tag
+  public static final double kAngularStdDevBaseline       = 0.06;  // radians at 1 m with one tag
+  public static final double kMinXYStdDev                 = 0.02;  // meters, floor (never fully trust vision)
+  public static final double kMaxXYStdDev                 = 1.0;   // meters, ceiling
+  public static final double kMinThetaStdDev              = 0.05;  // radians, floor
+  public static final double kIgnoredThetaStdDev          = 1.0e6; // effectively "do not use heading"
+  public static final double kMaxDistanceMeters           = 6.00;  // multi-tag estimates beyond this are rejected
+  public static final double kSingleTagMaxDistanceMeters  = 4.00;  // single-tag estimates beyond this are rejected
+  
   // ----------------------------------------------------------
   // Define the robot's cameras
   // IMPORTANT:

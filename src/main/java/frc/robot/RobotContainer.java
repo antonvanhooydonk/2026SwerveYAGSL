@@ -49,10 +49,7 @@ public class RobotContainer {
   private final LEDSubsystem ledSubsystem = new LEDSubsystem();
   private final RumbleSubsystem rumbleSubsystem = new RumbleSubsystem(driverXbox);
   private final TurretSubsystem turretSubsystem = new TurretSubsystem();
-  private final VisionSubsystem visionSubsystem = new VisionSubsystem(
-    driveSubsystem::addVisionMeasurement,     
-    () -> driveSubsystem.getSimPose().orElse(driveSubsystem.getPose())
-  );
+  private final VisionSubsystem visionSubsystem = new VisionSubsystem(driveSubsystem::addVisionMeasurement);
  
   // Coordination command factories
   private final Feedback feedback = new Feedback(ledSubsystem, rumbleSubsystem);
