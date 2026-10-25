@@ -269,41 +269,6 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Get a vision system camera by name.
-   * @param cameraName Name of the camera
-   * @return Optional containing the camera
-   */
-  public Optional<Camera> getCamera(String cameraName) {
-    return cameras.stream()
-      .filter(camera -> camera.getName().equals(cameraName))
-      .findFirst();
-  }
-
-  /**
-   * Gets the best target from the specified camera (from cached data)
-   * @param cameraName Name of the camera
-   * @return Optional containing the best target
-   */
-  public Optional<PhotonTrackedTarget> getBestTarget(String cameraName) {
-    return cameras.stream()
-      .filter(camera -> camera.getName().equals(cameraName))
-      .findFirst()
-      .flatMap(Camera::getBestTarget);
-  }
-
-  /**
-   * Gets the best target from any camera (from cached data)
-   * @return Optional containing the best target
-   */
-  public Optional<PhotonTrackedTarget> getBestTarget() {
-    return cameras.stream()
-      .map(Camera::getBestTarget)
-      .filter(Optional::isPresent)
-      .map(Optional::get)
-      .findFirst();
-  }
-
-  /**
    * Checks if any camera has visible targets (from cached data)
    * @return True if any targets are visible
    */
@@ -317,27 +282,6 @@ public class VisionSubsystem extends SubsystemBase {
    */
   public int getTotalTargetCount() {
     return cameras.stream().mapToInt(Camera::getTargetCount).sum();
-  }
-
-  /**
-   * Gets a list of all camera names
-   * @return List of camera names
-   */
-  public List<String> getCameraNames() {
-    return cameras.stream().map(camera -> camera.getName()).toList();
-  }
-
-  /**
-   * Gets the most recent result for a specific camera (from cached data)
-   * @param cameraName Name of the camera
-   * @return Most recent PhotonPipelineResult, or empty result if camera not found
-   */
-  public PhotonPipelineResult getLatestResult(String cameraName) {
-    return cameras.stream()
-      .filter(camera -> camera.getName().equals(cameraName))
-      .findFirst()
-      .map(Camera::getLatestResult)
-      .orElse(new PhotonPipelineResult());
   }
 
   /**
