@@ -31,16 +31,21 @@ public final class ShotCalculator {
    * @param fieldSpeeds field-relative chassis speeds (null is treated as stationary)
    */
   public static Solution solve(Pose2d turretPose, Translation2d target, ChassisSpeeds fieldSpeeds) {
-    Translation2d shooter = turretPose.getTranslation();
     double vx = fieldSpeeds == null ? 0.0 : fieldSpeeds.vxMetersPerSecond;
     double vy = fieldSpeeds == null ? 0.0 : fieldSpeeds.vyMetersPerSecond;
+
+    // Where the shooter will be when the ball actually leaves
+    Translation2d shooter = turretPose.getTranslation().plus(new Translation2d(
+      vx * FlywheelConstants.kShotLatencySeconds,
+      vy * FlywheelConstants.kShotLatencySeconds)
+    );
 
     Translation2d virtual = target;
     double distance = shooter.getDistance(target);
 
     // Time of flight depends on the (virtual) distance, which depends on time of flight. Iterate.
     for (int i = 0; i < 3; i++) {
-      double timeOfFlight = distance / FlywheelConstants.kShotSpeedMetersPerSecond;
+      double timeOfFlight = FlywheelConstants.kTimeOfFlightSeconds.get(distance);
       virtual = target.minus(new Translation2d(vx * timeOfFlight, vy * timeOfFlight));
       distance = shooter.getDistance(virtual);
     }

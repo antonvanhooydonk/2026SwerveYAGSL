@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.flywheel;
 
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -31,7 +33,16 @@ public final class FlywheelConstants {
   public static final double kShotSpeedMetersPerSecond = 12.0;
 
   public static final double kFlywheelDefaultDistanceToTarget = 2.0; // Default distance to target if robot or target pose is null
-  
+  public static final double kShotLatencySeconds = 0.10; // placeholder: measure/tune
+
+  // Distance (m) -> time of flight (s). Placeholder values: measure with slow-mo video
+  public static final InterpolatingDoubleTreeMap kTimeOfFlightSeconds = new InterpolatingDoubleTreeMap();
+  static {
+    kTimeOfFlightSeconds.put(1.5, 0.45);
+    kTimeOfFlightSeconds.put(3.0, 0.65);
+    kTimeOfFlightSeconds.put(5.0, 0.90);
+  }
+
   // ------------------------------------------------------------
   // PID / Feedforward gains (tune with SysId)
   // Tuning: start with kV only (kP = 0), add kP if error remains
