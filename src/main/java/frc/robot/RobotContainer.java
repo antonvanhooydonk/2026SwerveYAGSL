@@ -33,6 +33,7 @@ import frc.robot.subsystems.led.LEDSubsystem;
 import frc.robot.subsystems.rumble.RumbleSubsystem;
 import frc.robot.subsystems.turret.TurretSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.util.StartingPoseGuide;
 import frc.robot.util.Utils;
 
 public class RobotContainer {
@@ -70,6 +71,9 @@ public class RobotContainer {
   // Track match state
   private boolean wasInAuto = false;
   private boolean wasInTeleop = false;
+
+  // Starting pose guide for placing the robot on the field before a match.
+  private final StartingPoseGuide startingPoseGuide = new StartingPoseGuide(autoChooser::getSelected, driveSubsystem::getPose);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -271,9 +275,10 @@ public class RobotContainer {
       // Seed the pose heading for the current alliance (once per alliance change)
       driveSubsystem.seedHeadingForAlliance();
 
-      // Update the dashboard with the current auto starting pose
-      // The chooser value is the PathPlanner auto name ("" = no auto)
-      driveSubsystem.publishStartingPoseAlignment(autoChooser::getSelected);
+      // Update the starting pose guide (if enabled) to show the current robot pose and the
+      // starting pose for the selected auto. This is only done in disabled mode, so the
+      // drive team can position the robot on the field before the match starts.
+      startingPoseGuide.update();
     }
   }
 
