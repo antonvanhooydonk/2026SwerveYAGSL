@@ -44,7 +44,9 @@ public class Camera {
    */
   public void updateCache() {
     // Get all unread results from camera
-    cachedResults = camera.getAllUnreadResults();
+    if (camera.isConnected()) {
+      cachedResults = camera.getAllUnreadResults();
+    }
 
     // Update alert state
     disconnectedAlert.set(!camera.isConnected());
