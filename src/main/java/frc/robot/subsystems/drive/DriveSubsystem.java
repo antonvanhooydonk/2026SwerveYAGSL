@@ -494,8 +494,10 @@ public class DriveSubsystem extends SubsystemBase {
    * Should be called from Robot.postMatch() or a command scheduler binding.
    */
   public void postMatch() {
-    // Set motors to brake mode for match (do this before resetting encoders)
-    setMotorBrake(true);
+    // Never end a match in coast (pit toggle may have been left on)
+    if (!brakeMode) {
+      setMotorBrake(true);
+    }
   
     // Reset slew rate limiters
     xLimiter.reset(0.0);
