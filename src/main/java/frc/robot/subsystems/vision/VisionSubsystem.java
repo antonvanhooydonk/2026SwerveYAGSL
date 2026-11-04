@@ -8,16 +8,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -44,12 +50,19 @@ public class VisionSubsystem extends SubsystemBase {
   // Camera object storage
   private final List<Camera> cameras = new ArrayList<>();
 
+  // Supplies the robot's TRUE pose in simulation (unused on a real robot)
+  private final Supplier<Pose2d> simPoseSupplier;
+
+  // Simulated world that renders AprilTags into the simulated cameras (null on a real robot)
+  private VisionSystemSim visionSim;
+
   /**
    * Creates a new VisionSubsystem
    */
-  public VisionSubsystem(VisionMeasurementConsumer visionConsumer) {
+  public VisionSubsystem(VisionMeasurementConsumer visionConsumer, Supplier<Pose2d> simPoseSupplier) {
     // Store the vision consumer for pose estimator updates
     this.visionConsumer = visionConsumer;
+    this.simPoseSupplier = simPoseSupplier;
 
     // Exit early if vision is not enabled to avoid unnecessary initialization
     if (!VisionConstants.kEnableVision) {
@@ -67,6 +80,11 @@ public class VisionSubsystem extends SubsystemBase {
       } catch (Exception ex) {
         Utils.logError("Failed to initialize camera " + cameraName + ": " + ex.getMessage());
       }
+    }
+
+    // Initialize simulation if running in simulation mode
+    if (RobotBase.isSimulation()) {
+      initSimulation();
     }
 
     // Initialize dashboard values
@@ -99,7 +117,46 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    if (visionSim == null) {
+      return;
+    }
+
+    // Renders the AprilTags into each virtual camera from the true pose. PhotonVision
+    // publishes results to the same NetworkTables topics a coprocessor would, so
+    // Camera.updateCache() reads them with no changes.
+    visionSim.update(simPoseSupplier.get());
+  }
+
+  /**
+   * Initializes the vision simulation environment with AprilTags and virtual cameras.
+   * This is only called in simulation mode.
+   */
+  private void initSimulation() {
+    visionSim = new VisionSystemSim("AprilTags");
+    visionSim.addAprilTags(FieldConstants.kFieldLayout);
+
+    for (Camera camera : cameras) {
+      SimCameraProperties props = new SimCameraProperties();  // one per camera
+      props.setCalibration(
+        VisionConstants.kSimCameraWidthPx,
+        VisionConstants.kSimCameraHeightPx,
+        Rotation2d.fromDegrees(VisionConstants.kSimCameraDiagFovDegrees)
+      );
+      props.setCalibError(VisionConstants.kSimCalibErrorAvgPx, VisionConstants.kSimCalibErrorStdDevPx);
+      props.setFPS(VisionConstants.kSimCameraFps);
+      props.setAvgLatencyMs(VisionConstants.kSimAvgLatencyMs);
+      props.setLatencyStdDevMs(VisionConstants.kSimLatencyStdDevMs);
+
+      PhotonCameraSim cameraSim = new PhotonCameraSim(camera.getCamera(), props);
+      cameraSim.setMaxSightRange(VisionConstants.kSimMaxSightRangeMeters);
+      cameraSim.enableDrawWireframe(VisionConstants.kSimDrawWireframe);
+
+      visionSim.addCamera(cameraSim, camera.getRobotToCamera());
+    }
+
+    SmartDashboard.putData("Vision/SimField", visionSim.getDebugField());
+  }
 
   // ==================== Internal State Modifiers ====================
 

@@ -166,7 +166,14 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     // Show the physics "truth" pose next to the estimated pose
-    getSimPose().ifPresent(p -> swerveDrive.field.getObject("Sim Truth").setPose(p));
+    swerveDrive.getSimulationDriveTrainPose().ifPresent(p -> swerveDrive.field.getObject("Sim Truth").setPose(p));
+  }
+
+  /**
+   * Gets the current simulated pose of the robot in the simulation world.
+   */
+  public Pose2d getSimTruthPose() {
+    return swerveDrive.getSimulationDriveTrainPose().orElse(new Pose2d());
   }
 
   // ----------------------------------------------------------------------------------------
@@ -324,13 +331,6 @@ public class DriveSubsystem extends SubsystemBase {
    */
   public Pose2d getPose() {
     return swerveDrive.getPose();
-  }
-
-  /**
-   * Gets the current simulated pose of the robot in the simulation world.
-   */
-  public Optional<Pose2d> getSimPose() {
-    return swerveDrive.getSimulationDriveTrainPose();
   }
 
   /**

@@ -43,6 +43,18 @@ public final class VisionConstants {
   public static final double kMaxDistanceMeters           = 6.00;  // multi-tag estimates beyond this are rejected
   public static final double kSingleTagMaxDistanceMeters  = 4.00;  // single-tag estimates beyond this are rejected
   
+  // Simulation constants (for testing without a real robot)
+  public static final int kSimCameraWidthPx           = 1280;
+  public static final int kSimCameraHeightPx          = 800;
+  public static final double kSimCameraDiagFovDegrees = 79.0;  // ~70 deg HFOV at 1280x800
+  public static final double kSimCalibErrorAvgPx      = 0.25;
+  public static final double kSimCalibErrorStdDevPx   = 0.08;
+  public static final double kSimCameraFps            = 30.0;
+  public static final double kSimAvgLatencyMs         = 35.0;
+  public static final double kSimLatencyStdDevMs      = 5.0;
+  public static final double kSimMaxSightRangeMeters  = 8.0;
+  public static final boolean kSimDrawWireframe       = false;
+
   // ----------------------------------------------------------
   // Define the robot's cameras
   // IMPORTANT:
