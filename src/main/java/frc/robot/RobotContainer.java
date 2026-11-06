@@ -270,22 +270,6 @@ public class RobotContainer {
   // --------------------------------------------------------------------------------
 
   /**
-   * This method is called periodically while the robot is disabled.
-   */
-  public void disabledPeriodic() {
-    // Pre-match
-    if (!wasInAuto && !wasInTeleop) {
-      // Seed the pose heading for the current alliance (once per alliance change)
-      driveSubsystem.seedHeadingForAlliance();
-
-      // Update the starting pose guide (if enabled) to show the current robot pose and the
-      // starting pose for the selected auto. This is only done in disabled mode, so the
-      // drive team can position the robot on the field before the match starts.
-      startingPoseGuide.update();
-    }
-  }
-
-  /**
    * Initializes all subsystems for autonomous mode. Should be called from Robot.autonomousInit().
    */
   public void autonomousInit() {
@@ -360,6 +344,22 @@ public class RobotContainer {
       flywheelSubsystem.postMatch();
       intakeSubsystem.postMatch();
       turretSubsystem.postMatch();
+    }
+  }
+
+  /**
+   * This method is called periodically while the robot is disabled.
+   */
+  public void disabledPeriodic() {
+    // Pre-match
+    if (!wasInAuto && !wasInTeleop) {
+      // Seed the pose heading for the current alliance (once per alliance change)
+      driveSubsystem.seedHeadingForAlliance();
+
+      // Update the starting pose guide (if enabled) to show the current robot pose and the
+      // starting pose for the selected auto. This is only done in disabled mode, so the
+      // drive team can position the robot on the field before the match starts.
+      startingPoseGuide.update();
     }
   }
 }
