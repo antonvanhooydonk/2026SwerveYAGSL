@@ -23,11 +23,20 @@ public final class Utils {
   }
 
   /**
+   * Log robot warning message to console or other notification systems.
+   */
+  public static void logWarning(String msg) {
+    System.out.println(msg);
+    DriverStation.reportWarning(msg, false);
+    Elastic.sendNotification(new Notification(NotificationLevel.WARNING, "Warning", msg));
+  }
+
+  /**
    * Log robot error message to console or other notification systems.
    */
   public static void logError(String msg) {
     System.err.println(msg);
-    DriverStation.reportError(msg, false);
+    DriverStation.reportError(msg, true);
     Elastic.sendNotification(new Notification(NotificationLevel.ERROR, "Error", msg));
   }
 
