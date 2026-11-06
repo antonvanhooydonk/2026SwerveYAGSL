@@ -430,9 +430,6 @@ public class DriveSubsystem extends SubsystemBase {
     // Backstop in case the alliance only became known after the last disabledPeriodic()
     seedHeadingForAlliance();
 
-    // Set motors to brake mode for match (do this before resetting encoders)
-    setMotorBrake(true);
-
     // Reset drive setpoint for setpoint generator
     driveSetpoint = new SwerveSetpoint(
       new ChassisSpeeds(), 
@@ -465,9 +462,6 @@ public class DriveSubsystem extends SubsystemBase {
 
     // Backstop (no-op if already seeded for this alliance, e.g. after autonomous)
     seedHeadingForAlliance();
-
-    // Set motors to brake mode for match (do this before resetting encoders)
-    setMotorBrake(true);
 
     // Reset drive setpoint for setpoint generator
     driveSetpoint = new SwerveSetpoint(
