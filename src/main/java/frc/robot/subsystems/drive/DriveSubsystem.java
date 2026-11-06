@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems.drive;
 
+import static edu.wpi.first.units.Units.Newtons;
+
 import java.io.File;
 import java.util.Optional;
 import java.util.Set;
@@ -30,7 +32,9 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.measure.Force;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -87,6 +91,9 @@ public class DriveSubsystem extends SubsystemBase {
   // Alliance that the pose heading was last seeded for (empty = not seeded yet)
   private Optional<Alliance> seededAlliance = Optional.empty();
 
+  // Cached zero feedforward for when the input speeds are invalid or feedforwards are unusable
+  private static final DriveFeedforwards kZeroFeedforwards = DriveFeedforwards.zeros(4);
+
   /**
    * Creates a new swerve DriveSubsystem using the YAGSL library.
    * @param directory The directory containing the swerve drive JSON configuration
@@ -105,11 +112,11 @@ public class DriveSubsystem extends SubsystemBase {
     // Heading correction should only be used while controlling the robot via angle.
     swerveDrive.setHeadingCorrection(false);
     
-    // Disable cosine compensation when using swerveDrive.drive(robotVelocity, state, feedforwards)
-    swerveDrive.setCosineCompensator(!DriveConstants.kUseSetpointGenerator);
+    // Disable cosine compensation since we do this ourselves or in the setpoint generator.
+    swerveDrive.setCosineCompensator(false);
 
-    // Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
-    swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
+    // Disable chassis discretization.
+    swerveDrive.setChassisDiscretization(false, DriveConstants.kPeriodicTimeSeconds);
     
     // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
     swerveDrive.setModuleEncoderAutoSynchronize(false, 1);
@@ -129,11 +136,7 @@ public class DriveSubsystem extends SubsystemBase {
     );
     
     // Initialize the drive setpoint
-    driveSetpoint = new SwerveSetpoint(
-      new ChassisSpeeds(), 
-      getModuleStates(), 
-      DriveFeedforwards.zeros(4)
-    );
+    driveSetpoint = new SwerveSetpoint(new ChassisSpeeds(), getModuleStates(), kZeroFeedforwards);
 
     // Configure AutoBuilder for path following
     AutoBuilder.configure(
@@ -187,33 +190,99 @@ public class DriveSubsystem extends SubsystemBase {
    *                     If null, feedforward is computed by the setpoint generator (or omitted).
    */
   private void driveRobotRelative(ChassisSpeeds speeds, DriveFeedforwards feedforwards) {
+    // Setpoint generator path: it computes its own feedforward, so PathPlanner's forces are ignored there
+    if (DriveConstants.kUseSetpointGenerator) {
+      driveWithSetpointGenerator(speeds);
+      return;
+    }
+
+    // Reject non-finite input; bad speeds also invalidate any forces that came with them
+    boolean valid = isValidSpeeds(speeds);
+    if (!valid) {
+      speeds = new ChassisSpeeds();
+    }
+
+    // Joystick passes null -> zero forces. PathPlanner passes real forces.
+    DriveFeedforwards ff = (valid && isValidFeedforwards(feedforwards)) ? feedforwards : kZeroFeedforwards;
+
+    // Copy so we never modify PathPlanner's array or the shared zero array
+    Force[] desiredForces = ff.linearForces().clone();
+
+    // Compensate for skew when translating and rotating at once
+    speeds = ChassisSpeeds.discretize(speeds, DriveConstants.kPeriodicTimeSeconds);
+
+    // Compute the desired swerve module states from the chassis speeds
+    SwerveModuleState[] desiredStates = swerveDrive.kinematics.toSwerveModuleStates(speeds);
+
+    // Desaturation scales every module by one factor, so work it out first and reuse it for the forces
+    double maxRequested = 0.0;
+    for (SwerveModuleState s : desiredStates) {
+      maxRequested = Math.max(maxRequested, Math.abs(s.speedMetersPerSecond));
+    }
+    double desatScale = maxRequested > DriveConstants.kMaxSpeedMetersPerSecond
+      ? DriveConstants.kMaxSpeedMetersPerSecond / maxRequested
+      : 1.0;
+
+    // Desaturate the wheel speeds to ensure they are within the maximum allowed speed
+    SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, DriveConstants.kMaxSpeedMetersPerSecond);
+
+    // Per module: flip, optimize, cosine scale, and apply the same factors to the force
+    SwerveModuleState[] current = getModuleStates();
+    for (int i = 0; i < 4; i++) {
+      Rotation2d currentAngle = current[i].angle;
+      SwerveModuleState s = desiredStates[i];
+
+      // Determine if the voltage sign should be flipped based on the angle difference. 
+      // If the angle difference is greater than 90 degrees, flip the voltage sign.
+      // Must be done before calling optimize() since optimize() may change the 
+      // angle to be more than 90 degrees away from the current angle.
+      boolean flipped = Math.abs(s.angle.minus(currentAngle).getDegrees()) > 90.0;
+
+      // Optimize the desired state to minimize rotation and avoid unnecessary wheel spinning
+      s.optimize(currentAngle);
+
+      // Scale the speed by the cosine of the angle difference to reduce  
+      // speed when the wheel is not aligned with the desired direction
+      s.cosineScale(currentAngle);
+
+      // Feedforward follows the same desaturation, flip, and cosine scaling as the speed
+      double scale = desatScale * (flipped ? -1.0 : 1.0) * s.angle.minus(currentAngle).getCos();
+
+      // Apply the scale to the desired forces for this module
+      desiredForces[i] = desiredForces[i].times(scale);
+    }
+
+    // Drive the robot using the computed module states and feedforward forces
+    swerveDrive.drive(speeds, desiredStates, desiredForces);
+  }
+
+  /**
+   * Drives the robot using a SwerveSetpoint, which includes 
+   * both desired chassis speeds and feedforward forces.
+   * @param setpoint The desired swerve setpoint
+   */
+  private void driveWithSetpointGenerator(ChassisSpeeds speeds) {
+    // Skip if the setpoint generator is disabled
+    if (!DriveConstants.kUseSetpointGenerator) {
+      driveRobotRelative(speeds, kZeroFeedforwards);
+      return;
+    }
+
     // Reject non-finite input before it reaches either path
     if (!isValidSpeeds(speeds)) {
       speeds = new ChassisSpeeds();
     }
 
-    // By-pass the setpoint generator and drive directly with the desired speeds if necessary
-    if (!DriveConstants.kUseSetpointGenerator) {
-      if (feedforwards != null) {
-        SwerveModuleState[] states = swerveDrive.kinematics.toSwerveModuleStates(speeds);
-        swerveDrive.drive(speeds, states, feedforwards.linearForces());
-      } else {
-        swerveDrive.drive(speeds);
-      }
-      return;
-    }
-
     // Create a new drive setpoint based on the current drive setpoint & the desired chassis speeds.
     driveSetpoint = setpointGenerator.generateSetpoint(driveSetpoint, speeds, DriveConstants.kPeriodicTimeSeconds);
     
-    // If the generator produced garbage, reset from the real module states and skip this cycle
+    // If the generator produced garbage, set the setpoint to zero speeds and zero feedforward forces
     if (!isValidSpeeds(driveSetpoint.robotRelativeSpeeds())) {
-      driveSetpoint = new SwerveSetpoint(
-        new ChassisSpeeds(),
-        getModuleStates(),
-        DriveFeedforwards.zeros(4)
-      );
-      return;
+      SwerveModuleState[] stopped = getModuleStates();
+      for (var s : stopped) {
+        s.speedMetersPerSecond = 0.0;
+      }
+      driveSetpoint = new SwerveSetpoint(new ChassisSpeeds(), stopped, kZeroFeedforwards);
     }
 
     // Move the robot using the new setpoint
@@ -237,6 +306,28 @@ public class DriveSubsystem extends SubsystemBase {
       !Double.isFinite(speeds.omegaRadiansPerSecond)
     ) {
       return false;
+    }
+    return true;
+  }
+
+  /**
+   * Validates that the given feedforward forces are finite numbers 
+   * (not NaN or infinite) and of the correct length.
+   * @param feedforwards The feedforward forces to validate
+   * @return True if the feedforwards are valid, false otherwise
+   */
+  private static boolean isValidFeedforwards(DriveFeedforwards feedforwards) {
+    if (feedforwards == null) {
+      return false;
+    }
+    Force[] forces = feedforwards.linearForces();
+    if (forces == null || forces.length != 4) {
+      return false;
+    }
+    for (Force f : forces) {
+      if (!Double.isFinite(f.in(Newtons))) {
+        return false;
+      }
     }
     return true;
   }
@@ -432,11 +523,7 @@ public class DriveSubsystem extends SubsystemBase {
     seedHeadingForAlliance();
 
     // Reset drive setpoint for setpoint generator
-    driveSetpoint = new SwerveSetpoint(
-      new ChassisSpeeds(), 
-      getModuleStates(), 
-      DriveFeedforwards.zeros(4)
-    );
+    driveSetpoint = new SwerveSetpoint(new ChassisSpeeds(), getModuleStates(), kZeroFeedforwards);
 
     // Reset slew rate limiters
     xLimiter.reset(0.0);
@@ -465,11 +552,7 @@ public class DriveSubsystem extends SubsystemBase {
     seedHeadingForAlliance();
 
     // Reset drive setpoint for setpoint generator
-    driveSetpoint = new SwerveSetpoint(
-      new ChassisSpeeds(), 
-      getModuleStates(), 
-      DriveFeedforwards.zeros(4)
-    );
+    driveSetpoint = new SwerveSetpoint(new ChassisSpeeds(), getModuleStates(), kZeroFeedforwards);
 
     // Reset slew rate limiters
     xLimiter.reset(0.0);
