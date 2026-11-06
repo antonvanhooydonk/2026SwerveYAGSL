@@ -383,6 +383,7 @@ public class DriveSubsystem extends SubsystemBase {
   private boolean isSlowMode() {
     return slowMode;
   }
+  
   /**
    * Gets whether brake mode is enabled
    * @return Brake mode status
